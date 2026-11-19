@@ -19,6 +19,11 @@ powershell -NoProfile -File scripts\probe-network.ps1 # 网络探活
 # M1 验收面：把某个版本完整下到数据根（默认 D:\mc-data）
 .\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe fetch --version 1.7.10 --dry-run
 .\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe fetch --version 1.7.10
+
+# M2 验收面：离线启动（Java 按 version.json 要求自动选，绝不走 PATH）
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe java
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe launch --version 1.18.2 --dry-run
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe launch --version 1.18.2 --username Dev --autostop 30
 ```
 
 ## 文档

@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M1 完成，待用户验收**（2026-11-19）：元数据解析 + 下载引擎 + `glauncher fetch` CLI 全部落地并有真实下载证据
+- **当前阶段**：**M2 完成，待用户验收**（2026-11-19）：离线启动核心跑通，1.18.2 真实起客户端并正确退出
 - **项目根**：`D:\dev\mc-launcher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -92,6 +92,25 @@
 
 **未演练**：真实网络中断后的续传（续传逻辑有单测，但没有真断网实验）→ 标 `TODO(需验证)`，M2 或夜跑时补。
 
-## 下一步（等你验收 M1 → 进入 M2）
+## M2 启动核心（2026-11-19 本轮交付）
 
-**M2 · 启动核心**：javaw 绝对路径（**绝不能走 PATH**，本机 PATH 上的 java 会崩）、classpath 顺序、natives 目录、双格式参数（已由 M1 提供）、logging、JVM/GC 参数、内存、工作目录 → 起真实 1.7.10 客户端。
+`dotnet test` → **79 passed / 0 failed**；真实 1.18.2 离线启动成功并正确退出。
+
+| 能力 | 落点 | 证据 |
+|---|---|---|
+| Java 发现（只扫 JAVA_HOME + 常见目录，绝不读 PATH）+ 精确主版本匹配 | `Launching/JavaRuntime.cs` | `glauncher java` 找到 17/21；1.7.10 被拒绝并解释（exit 3） |
+| classpath（元数据顺序、旧版 natives 不进、客户端最后） | `Launching/ClasspathBuilder.cs` | 3 个单测；1.18.2 实测 37 entries / missing 0 |
+| 命令组装（双格式参数、logging、-Xmx、JVM 参数、工作目录） | `Launching/LaunchCommandBuilder.cs` | 5 个单测；`--dump` 可导出完整命令行 |
+| 进程封装（日志落盘、到点杀进程树、退出码） | `Launching/ProcessRunner.cs` | 真实启动 38.1 s，窗口关闭后 exit 0 |
+| 离线身份（MD5 v3 UUID） | `Launching/OfflineIdentity.cs` | 2 个单测；日志 `Setting user: Dev` |
+| CLI `launch` / `java` | `src/GLauncher.Cli` | 见 M2 文档验收表 |
+
+**真实启动证据**：`glauncher launch --version 1.18.2 --username Dev` → 窗口 "Minecraft 1.18.2" 出现，
+日志含 `Backend library: LWJGL version 3.2.2`、`OpenAL initialized`、`Sound engine started`；
+手动关窗后游戏进程 exit 0，CLI 报 `autoStopped=False / exit=0`；`--autostop 30` 路径也验证通过。
+
+**已知异常**：首次启动出现过一次 `0xC0000005`（无 hs_err），其后 3 次稳定 → 记为待复现风险。
+
+## 下一步（等你验收 M2）
+
+建议顺序：**M4（Java 运行时下载）优先**——它解锁 1.7.10/1.12.2 等 Java 8 版本的启动验证，也补上 M2 唯一的未验证面；随后 M3a（离线认证收尾）/ M3b（微软认证，需你提供 Azure client ID）。
