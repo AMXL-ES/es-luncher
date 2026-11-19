@@ -12,6 +12,7 @@
 | `adr/0001-ui-framework.md` | 为什么是 Avalonia 12 | 推翻选型时 |
 | `adr/0002-license-gpl3.md` | 为什么 GPL-3.0、能抄什么不能抄什么 | 许可证/依赖策略变化时 |
 | `M1-metadata-download.md` 等 | 各里程碑的设计与坑位 | 进入该里程碑时创建 |
+| `M1-metadata-download.md` | manifest/version.json 的实测结构、规模数字、待裁剪问题 | M1 期间持续更新 |
 
 ## 待建（按里程碑顺序）
 

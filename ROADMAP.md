@@ -6,7 +6,7 @@
 | 里程碑 | 内容 | 完成判据 | 状态 |
 |---|---|---|---|
 | **M0** | 环境 + 骨架 | 工具链版本齐全；探活表成型；`dotnet build -c Release` 零警告；空窗口能开能关且记录冷启动毫秒数 | 🟡 证据齐备，待验收 |
-| **M1** | 版本元数据 + 下载引擎 | manifest→version.json→libraries→assets→natives 全量下载；SHA1 全校验；断点续传；并发可配；真实 version.json fixture 单测 | 待办 |
+| **M1** | 版本元数据 + 下载引擎 | manifest→version.json→libraries→assets→natives 全量下载；SHA1 全校验；断点续传；并发可配；真实 version.json fixture 单测 | 🟡 调研完成（`docs/M1-metadata-download.md`），待裁剪 |
 | **M2** | 启动核心 | javaw 命令组件化拼装（新旧双格式 arguments、规则求值、natives 解压、classpath 顺序、logging、JVM 参数、内存、工作目录）；起真实客户端并正确退出 | 待办 |
 | **M3a** | 离线认证 | 离线 UUID（OfflinePlayer 规则）、profile 落盘、`--username/--uuid` 正确注入 | 待办 |
 | **M3b** | 微软认证（延后） | 设备码全链路 MSA→XBL→XSTS→minecraft login→profile→entitlements；自动续期；401 自动重登。**阻塞项：Azure 客户端 ID（用户提供）** | 阻塞 |
