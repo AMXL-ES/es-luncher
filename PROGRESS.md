@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M1 进行中**：元数据解析层完成（33 个测试全绿），下载引擎未开始（2026-11-19）
+- **当前阶段**：**M1 完成，待用户验收**（2026-11-19）：元数据解析 + 下载引擎 + `glauncher fetch` CLI 全部落地并有真实下载证据
 - **项目根**：`D:\dev\mc-launcher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -44,7 +44,7 @@
 详见 `docs/M1-metadata-download.md`，要点：
 
 - manifest **273 KB / 925 版本**（release 103、snapshot 761、old_beta 26、old_alpha 35），`latest.release=26.3`
-- 现代版本 26.3 完整下载量 ≈ **587 MiB**（client 39.6 + libs 111 + assets 465），资源对象 **597,235 个** → 下载引擎按"百万级小文件"设计
+- 现代版本 26.3 完整下载量 ≈ **587 MiB**（client 39.6 + libs 111 + assets 465），资源对象 **5,149 个**（索引文件本身 597,235 B）
 - 26.3 **已无 natives classifiers**，1.7.10 仍有 → 新旧两套路径都要实现
 - `javaVersion.majorVersion` 在 legacy 版本里也有（1.7.10 → 8）→ M4 可完全元数据驱动
 - 待裁剪 5 个问题：natives 归属、并发默认值、fixture 范围、CLI 验收面、镜像降级策略
@@ -64,6 +64,34 @@
 真实 JSON 交叉验证（临时工具，已清理）：26.3 libs=114/rules=61/natives=0、1.12.2 libs=39/natives=5、1.0 libs=13/natives=4。
 **修正判断**：natives 不是"只有 1.7.10 有"，1.0 也有 4 个；1.13+ 改为 LWJGL3 原生 jar 直接进 classpath。
 
-## 下一步（M1 剩余：下载引擎）
+## M1 下载引擎（2026-11-19 本轮交付）
 
-按已裁剪决定做：并发 8（可配）、SHA1 全校验、断点续传、镜像降级（失败 3 次或连接失败即切）、assets 全量、natives 解压（仅 ≤1.12.2）、`glauncher fetch --version <id>` CLI 验收面。
+`dotnet test` → **60 passed / 0 failed**；真实下载 1.7.10 全量成功。
+
+| 能力 | 落点 | 证据 |
+|---|---|---|
+| 单文件下载：主源 → 镜像回退、每源 3 次重试、Range 续传、大小+SHA1 校验、失败重下 | `Downloads/FileDownloader` | 9 个单测（含 5xx 重试、连接失败换镜像、忽略 Range 时重下、SHA1 不符重下） |
+| 并发执行（默认 8、可配）、单文件失败不中断 | `Downloads/DownloadExecutor` | 2 个单测 |
+| 计划生成：client / 库（含只有 natives 没有 artifact 的旧库）/ 资源索引 / 日志 / natives 解压 | `Downloads/DownloadPlanBuilder` | 7 个单测，覆盖 `${arch}`→32/64 |
+| 镜像改写（BMCLAPI maven / assets / version client，全部实测 206） | `Downloads/Mirrors` | 计划断言 + 探活 |
+| 清单与 version.json 缓存 + sha1 校验 | `Downloads/VersionCatalog` | 3 个单测（缓存命中、校验、未知版本） |
+| natives 解压（跳过 `META-INF/`、防 zip slip） | `Downloads/NativesExtractor` | 2 个单测 |
+| CLI 验收面 `glauncher fetch --version <id> [--dry-run] [--only ...] [--concurrency n]` | `src/GLauncher.Cli` | 下列真实下载 |
+
+**真实下载证据（1.7.10 全量）**：
+
+| 项 | 结果 |
+|---|---|
+| 命令 | `glauncher.exe fetch --version 1.7.10` |
+| 结果 | exit 0，**710 文件 / 133.1 MiB / 0 失败**，耗时 237 s（8 并发） |
+| 资产 | 索引 686 条目 → 674 个唯一对象 / 107 MiB |
+| 独立复核（不复用下载器代码） | 674 个对象逐个校验 size + SHA1：**0 bad / 0 missing**；client jar SHA1 与 version.json 一致 |
+| natives | 解压 14 个文件到 `instances/1.7.10/natives`（jinput-dx8.dll 等） |
+| 幂等重跑 | 第二次执行 **0.3 s，下载 0 / 跳过 710 / 失败 0** |
+| 磁盘 | `D:\mc-data` 共 158.3 MiB（含清单与版本 JSON） |
+
+**未演练**：真实网络中断后的续传（续传逻辑有单测，但没有真断网实验）→ 标 `TODO(需验证)`，M2 或夜跑时补。
+
+## 下一步（等你验收 M1 → 进入 M2）
+
+**M2 · 启动核心**：javaw 绝对路径（**绝不能走 PATH**，本机 PATH 上的 java 会崩）、classpath 顺序、natives 目录、双格式参数（已由 M1 提供）、logging、JVM/GC 参数、内存、工作目录 → 起真实 1.7.10 客户端。

@@ -15,6 +15,10 @@ dotnet build GLauncher.slnx -c Release    # 零警告
 dotnet test                               # 引擎单测
 powershell -NoProfile -File scripts\smoke-m0.ps1     # 空窗口冒烟 + 冷启动毫秒数
 powershell -NoProfile -File scripts\probe-network.ps1 # 网络探活
+
+# M1 验收面：把某个版本完整下到数据根（默认 D:\mc-data）
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe fetch --version 1.7.10 --dry-run
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe fetch --version 1.7.10
 ```
 
 ## 文档

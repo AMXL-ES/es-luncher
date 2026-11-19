@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/GLauncher.App/GLauncher.App.csproj" />
+    <Project Path="src/GLauncher.Cli/GLauncher.Cli.csproj" />
     <Project Path="src/GLauncher.Core/GLauncher.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
