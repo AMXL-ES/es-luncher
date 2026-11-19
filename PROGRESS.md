@@ -127,6 +127,11 @@
 
 **按裁剪暂缓**：皮肤站（authlib-injector 外置登录）。
 
+**M3 后增补（2026-11-19，20 分钟级）**：
+- `glauncher versions [--type release|snapshot|old_alpha|old_beta|all] [--limit n]`：直接列清单（实测 925 个版本）。
+- `scripts/smoke-m1m3.ps1`：一条命令跑完 build / test / accounts / launch dry-run / fetch 幂等 / versions，**6/6 通过**。
+- 测试数 91 → **97**。
+
 ## 下一步（本轮在此停止，等你的修改意见）
 
 按你的要求"M3 之后停止"。验收后可选：M4（Java 运行时下载，解锁 Java 8/16/25 版本）、

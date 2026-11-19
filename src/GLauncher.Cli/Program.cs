@@ -27,6 +27,7 @@ internal static class Program
                 "fetch" => await FetchAsync(options).ConfigureAwait(false),
                 "launch" => await LaunchAsync(options).ConfigureAwait(false),
                 "java" => ListJava(),
+                "versions" => await VersionsAsync(options).ConfigureAwait(false),
                 "login" => await LoginAsync(options).ConfigureAwait(false),
                 "accounts" => ListAccounts(options),
                 "logout" => await LogoutAsync(options).ConfigureAwait(false),
@@ -53,6 +54,27 @@ internal static class Program
         }
 
         return runtimes.Count > 0 ? 0 : 1;
+    }
+
+    private static async Task<int> VersionsAsync(CommandOptions options)
+    {
+        var layout = new DataLayout(options.DataRoot);
+        using var client = new HttpRemoteFileClient();
+        var catalog = new VersionCatalog(layout, new FileDownloader(client));
+        var manifest = await catalog.GetManifestAsync(options.Refresh, CancellationToken.None).ConfigureAwait(false);
+
+        Console.WriteLine(
+            $"manifest: {manifest.Versions.Count} 个版本，latest release={manifest.Latest.Release}，snapshot={manifest.Latest.Snapshot}");
+
+        var type = string.IsNullOrWhiteSpace(options.Type) ? "release" : options.Type!;
+        var entries = VersionQuery.Latest(manifest, type, options.Limit);
+        Console.WriteLine($"type={type} 共取 {entries.Count} 条（新→旧）：");
+        foreach (var entry in entries)
+        {
+            Console.WriteLine($"  {entry.Id,-20} {entry.Type,-10} {(entry.ReleaseTime?.ToString("yyyy-MM-dd") ?? "-")}");
+        }
+
+        return 0;
     }
 
     private static async Task<int> LoginAsync(CommandOptions options)
@@ -382,6 +404,7 @@ internal static class Program
           glauncher fetch    --version <id> [选项]
           glauncher launch   --version <id> [选项]
           glauncher java
+          glauncher versions [--type <t>] [--limit <n>]
           glauncher login    --provider offline|microsoft [选项]
           glauncher accounts
           glauncher logout   --account <名字>
@@ -402,6 +425,8 @@ internal static class Program
           --provider <p>     login: offline | microsoft
           --client-id <id>   login microsoft 的 Azure 客户端 ID（或 GLAUNCHER_MSA_CLIENT_ID）
           --dump <file>      把完整命令行写到文件（排障/复现）
+          --type <t>         versions: release|snapshot|old_alpha|old_beta|all（默认 release）
+          --limit <n>        versions: 取几条（默认 10）
 
         示例:
           glauncher fetch  --version 1.7.10 --dry-run
@@ -466,6 +491,10 @@ internal sealed class CommandOptions
 
     public string? ClientId { get; private set; }
 
+    public string? Type { get; private set; }
+
+    public int Limit { get; private set; } = 10;
+
     /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
     public string RequireVersion()
     {
@@ -529,6 +558,12 @@ internal sealed class CommandOptions
                 case "--client-id":
                     options.ClientId = Next(args, ref i);
                     break;
+                case "--type":
+                    options.Type = Next(args, ref i);
+                    break;
+                case "--limit":
+                    options.Limit = int.Parse(Next(args, ref i), CultureInfo.InvariantCulture);
+                    break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");
             }
@@ -547,6 +582,11 @@ internal sealed class CommandOptions
         if (options.AutoStopSeconds < 0)
         {
             throw new ArgumentException("--autostop 不能为负");
+        }
+
+        if (options.Limit < 1 || options.Limit > 200)
+        {
+            throw new ArgumentException("--limit 必须在 1..200");
         }
 
         return options;

@@ -30,6 +30,11 @@ powershell -NoProfile -File scripts\probe-network.ps1 # 网络探活
 .\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe accounts
 .\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe launch --version 1.18.2 --account dev --autostop 30
 .\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe login --provider microsoft --client-id <azure-client-id>
+
+# 版本列表 + 一条命令回归（M1–M3）
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe versions --limit 10
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe versions --type snapshot --limit 5
+powershell -NoProfile -File scripts\smoke-m1m3.ps1
 ```
 
 ## 文档
