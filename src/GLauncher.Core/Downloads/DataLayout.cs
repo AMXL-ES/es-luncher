@@ -27,6 +27,13 @@ public sealed class DataLayout
 
     public string InstancesDir => Path.Combine(Root, "instances");
 
+    public string LogsDir => Path.Combine(Root, "logs");
+
+    public string InstanceDir(string instanceId) => Path.Combine(InstancesDir, instanceId);
+
+    /// <summary>游戏工作目录（<c>--gameDir</c>），与 natives 目录分开。</summary>
+    public string GameDir(string instanceId) => Path.Combine(InstanceDir(instanceId), "game");
+
     public string VersionDir(string versionId) => Path.Combine(VersionsDir, versionId);
 
     public string VersionJson(string versionId) => Path.Combine(VersionDir(versionId), versionId + ".json");

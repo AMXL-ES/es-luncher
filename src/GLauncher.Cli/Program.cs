@@ -1,5 +1,6 @@
 using System.Globalization;
 using GLauncher.Core.Downloads;
+using GLauncher.Core.Launching;
 using GLauncher.Core.Metadata;
 
 namespace GLauncher.Cli;
@@ -23,6 +24,8 @@ internal static class Program
             return command.ToLowerInvariant() switch
             {
                 "fetch" => await FetchAsync(options).ConfigureAwait(false),
+                "launch" => await LaunchAsync(options).ConfigureAwait(false),
+                "java" => ListJava(),
                 _ => Fail($"未知命令：{command}"),
             };
         }
@@ -30,12 +33,149 @@ internal static class Program
         {
             return Fail(ex.Message);
         }
+        catch (Exception ex) when (ex is MetadataFormatException or InvalidOperationException or IOException or HttpRequestException or TimeoutException)
+        {
+            return Fail(ex.Message);
+        }
+    }
+
+    private static int ListJava()
+    {
+        var runtimes = JavaDiscovery.Discover();
+        Console.WriteLine($"发现 {runtimes.Count} 个可用 Java（PATH 上的 java 一律忽略）：");
+        foreach (var runtime in runtimes)
+        {
+            Console.WriteLine($"  Java {runtime.MajorVersion,2}  {runtime.JavaExePath}");
+        }
+
+        return runtimes.Count > 0 ? 0 : 1;
+    }
+
+    private static async Task<int> LaunchAsync(CommandOptions options)
+    {
+        var versionId = options.RequireVersion();
+        var layout = new DataLayout(options.DataRoot);
+        using var client = new HttpRemoteFileClient();
+        var downloader = new FileDownloader(client);
+        var catalog = new VersionCatalog(layout, downloader);
+
+        var manifest = await catalog.GetManifestAsync(options.Refresh, CancellationToken.None).ConfigureAwait(false);
+        var version = await catalog.GetVersionAsync(versionId, manifest, options.Refresh, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        var environment = LaunchEnvironment.Detect();
+        var requiredMajor = version.JavaVersion?.MajorVersion;
+        if (requiredMajor is null)
+        {
+            Console.WriteLine($"警告：{version.Id} 的 version.json 没有 javaVersion，按 Java 8 处理");
+            requiredMajor = 8;
+        }
+
+        JavaRuntime? overridden = null;
+        if (!string.IsNullOrWhiteSpace(options.JavaPath))
+        {
+            overridden = JavaRuntime.TryProbe(options.JavaPath);
+            if (overridden is null)
+            {
+                return Fail($"--java 指向的不是可用的 java：{options.JavaPath}");
+            }
+        }
+
+        var selection = JavaSelector.Select(requiredMajor.Value, JavaDiscovery.Discover(), overridden);
+        Console.WriteLine(selection.Message);
+        if (!selection.IsSatisfied)
+        {
+            return 3;
+        }
+
+        var request = new LaunchRequest
+        {
+            Username = options.Username ?? "Player",
+            InstanceId = options.InstanceId,
+            MemoryMb = options.MemoryMb,
+        };
+        var command = LaunchCommandBuilder.Build(version, environment, layout, selection.Runtime!, request);
+
+        var classpathEntries = command.Classpath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+        var missing = classpathEntries.Where(path => !File.Exists(path)).ToArray();
+        var nativesFiles = Directory.Exists(command.NativesDirectory)
+            ? Directory.GetFiles(command.NativesDirectory).Length
+            : 0;
+
+        Console.WriteLine();
+        Console.WriteLine($"version   : {version.Id} ({version.Type})  java required={requiredMajor}");
+        Console.WriteLine($"java      : {command.JavaExePath}");
+        Console.WriteLine($"working   : {command.WorkingDirectory}");
+        Console.WriteLine($"natives   : {command.NativesDirectory} ({nativesFiles} files)");
+        Console.WriteLine($"classpath : {classpathEntries.Length} entries, missing {missing.Length}");
+        foreach (var path in missing.Take(5))
+        {
+            Console.WriteLine($"  ! missing {path}");
+        }
+
+        Console.WriteLine($"arguments : {command.Arguments.Count}");
+        foreach (var argument in command.Arguments.Take(14))
+        {
+            Console.WriteLine($"  {argument}");
+        }
+
+        if (command.Arguments.Count > 14)
+        {
+            Console.WriteLine("  ...");
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.DumpPath))
+        {
+            File.WriteAllLines(
+                options.DumpPath,
+                new[] { command.JavaExePath }.Concat(command.Arguments));
+            Console.WriteLine($"command dumped: {options.DumpPath}");
+        }
+
+        if (options.DryRun)
+        {
+            Console.WriteLine("dry-run：未启动进程");
+            return missing.Length == 0 ? 0 : 4;
+        }
+        if (missing.Length > 0)
+        {
+            return Fail($"classpath 缺 {missing.Length} 个文件，先跑 `glauncher fetch --version {version.Id}`");
+        }
+
+        Directory.CreateDirectory(command.WorkingDirectory);
+        var logPath = Path.Combine(
+            layout.LogsDir,
+            $"launch-{version.Id}-{DateTime.Now:yyyyMMdd-HHmmss}.log");
+        Console.WriteLine($"log       : {logPath}");
+        Console.WriteLine(options.AutoStopSeconds > 0
+            ? $"启动游戏（{options.AutoStopSeconds}s 后自动停止，用于验收）…"
+            : "启动游戏（等待进程退出）…");
+
+        var autoStop = options.AutoStopSeconds > 0 ? TimeSpan.FromSeconds(options.AutoStopSeconds) : (TimeSpan?)null;
+        var result = await ProcessRunner.RunLoggedAsync(command, logPath, autoStop, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        Console.WriteLine();
+        Console.WriteLine("== launch result ==");
+        Console.WriteLine($"autoStopped : {result.AutoStopped}");
+        Console.WriteLine($"exit code   : {(result.ExitCode?.ToString(CultureInfo.InvariantCulture) ?? "(killed)")}");
+        Console.WriteLine($"duration    : {result.Duration.TotalSeconds:0.0} s");
+        Console.WriteLine($"log         : {result.LogPath}");
+
+        if (result.AutoStopped)
+        {
+            // 验收判据：起来且撑到时间点 → 成功（不是"崩溃秒退"）
+            return 0;
+        }
+
+        return result.ExitCode == 0 ? 0 : 1;
     }
 
     private static async Task<int> FetchAsync(CommandOptions options)
     {
+        var versionId = options.RequireVersion();
         var layout = new DataLayout(options.DataRoot);
-        Console.WriteLine($"GLauncher CLI · fetch {options.Version}");
+        Console.WriteLine($"GLauncher CLI · fetch {versionId}");
         Console.WriteLine($"data root : {layout.Root}");
         Console.WriteLine($"concurrency: {options.Concurrency}   selection: {options.Selection.Describe()}");
 
@@ -51,14 +191,14 @@ internal static class Program
 
         if (options.DryRun)
         {
-            var (version, plan) = await fetcher.BuildPlanAsync(options.Version!, fetchOptions, CancellationToken.None)
+            var (version, plan) = await fetcher.BuildPlanAsync(versionId, fetchOptions, CancellationToken.None)
                 .ConfigureAwait(false);
             PrintPlan(version, plan);
             return 0;
         }
 
         var progress = new ConsoleProgress();
-        var report = await fetcher.FetchAsync(options.Version!, fetchOptions, progress, CancellationToken.None)
+        var report = await fetcher.FetchAsync(versionId, fetchOptions, progress, CancellationToken.None)
             .ConfigureAwait(false);
         PrintReport(report);
         return report.Success ? 0 : 1;
@@ -116,22 +256,30 @@ internal static class Program
     private static void PrintHelp()
     {
         Console.WriteLine("""
-        GLauncher CLI（M1 验收面）
+        GLauncher CLI（M1 fetch / M2 launch 验收面）
 
         用法:
-          glauncher fetch --version <id> [选项]
+          glauncher fetch  --version <id> [选项]
+          glauncher launch --version <id> [选项]
+          glauncher java
 
         选项:
           --version <id>     必填，例如 1.7.10 / 1.12.2 / 26.3
           --data <dir>       数据根（默认 D:\mc-data，或环境变量 GLAUNCHER_DATA）
-          --concurrency <n>  并发下载数（默认 8）
-          --only <parts>     client,libraries,assets,natives 的子集
+          --concurrency <n>  fetch 并发下载数（默认 8）
+          --only <parts>     fetch: client,libraries,assets,natives 的子集
           --refresh          强制刷新版本清单与 version.json
-          --dry-run          只算计划、不下载
+          --dry-run          fetch: 只算计划；launch: 只打印命令行
+          --username <name>  launch 的离线用户名（默认 Player）
+          --instance <id>    launch 的实例名（默认同版本号）
+          --java <path>      launch 指定 java.exe（默认按 version.json 要求自动选）
+          --memory-mb <n>    launch 的 -Xmx（默认 2048）
+          --autostop <s>     launch 启动后 s 秒自动停止（验收用；0 = 等待退出）
 
         示例:
-          glauncher fetch --version 1.7.10 --dry-run
-          glauncher fetch --version 1.7.10 --only client,libraries
+          glauncher fetch  --version 1.7.10 --dry-run
+          glauncher launch --version 1.7.10 --dry-run
+          glauncher launch --version 1.7.10 --username Dev --autostop 25
         """);
     }
 
@@ -172,6 +320,29 @@ internal sealed class CommandOptions
 
     public bool DryRun { get; private set; }
 
+    public string? Username { get; private set; }
+
+    public string? InstanceId { get; private set; }
+
+    public string? JavaPath { get; private set; }
+
+    public int MemoryMb { get; private set; } = 2048;
+
+    public int AutoStopSeconds { get; private set; }
+
+    public string? DumpPath { get; private set; }
+
+    /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
+    public string RequireVersion()
+    {
+        if (string.IsNullOrWhiteSpace(Version))
+        {
+            throw new ArgumentException("缺少必填参数 --version <id>");
+        }
+
+        return Version!;
+    }
+
     public static CommandOptions Parse(string[] args)
     {
         var options = new CommandOptions();
@@ -197,19 +368,42 @@ internal sealed class CommandOptions
                 case "--dry-run":
                     options.DryRun = true;
                     break;
+                case "--username":
+                    options.Username = Next(args, ref i);
+                    break;
+                case "--instance":
+                    options.InstanceId = Next(args, ref i);
+                    break;
+                case "--java":
+                    options.JavaPath = Next(args, ref i);
+                    break;
+                case "--memory-mb":
+                    options.MemoryMb = int.Parse(Next(args, ref i), CultureInfo.InvariantCulture);
+                    break;
+                case "--autostop":
+                    options.AutoStopSeconds = int.Parse(Next(args, ref i), CultureInfo.InvariantCulture);
+                    break;
+                case "--dump":
+                    options.DumpPath = Next(args, ref i);
+                    break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");
             }
         }
 
-        if (string.IsNullOrWhiteSpace(options.Version))
-        {
-            throw new ArgumentException("缺少必填参数 --version <id>");
-        }
-
         if (options.Concurrency < 1 || options.Concurrency > 64)
         {
             throw new ArgumentException("--concurrency 必须在 1..64");
+        }
+
+        if (options.MemoryMb < 512)
+        {
+            throw new ArgumentException("--memory-mb 至少 512");
+        }
+
+        if (options.AutoStopSeconds < 0)
+        {
+            throw new ArgumentException("--autostop 不能为负");
         }
 
         return options;
