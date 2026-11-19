@@ -14,6 +14,19 @@ public sealed record LaunchEnvironment(
 {
     public static readonly IReadOnlyDictionary<string, bool> NoFeatures = new Dictionary<string, bool>(0);
 
+    /// <summary>
+    /// natives 模板里 <c>${arch}</c> 的取值：32 / 64（实测 1.7.10 的 twitch 库用
+    /// <c>natives-windows-32</c> / <c>natives-windows-64</c>）。与 rules 的 <c>os.arch</c> 不同。
+    /// </summary>
+    public string NativeArch => OsArch switch
+    {
+        "x86" => "32",
+        "x86_64" => "64",
+        "arm" => "32",
+        "arm64" => "arm64",
+        _ => OsArch,
+    };
+
     public static LaunchEnvironment Detect(IReadOnlyDictionary<string, bool>? features = null)
     {
         var osName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)

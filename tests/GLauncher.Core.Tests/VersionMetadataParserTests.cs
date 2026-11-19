@@ -65,8 +65,8 @@ public class VersionMetadataParserTests
         Assert.Equal(2, version.Libraries.Count);
 
         var nativesLibrary = version.Libraries[0];
-        Assert.Equal("natives-windows", nativesLibrary.ResolveNativeClassifier("windows", "x86_64"));
-        Assert.Equal("natives-linux", nativesLibrary.ResolveNativeClassifier("linux", "x86_64"));
+        Assert.Equal("natives-windows", nativesLibrary.ResolveNativeClassifier("windows", "64"));
+        Assert.Equal("natives-linux", nativesLibrary.ResolveNativeClassifier("linux", "64"));
         Assert.Null(nativesLibrary.ResolveNativeClassifier("osx", "arm64"));
         Assert.Contains("META-INF/", nativesLibrary.ExtractExclude);
         Assert.Contains("natives-windows", nativesLibrary.Classifiers.Keys);

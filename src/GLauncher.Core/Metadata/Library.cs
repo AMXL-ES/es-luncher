@@ -33,14 +33,18 @@ public sealed record Library
 
     public bool IsAllowed(LaunchEnvironment environment) => RuleEvaluator.IsAllowed(Rules, environment);
 
-    /// <summary>取出当前系统对应的 natives classifier 名（已替换 <c>${arch}</c>）。</summary>
-    public string? ResolveNativeClassifier(string osName, string osArch)
+    /// <summary>
+    /// 取出当前系统对应的 natives classifier 名（替换 <c>${arch}</c>）。
+    /// 注意 <c>${arch}</c> 是 32/64 位（如 <c>natives-windows-64</c>），
+    /// 与 rules 里的 <c>os.arch</c>（x86/x86_64）不是同一套取值。
+    /// </summary>
+    public string? ResolveNativeClassifier(string osName, string nativeArch)
     {
         if (!NativeClassifiers.TryGetValue(osName, out var template))
         {
             return null;
         }
 
-        return template.Replace("${arch}", osArch, StringComparison.Ordinal);
+        return template.Replace("${arch}", nativeArch, StringComparison.Ordinal);
     }
 }
