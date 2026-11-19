@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M0 完成待验收；M1 调研完成、未开工**（2026-11-19）
+- **当前阶段**：**M1 进行中**：元数据解析层完成（33 个测试全绿），下载引擎未开始（2026-11-19）
 - **项目根**：`D:\dev\mc-launcher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -49,6 +49,21 @@
 - `javaVersion.majorVersion` 在 legacy 版本里也有（1.7.10 → 8）→ M4 可完全元数据驱动
 - 待裁剪 5 个问题：natives 归属、并发默认值、fixture 范围、CLI 验收面、镜像降级策略
 
-## 下一步（等你放行 M1）
+## M1 进展（2026-11-19 本轮交付：元数据解析层）
 
-先问 5 个裁剪问题 → 冻结 M1 接口 → 实现 manifest/version 解析 + 下载引擎 → CLI 验收 → 停手。
+`dotnet test GLauncher.slnx -c Release` → **33 passed / 0 failed**（0 warning）。
+
+| 能力 | 落点 | 证据 |
+|---|---|---|
+| manifest 解析（925 版本 / 4 种 type） | `Metadata/VersionManifestParser` | 真实 manifest 通过 + fixture 单测 |
+| version.json 解析（新/旧格式、javaVersion、assetIndex、logging、downloads） | `Metadata/VersionMetadataParser` | 真实 26.3 / 1.21.4 / 1.12.2 / 1.7.10 / 1.0 全部 OK |
+| 规则求值（os.name / arch / version 正则 / features；缺省=允许，后者覆盖） | `Metadata/RuleEvaluator` | 8 个单测，含真实 legacy 形状 `[allow, disallow osx]` |
+| 启动参数组装（规则过滤 + `${}` 展开 + 旧格式分词；先分词后展开） | `Launching/ArgumentAssembler` | 8 个单测，含含空格路径与缺值报错 |
+| maven 坐标 → 下载路径 | `Metadata/MavenCoordinate` | 4 个单测 |
+
+真实 JSON 交叉验证（临时工具，已清理）：26.3 libs=114/rules=61/natives=0、1.12.2 libs=39/natives=5、1.0 libs=13/natives=4。
+**修正判断**：natives 不是"只有 1.7.10 有"，1.0 也有 4 个；1.13+ 改为 LWJGL3 原生 jar 直接进 classpath。
+
+## 下一步（M1 剩余：下载引擎）
+
+按已裁剪决定做：并发 8（可配）、SHA1 全校验、断点续传、镜像降级（失败 3 次或连接失败即切）、assets 全量、natives 解压（仅 ≤1.12.2）、`glauncher fetch --version <id>` CLI 验收面。
