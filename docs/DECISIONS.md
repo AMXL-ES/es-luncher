@@ -14,3 +14,6 @@
 | 2026-11-19 | M2 的真实启动验收用 **1.18.2**（要求 Java 17，本机有 17.0.12） | 本机没有 Java 8，1.7.10 无法起；1.18.2 资产 447 MiB 在当前授权线内，且与现代参数格式一致 | 换目标版本只改命令行参数；M4 解锁 Java 8 后补验 1.7.10 |
 | 2026-11-19 | 离线占位符默认值：`clientid`/`auth_xuid` 空串、`user_properties` = `{}` | 真实 version.json 会引用这三个；缺失会抛占位符异常，空串是官方离线启动的通行做法 | 接正版时由 token 流程填真实值 |
 | 2026-11-19 | classpath 不检查文件存在性（纯组装）；存在性检查放在 CLI 启动前 | 引擎保持可单测、无 IO；CLI 负责给人看的"缺几个文件" | 需要引擎自检时再加 `Verify()` |
+| 2026-11-19 | 凭据加密用 **DPAPI P/Invoke**（`crypt32.dll`），不引入 NuGet 包 | Windows 优先、零额外依赖；非 Windows 明确抛异常而不是降级明文 | 跨平台时换成 keyring 实现，接口 `ITokenStore` 不变 |
+| 2026-11-19 | **不内置任何微软 client ID**；必须由用户在 Azure 注册后提供（`--client-id` 或 `GLAUNCHER_MSA_CLIENT_ID`） | 用别人的 client ID 属于违规，也违反"不伪造身份"红线 | 无——这是合规硬约束 |
+| 2026-11-19 | 皮肤站认证按用户裁剪暂缓，仅留 `IAuthProvider` 扩展点 | 用户明确"先只做离线，给另外两个留位置" | 要启用时实现 `SkinStationAuthProvider` + authlib-injector 注入 |

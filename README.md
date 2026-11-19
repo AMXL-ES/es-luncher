@@ -24,6 +24,12 @@ powershell -NoProfile -File scripts\probe-network.ps1 # 网络探活
 .\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe java
 .\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe launch --version 1.18.2 --dry-run
 .\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe launch --version 1.18.2 --username Dev --autostop 30
+
+# M3 验收面：账号（DPAPI 加密落盘）与微软设备码登录
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe login --provider offline --username Dev
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe accounts
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe launch --version 1.18.2 --account dev --autostop 30
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe login --provider microsoft --client-id <azure-client-id>
 ```
 
 ## 文档

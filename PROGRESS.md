@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M2 完成，待用户验收**（2026-11-19）：离线启动核心跑通，1.18.2 真实起客户端并正确退出
+- **当前阶段**：**M3 完成（待你的反馈）**（2026-11-19）：离线认证完成，微软链路代码完整（真实登录待 client ID），皮肤站按裁剪暂缓
 - **项目根**：`D:\dev\mc-launcher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -111,6 +111,23 @@
 
 **已知异常**：首次启动出现过一次 `0xC0000005`（无 hs_err），其后 3 次稳定 → 记为待复现风险。
 
-## 下一步（等你验收 M2）
+## M3 认证（2026-11-19 本轮交付）
 
-建议顺序：**M4（Java 运行时下载）优先**——它解锁 1.7.10/1.12.2 等 Java 8 版本的启动验证，也补上 M2 唯一的未验证面；随后 M3a（离线认证收尾）/ M3b（微软认证，需你提供 Azure client ID）。
+`dotnet test` → **91 passed / 0 failed**（新增 12 个认证测试）。
+
+| 能力 | 落点 | 证据 |
+|---|---|---|
+| 离线身份 + 会话模型 | `Auth/AuthModels.cs`、`Launching/OfflineIdentity.cs` | 离线账号 `Dev` 的 UUID 与 OfflinePlayer 规则一致 |
+| 微软设备码全链路（MSA→XBL→XSTS→MC→profile） | `Auth/MicrosoftAuthClient.cs` | 6 个测试覆盖成功链路 / pending / slow_down / 过期 / XSTS 错误码 / 401 |
+| DPAPI 凭据落盘 | `Auth/Dpapi.cs`、`Auth/TokenStore.cs` | 文件头 `01 00 00 00 d0 8c 9d df`；文件内搜不到明文名字与 token |
+| CLI `login/accounts/logout` + `launch --account` | `src/GLauncher.Cli` | 实测保存/列出/删除；`launch --account dev` 正确注入身份 |
+
+**未验证（要你提供）**：真实微软设备码登录需要 Azure 客户端 ID（公共客户端应用，个人账号免费）。
+没有它时 CLI 只打印注册步骤并 exit 2，**不内置任何第三方 client ID**。
+
+**按裁剪暂缓**：皮肤站（authlib-injector 外置登录）。
+
+## 下一步（本轮在此停止，等你的修改意见）
+
+按你的要求"M3 之后停止"。验收后可选：M4（Java 运行时下载，解锁 Java 8/16/25 版本）、
+M3b 收尾（真实 client ID 登录 + 自动续期接线）、M7（UI 壳）。
