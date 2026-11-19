@@ -1,4 +1,5 @@
 using System.Globalization;
+using GLauncher.Core.Auth;
 using GLauncher.Core.Downloads;
 using GLauncher.Core.Launching;
 using GLauncher.Core.Metadata;
@@ -26,6 +27,9 @@ internal static class Program
                 "fetch" => await FetchAsync(options).ConfigureAwait(false),
                 "launch" => await LaunchAsync(options).ConfigureAwait(false),
                 "java" => ListJava(),
+                "login" => await LoginAsync(options).ConfigureAwait(false),
+                "accounts" => ListAccounts(options),
+                "logout" => await LogoutAsync(options).ConfigureAwait(false),
                 _ => Fail($"未知命令：{command}"),
             };
         }
@@ -49,6 +53,101 @@ internal static class Program
         }
 
         return runtimes.Count > 0 ? 0 : 1;
+    }
+
+    private static async Task<int> LoginAsync(CommandOptions options)
+    {
+        var layout = new DataLayout(options.DataRoot);
+        var store = new DpapiTokenStore(layout);
+        var provider = (options.Provider ?? "offline").ToLowerInvariant();
+
+        if (provider == "offline")
+        {
+            if (string.IsNullOrWhiteSpace(options.Username))
+            {
+                return Fail("login offline 需要 --username <名字>");
+            }
+
+            var session = await new OfflineAuthProvider(options.Username).LoginAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+            await store.SaveAsync(session.Profile.Name.ToLowerInvariant(), session, CancellationToken.None)
+                .ConfigureAwait(false);
+            Console.WriteLine($"已保存离线账号：{session.Describe()}");
+            return 0;
+        }
+
+        if (provider == "microsoft")
+        {
+            var clientId = options.ClientId ?? Environment.GetEnvironmentVariable("GLAUNCHER_MSA_CLIENT_ID");
+            if (string.IsNullOrWhiteSpace(clientId))
+            {
+                Console.Error.WriteLine("错误：微软登录需要一个 Azure 客户端 ID（公共客户端应用）。");
+                Console.Error.WriteLine("  1) portal.azure.com 注册应用（个人账号免费），重定向填 http://localhost");
+                Console.Error.WriteLine("  2) 在「身份验证」里允许公共客户端流（设备代码）");
+                Console.Error.WriteLine("  3) glauncher login --provider microsoft --client-id <id>，或设置 GLAUNCHER_MSA_CLIENT_ID");
+                return 2;
+            }
+
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+            var client = new MicrosoftAuthClient(http, clientId);
+            var session = await client.LoginAsync(
+                device =>
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"浏览器打开 {device.VerificationUri}，输入代码：{device.UserCode}");
+                    Console.WriteLine(device.Message);
+                    Console.WriteLine();
+                },
+                CancellationToken.None).ConfigureAwait(false);
+
+            await store.SaveAsync(session.Profile.Name.ToLowerInvariant(), session, CancellationToken.None)
+                .ConfigureAwait(false);
+            Console.WriteLine($"已保存微软账号：{session.Describe()}");
+            return 0;
+        }
+
+        return Fail($"未知认证方式：{provider}（支持 offline / microsoft）");
+    }
+
+    private static int ListAccounts(CommandOptions options)
+    {
+        var layout = new DataLayout(options.DataRoot);
+        var store = new DpapiTokenStore(layout);
+        var accounts = store.ListAccounts();
+        if (accounts.Count == 0)
+        {
+            Console.WriteLine("没有已保存的账号。用 `glauncher login --provider offline --username <名字>` 添加。");
+            return 0;
+        }
+
+        foreach (var key in accounts)
+        {
+            try
+            {
+                var session = store.LoadAsync(key, CancellationToken.None).GetAwaiter().GetResult();
+                Console.WriteLine($"  {key,-16} {session?.Describe() ?? "(无法解密)"}");
+            }
+            catch (AuthenticationException ex)
+            {
+                Console.WriteLine($"  {key,-16} 解密失败：{ex.Message}");
+            }
+        }
+
+        return 0;
+    }
+
+    private static async Task<int> LogoutAsync(CommandOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(options.Account))
+        {
+            return Fail("logout 需要 --account <名字>");
+        }
+
+        var layout = new DataLayout(options.DataRoot);
+        var store = new DpapiTokenStore(layout);
+        var removed = await store.DeleteAsync(options.Account, CancellationToken.None).ConfigureAwait(false);
+        Console.WriteLine(removed ? $"已删除账号 {options.Account}" : $"没有这个账号：{options.Account}");
+        return removed ? 0 : 1;
     }
 
     private static async Task<int> LaunchAsync(CommandOptions options)
@@ -88,9 +187,30 @@ internal static class Program
             return 3;
         }
 
+        AuthSession? session = null;
+        if (!string.IsNullOrWhiteSpace(options.Account))
+        {
+            var store = new DpapiTokenStore(layout);
+            session = await store.LoadAsync(options.Account, CancellationToken.None).ConfigureAwait(false);
+            if (session is null)
+            {
+                return Fail($"没有找到账号 {options.Account}，先 `glauncher login`");
+            }
+
+            if (session.IsExpired(DateTimeOffset.UtcNow))
+            {
+                Console.WriteLine("警告：会话已过期；启动可能被服务端拒绝（M3b 的自动续期尚未接入）");
+            }
+
+            Console.WriteLine($"账号：{session.Describe()}");
+        }
+
         var request = new LaunchRequest
         {
-            Username = options.Username ?? "Player",
+            Username = session?.Profile.Name ?? options.Username ?? "Player",
+            Uuid = session?.Profile.Id,
+            AccessToken = session?.AccessToken,
+            UserType = session?.UserType ?? "legacy",
             InstanceId = options.InstanceId,
             MemoryMb = options.MemoryMb,
         };
@@ -259,9 +379,12 @@ internal static class Program
         GLauncher CLI（M1 fetch / M2 launch 验收面）
 
         用法:
-          glauncher fetch  --version <id> [选项]
-          glauncher launch --version <id> [选项]
+          glauncher fetch    --version <id> [选项]
+          glauncher launch   --version <id> [选项]
           glauncher java
+          glauncher login    --provider offline|microsoft [选项]
+          glauncher accounts
+          glauncher logout   --account <名字>
 
         选项:
           --version <id>     必填，例如 1.7.10 / 1.12.2 / 26.3
@@ -270,16 +393,21 @@ internal static class Program
           --only <parts>     fetch: client,libraries,assets,natives 的子集
           --refresh          强制刷新版本清单与 version.json
           --dry-run          fetch: 只算计划；launch: 只打印命令行
-          --username <name>  launch 的离线用户名（默认 Player）
+          --username <name>  launch 的离线用户名 / login offline 的名字（默认 Player）
           --instance <id>    launch 的实例名（默认同版本号）
           --java <path>      launch 指定 java.exe（默认按 version.json 要求自动选）
           --memory-mb <n>    launch 的 -Xmx（默认 2048）
           --autostop <s>     launch 启动后 s 秒自动停止（验收用；0 = 等待退出）
+          --account <name>   launch 用已保存账号；logout 指定账号
+          --provider <p>     login: offline | microsoft
+          --client-id <id>   login microsoft 的 Azure 客户端 ID（或 GLAUNCHER_MSA_CLIENT_ID）
+          --dump <file>      把完整命令行写到文件（排障/复现）
 
         示例:
           glauncher fetch  --version 1.7.10 --dry-run
-          glauncher launch --version 1.7.10 --dry-run
-          glauncher launch --version 1.7.10 --username Dev --autostop 25
+          glauncher login  --provider offline --username Dev
+          glauncher launch --version 1.18.2 --account dev --autostop 30
+          glauncher login  --provider microsoft --client-id <azure-client-id>
         """);
     }
 
@@ -331,6 +459,12 @@ internal sealed class CommandOptions
     public int AutoStopSeconds { get; private set; }
 
     public string? DumpPath { get; private set; }
+
+    public string? Provider { get; private set; }
+
+    public string? Account { get; private set; }
+
+    public string? ClientId { get; private set; }
 
     /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
     public string RequireVersion()
@@ -385,6 +519,15 @@ internal sealed class CommandOptions
                     break;
                 case "--dump":
                     options.DumpPath = Next(args, ref i);
+                    break;
+                case "--provider":
+                    options.Provider = Next(args, ref i);
+                    break;
+                case "--account":
+                    options.Account = Next(args, ref i);
+                    break;
+                case "--client-id":
+                    options.ClientId = Next(args, ref i);
                     break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");

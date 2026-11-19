@@ -29,6 +29,10 @@ public sealed class DataLayout
 
     public string LogsDir => Path.Combine(Root, "logs");
 
+    public string AuthDir => Path.Combine(Root, "auth");
+
+    public string AuthAccountsDir => Path.Combine(AuthDir, "accounts");
+
     public string InstanceDir(string instanceId) => Path.Combine(InstancesDir, instanceId);
 
     /// <summary>游戏工作目录（<c>--gameDir</c>），与 natives 目录分开。</summary>

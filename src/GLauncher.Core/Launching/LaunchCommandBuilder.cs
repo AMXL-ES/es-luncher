@@ -11,6 +11,9 @@ public sealed record LaunchRequest
 
     public string? AccessToken { get; init; }
 
+    /// <summary><c>msa</c> 或 <c>legacy</c>，由认证方式决定，不靠猜。</summary>
+    public string UserType { get; init; } = "legacy";
+
     public string? InstanceId { get; init; }
 
     public int MemoryMb { get; init; } = 2048;
@@ -63,7 +66,7 @@ public static class LaunchCommandBuilder
             ["assets_index_name"] = assetsIndex,
             ["auth_uuid"] = request.Uuid ?? OfflineIdentity.CreateUuid(request.Username),
             ["auth_access_token"] = request.AccessToken ?? "0",
-            ["user_type"] = request.AccessToken is null ? "legacy" : "msa",
+            ["user_type"] = request.UserType,
             ["version_type"] = version.Type,
             ["natives_directory"] = nativesDirectory,
             ["classpath"] = classpath,
