@@ -1,0 +1,25 @@
+# .NET build output
+bin/
+obj/
+artifacts/
+TestResults/
+*.nupkg
+*.snupkg
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+*.DotSettings.user
+.vscode/
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs / local scratch
+*.log
+logs/
+.tmp/

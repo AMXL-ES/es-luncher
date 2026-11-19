@@ -1,0 +1,20 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GLauncher.App.MainWindow"
+        Title="GLauncher"
+        Width="960"
+        Height="600"
+        WindowStartupLocation="CenterScreen">
+  <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+    <TextBlock Text="GLauncher"
+               FontSize="34"
+               FontWeight="SemiBold"
+               HorizontalAlignment="Center" />
+    <TextBlock Text="M0 · 空窗口冒烟"
+               Opacity="0.75"
+               HorizontalAlignment="Center" />
+    <TextBlock Text="引擎层 GLauncher.Core 已就位，业务代码尚未开始"
+               Opacity="0.45"
+               HorizontalAlignment="Center" />
+  </StackPanel>
+</Window>
