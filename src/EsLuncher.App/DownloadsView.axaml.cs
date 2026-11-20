@@ -24,7 +24,43 @@ public partial class DownloadsView : UserControl
         {
             LoadInstances();
             await LoadManifestAsync(refresh: false);
+            await ApplyUiHooksAsync();
         };
+    }
+
+    private async Task ApplyUiHooksAsync()
+    {
+        var tab = Environment.GetEnvironmentVariable("ESLUNCHER_UI_DOWNLOAD_TAB")?.ToLowerInvariant();
+        if (tab is "versions" or "modpack" or "mods" or "resourcepacks" or "shaders" or "datapacks")
+        {
+            Tabs.SelectedIndex = tab switch
+            {
+                "versions" => 0,
+                "modpack" => 1,
+                "mods" => 2,
+                "resourcepacks" => 3,
+                "shaders" => 4,
+                _ => 5,
+            };
+        }
+
+        var query = Environment.GetEnvironmentVariable("ESLUNCHER_UI_DOWNLOAD_QUERY");
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return;
+        }
+
+        var panel = Tabs.SelectedIndex switch
+        {
+            1 => (ModrinthDownloadPanel)ModpackPanel,
+            2 => ModsPanel,
+            3 => ResourcePacksPanel,
+            4 => ShadersPanel,
+            5 => DatapacksPanel,
+            _ => ModsPanel,
+        };
+        panel.QueryBox.Text = query;
+        await panel.SearchAsync(query);
     }
 
     private void LoadInstances()

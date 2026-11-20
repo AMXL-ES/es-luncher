@@ -51,6 +51,11 @@ public partial class ModrinthDownloadPanel : UserControl
             return;
         }
 
+        await SearchAsync(query);
+    }
+
+    public async Task SearchAsync(string query)
+    {
         try
         {
             StatusText.Text = "搜索中 …";
