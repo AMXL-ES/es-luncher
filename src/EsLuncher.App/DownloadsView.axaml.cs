@@ -1,7 +1,10 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Threading;
 using EsLuncher.Core.Downloads;
+using EsLuncher.Core.Instances;
+using EsLuncher.Core.Java;
+using EsLuncher.Core.Launching;
+using EsLuncher.Core.Loaders;
 using EsLuncher.Core.Metadata;
 
 namespace EsLuncher.App;
@@ -71,30 +74,14 @@ public partial class DownloadsView : UserControl
 
         _cancellation = new CancellationTokenSource();
         CancelButton.IsEnabled = true;
-        ProgressBar.IsVisible = true;
-        ProgressBar.Value = 0;
-
         try
         {
-            using var client = new HttpRemoteFileClient();
-            var downloader = new FileDownloader(client);
-            var fetcher = new VersionFetcher(AppServices.Layout, downloader);
-            var progress = new Progress<DownloadProgress>(value =>
-            {
-                var percent = value.FilesTotal == 0 ? 0 : value.FilesDone * 100.0 / value.FilesTotal;
-                ProgressBar.Value = percent;
-                StatusText.Text = $"{value.FilesDone}/{value.FilesTotal} 文件 · {value.BytesDownloaded / 1048576.0:F1} MiB · {value.CurrentPath}";
-            });
-
-            var report = await fetcher.FetchAsync(
-                item.Id,
-                new FetchOptions { Concurrency = 8 },
-                progress,
-                _cancellation.Token);
-
-            StatusText.Text = report.Success
-                ? $"完成：{report.VersionId} 计划 {report.FilesPlanned}，下载 {report.Downloaded}，跳过 {report.Skipped}，失败 {report.Failed}"
-                : $"有 {report.Failed} 个文件失败（{report.VersionId}）";
+            var report = await FetchVersionAsync(item.Id, _cancellation.Token);
+            StatusText.Text = report is null
+                ? StatusText.Text
+                : report.Success
+                    ? $"完成：{report.VersionId} 计划 {report.FilesPlanned}，下载 {report.Downloaded}，跳过 {report.Skipped}，失败 {report.Failed}"
+                    : $"有 {report.Failed} 个文件失败（{report.VersionId}）";
         }
         catch (OperationCanceledException)
         {
@@ -106,13 +93,133 @@ public partial class DownloadsView : UserControl
         }
         finally
         {
-            CancelButton.IsEnabled = false;
-            _cancellation?.Dispose();
-            _cancellation = null;
+            EndDownloadUi();
         }
     }
 
+    private async void OnDownloadAndCreateClick(object? sender, RoutedEventArgs e)
+    {
+        if (VersionList.SelectedItem is not VersionItem item)
+        {
+            StatusText.Text = "先选一个版本";
+            return;
+        }
+
+        _cancellation = new CancellationTokenSource();
+        CancelButton.IsEnabled = true;
+        var layout = AppServices.Layout;
+        try
+        {
+            var report = await FetchVersionAsync(item.Id, _cancellation.Token);
+            if (report is null || !report.Success)
+            {
+                StatusText.Text = $"版本下载未完成：失败 {report?.Failed ?? 1} 个文件";
+                return;
+            }
+
+            var versionId = item.Id;
+            var loader = LoaderKindOf(LoaderBox.SelectedIndex);
+            if (loader is { } kind)
+            {
+                StatusText.Text = $"安装 {kind} 加载器 …";
+                using var client = new HttpRemoteFileClient();
+                var downloader = new FileDownloader(client);
+                var provisioner = new LoaderProvisioner(layout, downloader, client);
+                var java = kind is LoaderKind.Forge or LoaderKind.NeoForge
+                    ? await SelectJavaForVersionAsync(layout, downloader, item.Id, _cancellation.Token)
+                    : null;
+                versionId = await provisioner
+                    .InstallAsync(kind, item.Id, null, java, _cancellation.Token);
+
+                StatusText.Text = $"下载 {kind} 依赖库 …";
+                var fetcher = new VersionFetcher(layout, downloader);
+                var loaderReport = await fetcher.FetchAsync(
+                    versionId,
+                    new FetchOptions { Selection = new FetchSelection(Client: false, Libraries: true, Assets: false, Natives: true) },
+                    MakeProgress(),
+                    _cancellation.Token);
+                if (!loaderReport.Success)
+                {
+                    StatusText.Text = $"加载器依赖下载失败：{loaderReport.Failed} 个文件";
+                    return;
+                }
+            }
+
+            var name = string.IsNullOrWhiteSpace(InstanceNameBox.Text)
+                ? versionId
+                : InstanceNameBox.Text!.Trim();
+            var instance = new InstanceStore(layout).Create(
+                name,
+                versionId,
+                AppServices.Settings.DefaultMemoryMb,
+                username: null);
+            StatusText.Text = $"已创建实例 {instance.Name} ← {instance.VersionId}（可在「实例」页启动）";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "已取消";
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"创建实例失败：{exception.Message}";
+        }
+        finally
+        {
+            EndDownloadUi();
+        }
+    }
+
+    private async Task<FetchReport?> FetchVersionAsync(string versionId, CancellationToken cancellationToken)
+    {
+        ProgressBar.IsVisible = true;
+        ProgressBar.Value = 0;
+        using var client = new HttpRemoteFileClient();
+        var fetcher = new VersionFetcher(AppServices.Layout, new FileDownloader(client));
+        var report = await fetcher.FetchAsync(
+            versionId,
+            new FetchOptions { Concurrency = 8 },
+            MakeProgress(),
+            cancellationToken);
+        return report;
+    }
+
+    private Progress<DownloadProgress> MakeProgress() => new(value =>
+    {
+        var percent = value.FilesTotal == 0 ? 0 : value.FilesDone * 100.0 / value.FilesTotal;
+        ProgressBar.Value = percent;
+        StatusText.Text = $"{value.FilesDone}/{value.FilesTotal} 文件 · {value.BytesDownloaded / 1048576.0:F1} MiB · {value.CurrentPath}";
+    });
+
+    private void EndDownloadUi()
+    {
+        CancelButton.IsEnabled = false;
+        ProgressBar.IsVisible = false;
+        _cancellation?.Dispose();
+        _cancellation = null;
+    }
+
     private void OnCancelClick(object? sender, RoutedEventArgs e) => _cancellation?.Cancel();
+
+    private static LoaderKind? LoaderKindOf(int selectedIndex) => selectedIndex switch
+    {
+        1 => LoaderKind.Fabric,
+        2 => LoaderKind.Quilt,
+        3 => LoaderKind.Forge,
+        _ => null,
+    };
+
+    private static async Task<JavaRuntime?> SelectJavaForVersionAsync(
+        DataLayout layout,
+        FileDownloader downloader,
+        string mcVersion,
+        CancellationToken cancellationToken)
+    {
+        var catalog = new VersionCatalog(layout, downloader);
+        var manifest = await catalog.GetManifestAsync(false, cancellationToken);
+        var version = await catalog.GetVersionAsync(mcVersion, manifest, false, cancellationToken);
+        var required = version.JavaVersion?.MajorVersion ?? 8;
+        return JavaSelector.Select(required, JavaDiscovery.Discover([layout.JavaDir]), null).Runtime;
+    }
 }
 
 public sealed record VersionItem(string Id, string Type);

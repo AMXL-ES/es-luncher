@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:app="using:EsLuncher.App"
              x:Class="EsLuncher.App.DownloadsView">
-  <Grid RowDefinitions="Auto,Auto,*,Auto">
+  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
     <StackPanel Orientation="Horizontal" Spacing="10">
       <TextBlock Text="下载" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
       <ComboBox x:Name="FilterBox" SelectedIndex="0" SelectionChanged="OnFilterChanged">
@@ -12,12 +12,24 @@
       </ComboBox>
       <Button Content="刷新清单" Click="OnRefreshClick" />
       <Button Content="下载选中" Click="OnDownloadClick" />
+      <Button Content="下载并建实例" Click="OnDownloadAndCreateClick" />
       <Button x:Name="CancelButton" Content="取消" Click="OnCancelClick" IsEnabled="False" />
     </StackPanel>
 
-    <TextBlock x:Name="StatusText" Grid.Row="1" Margin="0,10,0,0" Foreground="#9A9AA3" TextWrapping="Wrap" />
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+      <TextBlock Text="加载器" Foreground="#9A9AA3" VerticalAlignment="Center" />
+      <ComboBox x:Name="LoaderBox" SelectedIndex="0" Width="120">
+        <ComboBoxItem Content="无" />
+        <ComboBoxItem Content="Fabric" />
+        <ComboBoxItem Content="Quilt" />
+        <ComboBoxItem Content="Forge" />
+      </ComboBox>
+      <TextBox x:Name="InstanceNameBox" Width="220" Watermark="实例名（留空=版本 id）" />
+    </StackPanel>
 
-    <ListBox x:Name="VersionList" Grid.Row="2" Margin="0,12,0,0" Background="Transparent">
+    <TextBlock x:Name="StatusText" Grid.Row="2" Margin="0,10,0,0" Foreground="#9A9AA3" TextWrapping="Wrap" />
+
+    <ListBox x:Name="VersionList" Grid.Row="3" Margin="0,12,0,0" Background="Transparent">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="app:VersionItem">
           <Border Background="#1A1A1F" CornerRadius="8" Padding="12" Margin="0,0,0,6">
@@ -30,6 +42,6 @@
       </ListBox.ItemTemplate>
     </ListBox>
 
-    <ProgressBar x:Name="ProgressBar" Grid.Row="3" Height="4" Margin="0,10,0,0" IsVisible="False" />
+    <ProgressBar x:Name="ProgressBar" Grid.Row="4" Height="4" Margin="0,10,0,0" IsVisible="False" />
   </Grid>
 </UserControl>

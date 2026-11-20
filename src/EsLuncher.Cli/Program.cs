@@ -1,5 +1,6 @@
 using System.Globalization;
 using EsLuncher.Core.Auth;
+using EsLuncher.Core.Content;
 using EsLuncher.Core.Downloads;
 using EsLuncher.Core.Instances;
 using EsLuncher.Core.Java;
@@ -32,6 +33,11 @@ internal static class Program
             if (command == "loader")
             {
                 return await LoaderCommandAsync(args).ConfigureAwait(false);
+            }
+
+            if (command == "content")
+            {
+                return ContentCommand(args);
             }
 
             if (command == "java")
@@ -102,6 +108,82 @@ internal static class Program
             .ConfigureAwait(false);
         Console.WriteLine($"完成：Java {runtime.MajorVersion} @ {runtime.JavaExePath}");
         return 0;
+    }
+
+    private static int ContentCommand(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            return Fail("用法：esluncher content <list|add|remove> --instance <名字> [--kind mods|resourcepacks|shaderpacks] [文件]");
+        }
+
+        var action = args[1].ToLowerInvariant();
+        var (positionals, optionTokens) = SplitOptions(args[2..]);
+        var options = CommandOptions.Parse(optionTokens);
+        if (string.IsNullOrWhiteSpace(options.InstanceId))
+        {
+            return Fail("content 命令需要 --instance <名字>");
+        }
+
+        var kind = ContentKind.Mods;
+        if (!string.IsNullOrWhiteSpace(options.Kind)
+            && !InstanceContentService.TryParseKind(options.Kind!, out kind))
+        {
+            return Fail($"未知内容类型：{options.Kind}（mods|resourcepacks|shaderpacks）");
+        }
+
+        var layout = new DataLayout(options.DataRoot);
+        var service = new InstanceContentService(layout, new InstanceStore(layout));
+
+        switch (action)
+        {
+            case "list":
+            {
+                var files = service.List(options.InstanceId!, kind);
+                if (files.Count == 0)
+                {
+                    Console.WriteLine($"{options.InstanceId} 的 {InstanceContentService.FolderName(kind)}：空");
+                    return 0;
+                }
+
+                Console.WriteLine($"{options.InstanceId} 的 {InstanceContentService.FolderName(kind)}（{files.Count} 个）：");
+                foreach (var file in files)
+                {
+                    Console.WriteLine($"  {file.Name,-40} {file.Size,10} B  {file.Modified:yyyy-MM-dd HH:mm}");
+                }
+
+                return 0;
+            }
+
+            case "add":
+            {
+                if (positionals.Count < 1)
+                {
+                    return Fail("content add 需要文件路径");
+                }
+
+                var added = service.Add(options.InstanceId!, kind, positionals[0]);
+                Console.WriteLine($"已添加 {added.Name}（{added.Size} 字节）→ {service.DirectoryFor(options.InstanceId!, kind)}");
+                return 0;
+            }
+
+            case "remove":
+            {
+                if (positionals.Count < 1)
+                {
+                    return Fail("content remove 需要文件名");
+                }
+
+                var removed = service.Remove(options.InstanceId!, kind, positionals[0]);
+                Console.WriteLine(removed
+                    ? $"已移除 {positionals[0]}（移入数据根 trash/content，可手动找回）"
+                    : $"没有这个文件：{positionals[0]}");
+                return removed ? 0 : 1;
+            }
+
+            default:
+                return Fail($"未知 content 动作：{action}（list|add|remove）");
+        }
     }
 
     private static async Task<JavaRuntime> InstallComponentAsync(
@@ -812,6 +894,9 @@ internal static class Program
           esluncher loader list --version <mc> --loader <fabric|quilt|forge|neoforge>
           esluncher loader install --version <mc> --loader <kind> [--loader-version <v>]
           esluncher instance create <名字> --version <mc> --loader <kind> [--loader-version <v>]
+          esluncher content list   --instance <名字> [--kind mods|resourcepacks|shaderpacks]
+          esluncher content add    --instance <名字> [--kind <k>] <文件>
+          esluncher content remove --instance <名字> [--kind <k>] <文件名>
           esluncher java
           esluncher java install --component <组件> | --version <id>
           esluncher versions [--type <t>] [--limit <n>]
@@ -843,6 +928,7 @@ internal static class Program
           --out <zip>        instance export: 输出路径
           --loader <kind>    fabric|quilt|forge|neoforge（loader/instance create）
           --loader-version <v> 指定加载器版本（默认最新稳定）
+          --kind <k>         content: mods|resourcepacks|shaderpacks（默认 mods）
 
         示例:
           esluncher fetch  --version 1.7.10 --dry-run
@@ -924,6 +1010,8 @@ internal sealed class CommandOptions
     public string? Loader { get; private set; }
 
     public string? LoaderVersion { get; private set; }
+
+    public string? Kind { get; private set; }
 
     /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
     public string RequireVersion()
@@ -1011,6 +1099,9 @@ internal sealed class CommandOptions
                     break;
                 case "--loader-version":
                     options.LoaderVersion = Next(args, ref i);
+                    break;
+                case "--kind":
+                    options.Kind = Next(args, ref i);
                     break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");
