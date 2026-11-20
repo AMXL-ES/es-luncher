@@ -59,6 +59,7 @@
           <StackPanel Orientation="Horizontal" Spacing="10">
             <Button Content="{app:T settings.openData}" Classes="ghost" Click="OnOpenDataRootClick" />
             <Button Content="{app:T settings.openTrash}" Classes="ghost" Click="OnOpenTrashClick" />
+            <Button x:Name="ClearIconsButton" Content="{app:T settings.clearIcons}" Classes="ghost" Click="OnClearIconsClick" />
           </StackPanel>
         </StackPanel>
       </Border>

@@ -263,14 +263,15 @@ public sealed class ModrinthClient(IRemoteFileClient client)
         ModrinthVersion version,
         ContentKind kind,
         string? world,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IProgress<double>? progress = null)
     {
         var file = version.Files.FirstOrDefault(candidate => candidate.Primary) ?? version.Files.FirstOrDefault()
             ?? throw new InvalidOperationException($"版本 {version.VersionNumber} 没有可下载文件");
         var targetDirectory = content.DirectoryFor(instanceName, kind, world);
         Directory.CreateDirectory(targetDirectory);
         var target = Path.Combine(targetDirectory, file.Filename);
-        await DownloadToAsync(new Uri(file.Url), target, cancellationToken).ConfigureAwait(false);
+        await DownloadToAsync(new Uri(file.Url), target, progress, cancellationToken).ConfigureAwait(false);
         return file.Filename;
     }
 
@@ -302,7 +303,8 @@ public sealed class ModrinthClient(IRemoteFileClient client)
         string? loader,
         CancellationToken cancellationToken,
         ContentKind kind = ContentKind.Mods,
-        string? world = null)
+        string? world = null,
+        IProgress<double>? progress = null)
     {
         var versions = await GetVersionsAsync(project, mcVersion, loader, cancellationToken).ConfigureAwait(false);
         var version = versions.FirstOrDefault() ?? throw new InvalidOperationException($"Modrinth 上没有匹配的版本：{project}");
@@ -312,11 +314,11 @@ public sealed class ModrinthClient(IRemoteFileClient client)
         var targetDirectory = content.DirectoryFor(instanceName, kind, world);
         Directory.CreateDirectory(targetDirectory);
         var target = Path.Combine(targetDirectory, file.Filename);
-        await DownloadToAsync(new Uri(file.Url), target, cancellationToken).ConfigureAwait(false);
+        await DownloadToAsync(new Uri(file.Url), target, progress, cancellationToken).ConfigureAwait(false);
         return file.Filename;
     }
 
-    private async Task DownloadToAsync(Uri uri, string target, CancellationToken cancellationToken)
+    private async Task DownloadToAsync(Uri uri, string target, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         using var response = await client.GetAsync(uri, 0, cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccess || response.Content is null)
@@ -325,9 +327,21 @@ public sealed class ModrinthClient(IRemoteFileClient client)
         }
 
         var temporary = target + ".part";
+        var total = response.ContentLength ?? 0;
+        var buffer = new byte[81920];
+        long done = 0;
         await using (var file = File.Create(temporary))
         {
-            await response.Content.CopyToAsync(file, cancellationToken).ConfigureAwait(false);
+            int read;
+            while ((read = await response.Content.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+            {
+                await file.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+                done += read;
+                if (total > 0)
+                {
+                    progress?.Report(done * 100.0 / total);
+                }
+            }
         }
 
         File.Move(temporary, target, overwrite: true);

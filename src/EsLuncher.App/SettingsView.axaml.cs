@@ -52,6 +52,12 @@ public partial class SettingsView : UserControl
     private void OnOpenJavaDirClick(object? sender, RoutedEventArgs e)
         => OpenDirectory(AppServices.Layout.JavaDir);
 
+    private void OnClearIconsClick(object? sender, RoutedEventArgs e)
+    {
+        IconCache.ClearAll();
+        StatusText.Text = Localization.T("settings.iconsCleared");
+    }
+
     private static void OpenDirectory(string path)
     {
         Directory.CreateDirectory(path);

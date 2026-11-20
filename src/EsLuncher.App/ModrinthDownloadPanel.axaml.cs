@@ -38,6 +38,7 @@ public partial class ModrinthDownloadPanel : UserControl
     private string _minecraftVersion = "1.18.2";
     private string? _loader;
     private string? _world;
+    private CancellationTokenSource? _installCts;
 
     public ModrinthDownloadPanel()
     {
@@ -169,12 +170,16 @@ public partial class ModrinthDownloadPanel : UserControl
             return;
         }
 
+        _installCts = new CancellationTokenSource();
+        CancelInstallButton.IsEnabled = true;
         ProgressBar.IsVisible = true;
+        ProgressBar.IsIndeterminate = false;
+        ProgressBar.Value = 0;
         try
         {
             if (ModpackMode)
             {
-                await InstallModpackAsync(item.Hit);
+                await InstallModpackAsync(item.Hit, _installCts.Token);
             }
             else
             {
@@ -191,11 +196,20 @@ public partial class ModrinthDownloadPanel : UserControl
                     item.Hit.Slug,
                     _minecraftVersion,
                     _loader,
-                    CancellationToken.None,
+                    _installCts.Token,
                     Kind,
-                    _world);
+                    _world,
+                    new Progress<double>(percent => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        ProgressBar.Value = percent;
+                        StatusText.Text = Localization.F("panel.downloading", item.Hit.Title, percent);
+                    })));
                 StatusText.Text = Localization.F("panel.installed", item.Hit.Title, file);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = Localization.T("panel.cancelled");
         }
         catch (Exception exception)
         {
@@ -204,10 +218,15 @@ public partial class ModrinthDownloadPanel : UserControl
         finally
         {
             ProgressBar.IsVisible = false;
+            CancelInstallButton.IsEnabled = false;
+            _installCts?.Dispose();
+            _installCts = null;
         }
     }
 
-    private async Task InstallModpackAsync(ModrinthHit hit)
+    private void OnCancelInstallClick(object? sender, RoutedEventArgs e) => _installCts?.Cancel();
+
+    private async Task InstallModpackAsync(ModrinthHit hit, CancellationToken cancellationToken)
     {
         var name = NameBox.Text?.Trim();
         if (string.IsNullOrWhiteSpace(name))
@@ -224,7 +243,7 @@ public partial class ModrinthDownloadPanel : UserControl
         }
 
         StatusText.Text = Localization.F("panel.readingPack", hit.Title);
-        var versions = await _client.GetVersionsAsync(hit.Slug, _minecraftVersion, null, CancellationToken.None);
+        var versions = await _client.GetVersionsAsync(hit.Slug, _minecraftVersion, null, cancellationToken);
         var version = versions.FirstOrDefault()
             ?? throw new InvalidOperationException("没有可用版本");
         var file = version.Files.FirstOrDefault(candidate =>
@@ -252,7 +271,7 @@ public partial class ModrinthDownloadPanel : UserControl
             new LoaderProvisioner(layout, downloader, client),
             new VersionFetcher(layout, downloader),
             client);
-        var instance = await installer.InstallAsync(zipPath, name!, 2048, CancellationToken.None);
+        var instance = await installer.InstallAsync(zipPath, name!, 2048, cancellationToken);
         StatusText.Text = Localization.F("panel.created", instance.Name, instance.VersionId);
         InstanceCreated?.Invoke();
     }

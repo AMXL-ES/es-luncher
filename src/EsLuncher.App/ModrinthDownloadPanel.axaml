@@ -9,6 +9,7 @@
       <Button Content="详情" Classes="ghost" Click="OnDetailClick" />
       <TextBox x:Name="NameBox" Width="180" PlaceholderText="新实例名" IsVisible="False" />
       <Button x:Name="InstallButton" Content="安装选中" Classes="primary" Click="OnInstallClick" />
+      <Button x:Name="CancelInstallButton" Content="{app:T panel.cancelInstall}" Classes="ghost" Click="OnCancelInstallClick" IsEnabled="False" />
     </StackPanel>
 
     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10">
