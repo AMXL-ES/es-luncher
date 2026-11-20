@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M8 进行中**（2026-11-20）：内容管理全链路（Core + CLI + UI 面板 + jar 元数据）；下载页支持加载器+一键建实例
+- **当前阶段**：**M9 进行中**（2026-11-20）：M8 完成 Modrinth 检索/安装与 .mrpack；M9 诊断 Core+CLI 完成（日志/崩溃/提示/诊断包），UI 入口待做
 - **项目根**：`D:\dev\es-luncher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -221,11 +221,30 @@
 
 **扩展点（别做死）**：新增内容类型只加枚举+目录映射；`ContentFile` 可扩字段；将来依赖解析/Modrinth 接入读同一批文件，不改现有语义。
 
-**待办**：UI 内容面板、jar 元数据（fabric.mod.json / mods.toml）、Modrinth/CF 下载、`.mrpack` 导入导出。
+## M8 增补：Modrinth + .mrpack（2026-11-20）
 
-## 下一步（M7 收尾）
+`dotnet test` → **162 passed / 0 failed**。
 
-下载页（版本列表+加载器+进度/取消）→ 设置页（数据根/Java/主题/语言）→ 选中态单色化与高 DPI → 鸣谢名单（Endless Studio 已就位，等第三方许可清单）。
+| 能力 | 证据 |
+|---|---|
+| Modrinth 检索 | `modrinth search --query jei --version 1.18.2 --loader fabric` → 5 条（JEI 86,313,860 下载） |
+| Modrinth 安装 | `modrinth install --instance "Fabric 测试" jei` → `jei-...jar`（1.1 MB） |
+| 依赖实况 | 只装 JEI → 启动失败（`HARD_DEP fabric`）；装 `fabric-api` 后 → **`Loading 51 mods`**、JEI atlas 创建、退出 0 |
+| .mrpack | 导出 971,964 B；导入同版本实例：下载 0 / 覆盖 1 / 跳过 0；`../` 路径被拒 |
+
+## M9 诊断（2026-11-20，进行中）
+
+| 能力 | 证据 |
+|---|---|
+| 错误行 + 崩溃报告 + 人话提示 | 缺依赖场景抓 3 条错误并提示「疑似缺少模组依赖」 |
+| 诊断包 | `forge-diag.zip` 2,618 B，含 logs / crash-reports / config / system-info |
+| CLI | `esluncher diagnose --instance <名字> [--export <zip>]` |
+
+## 下一步（M9 收尾 → M10）
+
+1. UI：诊断入口 + 结果面板；内容面板接 Modrinth 搜索框。
+2. 依赖自动解析（读版本依赖，缺前置时提示一键安装）。
+3. 之后 M10 分发（安装包/便携版/自动更新）。
 
 ## 待用户提供（做界面/关于页时提醒）
 
