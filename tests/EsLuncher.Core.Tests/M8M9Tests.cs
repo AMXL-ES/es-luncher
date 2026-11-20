@@ -41,7 +41,7 @@ public class ModrinthTests
         const string json = """
         [{"id":"V1","version_number":"1.2.3","files":[
           {"url":"https://cdn.test/jei.jar","filename":"jei.jar","primary":true,"size":10,
-           "hashes":{"sha1":"abc"}}]}]
+           "hashes":{"sha1":"abc"}}],"game_versions":["1.18.2"]}]
         """;
 
         var versions = DomainContent.ModrinthClient.ParseVersions(json);
@@ -50,6 +50,35 @@ public class ModrinthTests
         Assert.Equal("1.2.3", versions[0].VersionNumber);
         Assert.True(versions[0].Files[0].Primary);
         Assert.Equal("jei.jar", versions[0].Files[0].Filename);
+        Assert.Contains("1.18.2", versions[0].GameVersions!);
+    }
+
+    [Fact]
+    public void Search_uri_supports_index_and_category_facets()
+    {
+        var uri = DomainContent.ModrinthClient.BuildSearchUri(
+            string.Empty, "1.18.2", "fabric", 30, DomainContent.ContentKind.Mods, null, "downloads", ["optimization"]);
+
+        Assert.Contains("index=downloads", uri.Query);
+        var facets = Uri.UnescapeDataString(uri.Query);
+        Assert.Contains("categories:optimization", facets);
+    }
+
+    [Fact]
+    public void Parses_project_details()
+    {
+        const string json = """
+        {"id":"P1","slug":"jei","title":"Just Enough Items","description":"recipes",
+         "body":"# JEI\nView items","icon_url":"https://cdn.test/jei.png","downloads":123,
+         "categories":["storage","utility"]}
+        """;
+
+        var project = DomainContent.ModrinthClient.ParseProject(json);
+
+        Assert.NotNull(project);
+        Assert.Equal("jei", project!.Slug);
+        Assert.Equal("https://cdn.test/jei.png", project.IconUrl);
+        Assert.Contains("storage", project.Categories);
     }
 }
 

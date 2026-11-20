@@ -7,9 +7,32 @@ using EsLuncher.Core.Loaders;
 
 namespace EsLuncher.App;
 
-/// <summary>下载页里的 Modrinth 搜索面板：按类型装进选中实例；ModpackMode 时把 .mrpack 装成新实例。</summary>
+/// <summary>下载页里的 Modrinth 浏览/搜索面板：打开即出列表，可切分类与排序；支持详情与安装。</summary>
 public partial class ModrinthDownloadPanel : UserControl
 {
+    private static readonly Dictionary<ContentKind, (string Label, string Slugs)[]> Categories = new()
+    {
+        [ContentKind.Mods] =
+        [
+            ("全部", ""), ("优化", "optimization"), ("科技", "technology"), ("魔法", "magic"),
+            ("冒险", "adventure"), ("装饰", "decoration"), ("工具", "utility"), ("库", "library"),
+            ("世界生成", "worldgen"), ("存储", "storage"), ("食物", "food"),
+        ],
+        [ContentKind.Datapacks] =
+        [
+            ("全部", ""), ("冒险", "adventure"), ("装饰", "decoration"), ("经济", "economy"),
+            ("装备", "equipment"), ("游戏机制", "game-mechanics"), ("魔法", "magic"), ("生物", "mobs"),
+            ("优化", "optimization"), ("科技", "technology"), ("工具", "utility"), ("世界生成", "worldgen"),
+        ],
+        [ContentKind.ResourcePacks] = [("全部", "")],
+        [ContentKind.ShaderPacks] = [("全部", "")],
+    };
+
+    private static readonly (string Label, string? Index)[] Sorts =
+    [
+        ("下载量", "downloads"), ("相关度", null), ("关注", "follows"), ("最新", "newest"), ("最近更新", "updated"),
+    ];
+
     private readonly ModrinthClient _client = new(new HttpRemoteFileClient());
     private string? _instanceName;
     private string _minecraftVersion = "1.18.2";
@@ -19,10 +42,12 @@ public partial class ModrinthDownloadPanel : UserControl
     public ModrinthDownloadPanel()
     {
         InitializeComponent();
-        Loaded += (_, _) =>
+        Loaded += async (_, _) =>
         {
             NameBox.IsVisible = ModpackMode;
             InstallButton.Content = ModpackMode ? "安装整合包" : "安装选中";
+            FillFilters();
+            await SearchAsync(QueryBox.Text ?? string.Empty);
         };
     }
 
@@ -43,41 +68,95 @@ public partial class ModrinthDownloadPanel : UserControl
             : $"目标实例：{instanceName} · MC {minecraftVersion}{(loader is null ? string.Empty : " / " + loader)}";
     }
 
-    private async void OnSearchClick(object? sender, RoutedEventArgs e)
+    private void FillFilters()
     {
-        var query = QueryBox.Text?.Trim();
-        if (string.IsNullOrWhiteSpace(query))
+        if (CategoryBox.ItemsSource is not null)
         {
             return;
         }
 
-        await SearchAsync(query);
+        var categories = Categories.TryGetValue(Kind, out var list) ? list : [("全部", "")];
+        CategoryBox.ItemsSource = categories.Select(category => category.Label).ToArray();
+        CategoryBox.SelectedIndex = 0;
+        SortBox.SelectedIndex = 0;
     }
+
+    private async void OnFilterChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (IsLoaded)
+        {
+            await SearchAsync(QueryBox.Text ?? string.Empty);
+        }
+    }
+
+    private async void OnSearchClick(object? sender, RoutedEventArgs e)
+        => await SearchAsync(QueryBox.Text?.Trim() ?? string.Empty);
 
     public async Task SearchAsync(string query)
     {
         try
         {
-            StatusText.Text = "搜索中 …";
+            var category = string.Empty;
+            if (CategoryBox.SelectedItem is string label
+                && Categories.TryGetValue(Kind, out var list))
+            {
+                category = list.FirstOrDefault(entry => entry.Label == label).Slugs ?? string.Empty;
+            }
+
+            var sortIndex = SortBox.SelectedIndex >= 0 && SortBox.SelectedIndex < Sorts.Length
+                ? Sorts[SortBox.SelectedIndex].Index
+                : "downloads";
+            var categoriesFacet = string.IsNullOrWhiteSpace(category) ? null : new[] { category };
+
+            StatusText.Text = "加载列表 …";
             var hits = await _client.SearchAsync(
                 query,
                 _minecraftVersion,
                 _loader,
-                20,
+                30,
                 CancellationToken.None,
                 Kind,
-                ModpackMode ? "modpack" : null);
+                ModpackMode ? "modpack" : null,
+                sortIndex,
+                categoriesFacet);
             var items = await Task.WhenAll(hits.Select(async hit =>
                 new ModrinthItem(
                     hit,
                     $"{hit.Downloads:N0} 下载 · {hit.Description}",
                     await IconCache.GetAsync(hit.IconUrl))));
             HitsList.ItemsSource = items;
-            StatusText.Text = $"找到 {hits.Count} 条";
+            StatusText.Text = query.Length == 0
+                ? $"浏览：{hits.Count} 条（{Sorts[Math.Max(SortBox.SelectedIndex, 0)].Label}）"
+                : $"找到 {hits.Count} 条";
+
+            if (Environment.GetEnvironmentVariable("ESLUNCHER_UI_OPEN_DETAIL") == "1" && items.Length > 0)
+            {
+                HitsList.SelectedIndex = 0;
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => OnDetailClick(this, new RoutedEventArgs()));
+            }
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"搜索失败：{exception.Message}";
+            StatusText.Text = $"加载失败：{exception.Message}";
+        }
+    }
+
+    private void OnDetailClick(object? sender, RoutedEventArgs e)
+    {
+        if (HitsList.SelectedItem is not ModrinthItem item)
+        {
+            StatusText.Text = "先选中一个结果";
+            return;
+        }
+
+        var window = new ModrinthDetailWindow(item.Hit, Kind, ModpackMode, _instanceName, _minecraftVersion, _loader, _world);
+        if (TopLevel.GetTopLevel(this) is Window owner)
+        {
+            window.ShowDialog(owner);
+        }
+        else
+        {
+            window.Show();
         }
     }
 

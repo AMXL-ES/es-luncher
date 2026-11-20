@@ -2,17 +2,31 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:app="using:EsLuncher.App"
              x:Class="EsLuncher.App.ModrinthDownloadPanel">
-  <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="8">
     <StackPanel Orientation="Horizontal" Spacing="10">
-      <TextBox x:Name="QueryBox" Width="300" PlaceholderText="搜索（例如 jei / sodium / complementary）" />
+      <TextBox x:Name="QueryBox" Width="260" PlaceholderText="搜索（留空 = 直接浏览）" />
       <Button Content="搜索" Classes="ghost" Click="OnSearchClick" />
-      <TextBox x:Name="NameBox" Width="200" PlaceholderText="新实例名" IsVisible="False" />
+      <Button Content="详情" Classes="ghost" Click="OnDetailClick" />
+      <TextBox x:Name="NameBox" Width="180" PlaceholderText="新实例名" IsVisible="False" />
       <Button x:Name="InstallButton" Content="安装选中" Classes="primary" Click="OnInstallClick" />
     </StackPanel>
 
-    <TextBlock x:Name="StatusText" Grid.Row="1" Foreground="#9A9AA3" TextWrapping="Wrap" />
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10">
+      <TextBlock Text="分类" Foreground="#9A9AA3" FontSize="12" VerticalAlignment="Center" />
+      <ComboBox x:Name="CategoryBox" Width="160" SelectionChanged="OnFilterChanged" />
+      <TextBlock Text="排序" Foreground="#9A9AA3" FontSize="12" VerticalAlignment="Center" />
+      <ComboBox x:Name="SortBox" Width="150" SelectionChanged="OnFilterChanged">
+        <ComboBoxItem Content="下载量" />
+        <ComboBoxItem Content="相关度" />
+        <ComboBoxItem Content="关注" />
+        <ComboBoxItem Content="最新" />
+        <ComboBoxItem Content="最近更新" />
+      </ComboBox>
+    </StackPanel>
 
-    <Border Grid.Row="2" Background="#141419" CornerRadius="12" Padding="10">
+    <TextBlock x:Name="StatusText" Grid.Row="2" Foreground="#9A9AA3" TextWrapping="Wrap" />
+
+    <Border Grid.Row="3" Background="#141419" CornerRadius="12" Padding="10">
       <ListBox x:Name="HitsList" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="app:ModrinthItem">
@@ -35,6 +49,6 @@
       </ListBox>
     </Border>
 
-    <ProgressBar x:Name="ProgressBar" Grid.Row="3" Height="4" IsVisible="False" />
+    <ProgressBar x:Name="ProgressBar" Grid.Row="4" Height="4" IsVisible="False" />
   </Grid>
 </UserControl>

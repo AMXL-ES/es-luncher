@@ -10,7 +10,17 @@ public sealed record ModrinthHit(string ProjectId, string Slug, string Title, st
 
 public sealed record ModrinthFile(string Url, string Filename, string Sha1, bool Primary, long Size);
 
-public sealed record ModrinthVersion(string Id, string VersionNumber, IReadOnlyList<ModrinthFile> Files);
+public sealed record ModrinthVersion(string Id, string VersionNumber, IReadOnlyList<ModrinthFile> Files, IReadOnlyList<string>? GameVersions = null);
+
+public sealed record ModrinthProject(
+    string Id,
+    string Slug,
+    string Title,
+    string Description,
+    string Body,
+    string? IconUrl,
+    long Downloads,
+    IReadOnlyList<string> Categories);
 
 /// <summary>
 /// Modrinth 只读 API：检索与按"MC 版本 + 加载器"找可装版本。
@@ -26,7 +36,9 @@ public sealed class ModrinthClient(IRemoteFileClient client)
         string? loader,
         int limit,
         ContentKind kind = ContentKind.Mods,
-        string? projectTypeOverride = null)
+        string? projectTypeOverride = null,
+        string? index = null,
+        IReadOnlyList<string>? categories = null)
     {
         var facets = new List<string> { $"[\"project_type:{projectTypeOverride ?? ProjectType(kind)}\"]" };
         if (!string.IsNullOrWhiteSpace(mcVersion))
@@ -39,10 +51,22 @@ public sealed class ModrinthClient(IRemoteFileClient client)
             facets.Add($"[\"categories:{loader}\"]");
         }
 
+        if (categories is not null)
+        {
+            foreach (var category in categories)
+            {
+                if (!string.IsNullOrWhiteSpace(category))
+                {
+                    facets.Add($"[\"categories:{category}\"]");
+                }
+            }
+        }
+
         var facetsPart = facets.Count == 0
             ? string.Empty
             : "&facets=" + Uri.EscapeDataString("[" + string.Join(",", facets) + "]");
-        return new Uri($"{BaseUrl}/search?query={Uri.EscapeDataString(query)}&limit={limit}{facetsPart}");
+        var indexPart = string.IsNullOrWhiteSpace(index) ? string.Empty : "&index=" + Uri.EscapeDataString(index);
+        return new Uri($"{BaseUrl}/search?query={Uri.EscapeDataString(query)}&limit={limit}{facetsPart}{indexPart}");
     }
 
     public static string ProjectType(ContentKind kind) => kind switch
@@ -128,7 +152,10 @@ public sealed class ModrinthClient(IRemoteFileClient client)
             versions.Add(new ModrinthVersion(
                 version.TryGetProperty("id", out var id) ? id.GetString() ?? string.Empty : string.Empty,
                 version.TryGetProperty("version_number", out var number) ? number.GetString() ?? string.Empty : string.Empty,
-                files));
+                files,
+                version.TryGetProperty("game_versions", out var gameVersions) && gameVersions.ValueKind == JsonValueKind.Array
+                    ? gameVersions.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString() ?? string.Empty).ToArray()
+                    : null));
         }
 
         return versions;
@@ -141,13 +168,63 @@ public sealed class ModrinthClient(IRemoteFileClient client)
         int limit,
         CancellationToken cancellationToken,
         ContentKind kind = ContentKind.Mods,
-        string? projectTypeOverride = null)
+        string? projectTypeOverride = null,
+        string? index = null,
+        IReadOnlyList<string>? categories = null)
     {
         var json = await GetStringAsync(
-                BuildSearchUri(query, mcVersion, loader, limit, kind, projectTypeOverride),
+                BuildSearchUri(query, mcVersion, loader, limit, kind, projectTypeOverride, index, categories),
                 cancellationToken)
             .ConfigureAwait(false);
         return ParseSearch(json);
+    }
+
+    public async Task<ModrinthProject?> GetProjectAsync(string idOrSlug, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var json = await GetStringAsync(
+                    new Uri($"{BaseUrl}/project/{Uri.EscapeDataString(idOrSlug)}"),
+                    cancellationToken)
+                .ConfigureAwait(false);
+            return ParseProject(json);
+        }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
+    }
+
+    public static ModrinthProject? ParseProject(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        var categories = new List<string>();
+        if (root.TryGetProperty("categories", out var categoryArray) && categoryArray.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var category in categoryArray.EnumerateArray())
+            {
+                if (category.ValueKind == JsonValueKind.String)
+                {
+                    categories.Add(category.GetString()!);
+                }
+            }
+        }
+
+        return new ModrinthProject(
+            root.TryGetProperty("id", out var id) ? id.GetString() ?? string.Empty : string.Empty,
+            root.TryGetProperty("slug", out var slug) ? slug.GetString() ?? string.Empty : string.Empty,
+            root.TryGetProperty("title", out var title) ? title.GetString() ?? string.Empty : string.Empty,
+            root.TryGetProperty("description", out var description) ? description.GetString() ?? string.Empty : string.Empty,
+            root.TryGetProperty("body", out var body) ? body.GetString() ?? string.Empty : string.Empty,
+            root.TryGetProperty("icon_url", out var icon) && icon.ValueKind == JsonValueKind.String ? icon.GetString() : null,
+            root.TryGetProperty("downloads", out var downloads) && downloads.ValueKind == JsonValueKind.Number ? downloads.GetInt64() : 0,
+            categories);
     }
 
     public async Task<IReadOnlyList<ModrinthVersion>> GetVersionsAsync(
