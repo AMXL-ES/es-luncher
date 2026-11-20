@@ -150,6 +150,7 @@ public partial class ModrinthDownloadPanel : UserControl
         }
 
         var window = new ModrinthDetailWindow(item.Hit, Kind, ModpackMode, _instanceName, _minecraftVersion, _loader, _world);
+        window.InstanceCreated += () => InstanceCreated?.Invoke();
         if (TopLevel.GetTopLevel(this) is Window owner)
         {
             window.ShowDialog(owner);

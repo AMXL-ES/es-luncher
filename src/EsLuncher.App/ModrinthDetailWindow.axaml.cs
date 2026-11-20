@@ -48,10 +48,12 @@ public partial class ModrinthDetailWindow : Window
         MetaText.Text = $"{hit.Slug} · MC {minecraftVersion}";
         DownloadsText.Text = $"{hit.Downloads:N0} 下载";
         DescriptionBox.Text = hit.Description;
-        InstallButton.IsVisible = !modpack;
+        InstallButton.IsVisible = true;
         if (modpack)
         {
-            StatusText.Text = "整合包请在列表页填写实例名后安装（详情页仅浏览）";
+            InstanceNameBox.IsVisible = true;
+            InstallButton.Content = "安装为实例";
+            StatusText.Text = "填实例名后可直接安装（会读取 .mrpack 依赖并创建实例）";
         }
 
         Loaded += async (_, _) =>
@@ -65,6 +67,8 @@ public partial class ModrinthDetailWindow : Window
             await LoadAsync();
         };
     }
+
+    public event Action? InstanceCreated;
 
     private async Task LoadAsync()
     {
@@ -100,15 +104,21 @@ public partial class ModrinthDetailWindow : Window
 
     private async void OnInstallClick(object? sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(_instanceName))
-        {
-            StatusText.Text = "没有目标实例：请从下载页进入";
-            return;
-        }
-
         if (VersionsList.SelectedItem is not VersionInfoItem selected)
         {
             StatusText.Text = "先选中一个版本";
+            return;
+        }
+
+        if (_modpack)
+        {
+            await InstallModpackAsync(selected.Version);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_instanceName))
+        {
+            StatusText.Text = "没有目标实例：请从下载页进入";
             return;
         }
 
@@ -126,6 +136,59 @@ public partial class ModrinthDetailWindow : Window
             var required = selected.Version.Dependencies.Count(dependency => dependency.DependencyType == "required");
             StatusText.Text = $"已安装 → {file}" +
                               (required > 0 ? $"（该版本有 {required} 个必需前置，安装后可在诊断里检查）" : string.Empty);
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"安装失败：{exception.Message}";
+        }
+    }
+
+    private async Task InstallModpackAsync(ModrinthVersion version)
+    {
+        var name = InstanceNameBox.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = _hit.Slug;
+        }
+
+        var layout = AppServices.Layout;
+        var store = new InstanceStore(layout);
+        if (store.TryLoad(name!) is not null)
+        {
+            StatusText.Text = $"实例已存在：{name}";
+            return;
+        }
+
+        var file = version.Files.FirstOrDefault(candidate =>
+            candidate.Filename.EndsWith(".mrpack", StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException("这个版本没有 .mrpack 文件");
+
+        try
+        {
+            using var client = new HttpRemoteFileClient();
+            var downloader = new FileDownloader(client);
+            var zipPath = Path.Combine(layout.Root, "cache", "packs", file.Filename);
+            Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
+            StatusText.Text = $"下载 {file.Filename}（{file.Size / 1048576.0:F1} MiB）…";
+            var downloaded = await downloader.DownloadAsync(
+                new DownloadJob { Primary = new Uri(file.Url), TargetPath = zipPath },
+                CancellationToken.None);
+            if (downloaded.Status == FileDownloadStatus.Failed)
+            {
+                StatusText.Text = $"下载失败：{downloaded.Error}";
+                return;
+            }
+
+            var installer = new ModpackInstaller(
+                layout,
+                store,
+                new InstancePackService(layout, store, new InstanceContentService(layout, store)),
+                new LoaderProvisioner(layout, downloader, client),
+                new VersionFetcher(layout, downloader),
+                client);
+            var instance = await installer.InstallAsync(zipPath, name!, 2048, CancellationToken.None);
+            StatusText.Text = $"已创建实例 {instance.Name} ← {instance.VersionId}";
+            InstanceCreated?.Invoke();
         }
         catch (Exception exception)
         {
