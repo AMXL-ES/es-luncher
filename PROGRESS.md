@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M8 进行中**（2026-11-20）：下载页支持加载器+一键建实例；内容管理 Core/CLI 完成（mods/资源包/光影，回收站式移除）
+- **当前阶段**：**M8 进行中**（2026-11-20）：内容管理全链路（Core + CLI + UI 面板 + jar 元数据）；下载页支持加载器+一键建实例
 - **项目根**：`D:\dev\es-luncher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -214,6 +214,10 @@
 | 移除 = 移入回收站（不真删） | 同上 | 文件在 `trash\content\Fabric 测试\20261120-192950-909-demo-mod.jar` |
 | 路径安全 | 同上 | `../escape.jar` / `a/b.jar` 被拒（单测） |
 | CLI | `esluncher content list/add/remove` | 实测通过 |
+| UI 内容面板 | 实例页底部：类型切换 / 添加（文件选择器）/ 移除 / 打开目录 | 截图 `docs/img/m7-instances.png` |
+| 模组元数据 | `Content/ModMetadata.cs` | Fabric `Example Mod · 1.2.3 · fabric`；Forge mods.toml；坏 jar 不崩 |
+
+**测试**：**148 passed / 0 failed**（内容 10 + 元数据 4）
 
 **扩展点（别做死）**：新增内容类型只加枚举+目录映射；`ContentFile` 可扩字段；将来依赖解析/Modrinth 接入读同一批文件，不改现有语义。
 
