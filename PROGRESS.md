@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M7 进行中**（2026-11-20）：图标（纯黑白 + ES/luncher）已上；UI 壳上线（实例页真实数据 + 启动接线 + 关于页含 Endless Studio）；下载/设置占位
+- **当前阶段**：**M8 进行中**（2026-11-20）：下载页支持加载器+一键建实例；内容管理 Core/CLI 完成（mods/资源包/光影，回收站式移除）
 - **项目根**：`D:\dev\es-luncher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -197,11 +197,27 @@
 | 实例页 | 真实读取 5 个实例（名称/版本/内存/账号/日期）；启动按钮接 `LaunchService`（继承链→Java→命令→natives→日志）；打开目录 |
 | 关于页 | **Endless Studio** 图标+名称（仅此页出现），GPL/版本/里程碑摘要 |
 | 下载页 | 925 条版本清单 + 正式/快照筛选 + 下载选中（进度条/取消，复用 fetch） |
+| 下载页·加载器 | **无/Fabric/Quilt/Forge** 选择 + 「下载并建实例」一键完成（版本→加载器→依赖库→实例） |
 | 设置页 | 数据根、默认内存、Java 路径、深/浅主题（`launcher-settings.json`，保存即生效） |
 | 截图 | `docs/img/m7-instances.png`、`m7-downloads.png`、`m7-settings.png`、`m7-about.png` |
 | 构建/测试 | 0 警告 0 错误；**134 tests 全绿** |
 
-**未验证**：启动按钮未做点击级自动化（同一编排在 CLI 已验证）；下载页的加载器选择与"下载后自动建实例"未接。
+**未验证**：启动按钮未做点击级自动化（同一编排在 CLI 已验证）；下载页的 NeoForge 仍受网络/授权限制。
+
+## M8 内容管理（2026-11-20 本轮交付，进行中）
+
+`dotnet test` → **144 passed / 0 failed**（新增 10 个内容测试）。
+
+| 能力 | 落点 | 证据 |
+|---|---|---|
+| mods / 资源包 / 光影包 列出与添加 | `Content/InstanceContent.cs` | `content add` 落 `instances\Fabric 测试\game\mods`（21 B），`list` 可见 |
+| 移除 = 移入回收站（不真删） | 同上 | 文件在 `trash\content\Fabric 测试\20261120-192950-909-demo-mod.jar` |
+| 路径安全 | 同上 | `../escape.jar` / `a/b.jar` 被拒（单测） |
+| CLI | `esluncher content list/add/remove` | 实测通过 |
+
+**扩展点（别做死）**：新增内容类型只加枚举+目录映射；`ContentFile` 可扩字段；将来依赖解析/Modrinth 接入读同一批文件，不改现有语义。
+
+**待办**：UI 内容面板、jar 元数据（fabric.mod.json / mods.toml）、Modrinth/CF 下载、`.mrpack` 导入导出。
 
 ## 下一步（M7 收尾）
 
