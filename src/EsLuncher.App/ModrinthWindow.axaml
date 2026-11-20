@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="using:EsLuncher.App"
+        x:Class="EsLuncher.App.ModrinthWindow"
+        Title="Modrinth"
+        Width="760"
+        Height="560"
+        WindowStartupLocation="CenterOwner"
+        Background="#0E0E10">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20">
+    <TextBlock x:Name="TitleText" Text="Modrinth" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" />
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+      <TextBox x:Name="SearchBox" Width="360" PlaceholderText="搜模组，例如 jei / sodium" />
+      <Button Content="搜索" Click="OnSearchClick" />
+      <Button Content="安装选中" Click="OnInstallClick" />
+    </StackPanel>
+
+    <ListBox x:Name="HitsList" Grid.Row="2" Margin="0,12,0,0" Background="Transparent">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="app:ModrinthItem">
+          <Border Background="#1A1A1F" CornerRadius="8" Padding="12" Margin="0,0,0,6">
+            <StackPanel>
+              <TextBlock Text="{Binding Title}" Foreground="#FFFFFF" FontSize="14" TextTrimming="CharacterEllipsis" />
+              <TextBlock Text="{Binding Detail}" Foreground="#8A8A93" FontSize="11" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <TextBlock x:Name="StatusText" Grid.Row="3" Margin="0,10,0,0" Foreground="#9A9AA3" TextWrapping="Wrap" />
+  </Grid>
+</Window>

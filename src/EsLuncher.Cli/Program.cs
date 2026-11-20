@@ -56,6 +56,11 @@ internal static class Program
                 return await DiagnoseCommandAsync(args).ConfigureAwait(false);
             }
 
+            if (command == "deps")
+            {
+                return DepsCommand(args);
+            }
+
             if (command == "java")
             {
                 if (args.Length > 1 && args[1].Equals("install", StringComparison.OrdinalIgnoreCase))
@@ -200,6 +205,31 @@ internal static class Program
             default:
                 return Fail($"未知 content 动作：{action}（list|add|remove）");
         }
+    }
+
+    private static int DepsCommand(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            return Fail("用法：esluncher deps --instance <名字>");
+        }
+
+        var (_, optionTokens) = SplitOptions(args[1..]);
+        var options = CommandOptions.Parse(optionTokens);
+        if (string.IsNullOrWhiteSpace(options.InstanceId))
+        {
+            return Fail("deps 需要 --instance <名字>");
+        }
+
+        var layout = new DataLayout(options.DataRoot);
+        var store = new InstanceStore(layout);
+        var result = new DependencyChecker(new InstanceContentService(layout, store)).Check(options.InstanceId!);
+
+        Console.WriteLine($"已装模组：{(result.Installed.Count == 0 ? "无" : string.Join(", ", result.Installed))}");
+        Console.WriteLine(result.Missing.Count == 0
+            ? "依赖检查：满足（静态检查）"
+            : $"缺少前置：{string.Join(", ", result.Missing)}");
+        return result.Missing.Count == 0 ? 0 : 1;
     }
 
     private static async Task<JavaRuntime> InstallComponentAsync(
@@ -1098,6 +1128,7 @@ internal static class Program
           esluncher pack export --instance <名字> [--out <zip>]
           esluncher pack import --instance <名字> <zip>
           esluncher diagnose --instance <名字> [--export <zip>]
+          esluncher deps --instance <名字>
           esluncher java
           esluncher java install --component <组件> | --version <id>
           esluncher versions [--type <t>] [--limit <n>]

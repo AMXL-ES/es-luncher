@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using EsLuncher.Core.Content;
 using EsLuncher.Core.Downloads;
 using EsLuncher.Core.Instances;
 using EsLuncher.Core.Java;
@@ -61,7 +62,21 @@ public sealed class InstanceDiagnostics(DataLayout layout, InstanceStore instanc
             }
         }
 
-        return new DiagnosticReport(instance.Name, File.Exists(logPath) ? logPath : null, errors, crashes, BuildHints(errors, crashes));
+        var hints = BuildHints(errors, crashes).ToList();
+        try
+        {
+            var dependencies = new DependencyChecker(new InstanceContentService(layout, instances)).Check(instance.Name);
+            if (dependencies.Missing.Count > 0)
+            {
+                hints.Add($"缺少模组前置：{string.Join(", ", dependencies.Missing)}（可用 `esluncher modrinth install` 补装）");
+            }
+        }
+        catch (IOException)
+        {
+            // 依赖体检失败不影响主诊断
+        }
+
+        return new DiagnosticReport(instance.Name, File.Exists(logPath) ? logPath : null, errors, crashes, hints);
     }
 
     public string Export(string instanceName, string outZip)

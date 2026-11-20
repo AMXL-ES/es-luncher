@@ -51,6 +51,8 @@
           <Button Content="刷新" Click="OnRefreshClick" />
           <Button Content="启动" Click="OnLaunchClick" />
           <Button Content="打开目录" Click="OnOpenFolderClick" />
+          <Button Content="诊断" Click="OnDiagnosticsClick" />
+          <Button Content="Modrinth" Click="OnModrinthClick" />
         </StackPanel>
 
         <ListBox x:Name="InstanceList" Grid.Row="1" Margin="0,18,0,0" Background="Transparent"

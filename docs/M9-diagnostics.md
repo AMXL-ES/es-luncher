@@ -17,7 +17,16 @@
 ```powershell
 esluncher diagnose --instance "Fabric 测试"
 esluncher diagnose --instance "Forge 测试" --export D:\tmp\forge-diag.zip
+esluncher deps --instance "Fabric 测试"
 ```
+
+## 2.1 UI（2026-11-20）
+
+![诊断窗口](img/m9-diagnostics.png)
+
+- 实例页工具栏「诊断」→ 弹窗展示：日志路径、错误行、崩溃报告、提示；「导出诊断包」走保存对话框。
+- `/deps` 的静态依赖检查也并进提示：缺前置时提示「可用 modrinth install 补装」。
+- 依赖检查规则：读 mods 里每个 jar 的 modId/depends；内置 id（minecraft/fabricloader/java/forge/neoforge/quilt）不算缺失；**装了 fabric-api / quilt-api 视为其子模块已满足**（Fabric API 一个 jar 里是几十个虚拟模块）。
 
 ## 3. 验收记录（2026-11-20）
 

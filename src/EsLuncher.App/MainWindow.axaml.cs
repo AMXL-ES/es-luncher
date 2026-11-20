@@ -55,6 +55,25 @@ public partial class MainWindow : Window
             NavList.SelectedIndex = index;
             ApplyNav(page);
         }
+
+        // 开发/验收用：ESLUNCHER_UI_DIALOG=diagnostics|modrinth 自动打开弹窗（截图用）。
+        var dialog = Environment.GetEnvironmentVariable("ESLUNCHER_UI_DIALOG")?.ToLowerInvariant();
+        if (dialog is "diagnostics" or "modrinth" && InstanceList.SelectedItem is InstanceItem selected)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+            {
+                if (dialog == "diagnostics")
+                {
+                    await new DiagnosticsWindow(selected.Config.Name, _layout).ShowDialog(this);
+                }
+                else
+                {
+                    var (minecraftVersion, loader) = InstanceVersionInfo.Derive(selected.Config.VersionId);
+                    var modrinthLoader = loader == "fabric-loader" ? "fabric" : loader == "quilt-loader" ? "quilt" : loader;
+                    await new ModrinthWindow(selected.Config.Name, _layout, minecraftVersion, modrinthLoader).ShowDialog(this);
+                }
+            });
+        }
     }
 
     private void ApplyNav(string tag)
@@ -214,6 +233,35 @@ public partial class MainWindow : Window
         {
             StatusText.Text = $"启动失败：{exception.Message}";
         }
+    }
+
+    private async void OnDiagnosticsClick(object? sender, RoutedEventArgs e)
+    {
+        if (InstanceList.SelectedItem is not InstanceItem item)
+        {
+            StatusText.Text = "先选一个实例";
+            return;
+        }
+
+        await new DiagnosticsWindow(item.Config.Name, _layout).ShowDialog(this);
+    }
+
+    private async void OnModrinthClick(object? sender, RoutedEventArgs e)
+    {
+        if (InstanceList.SelectedItem is not InstanceItem item)
+        {
+            StatusText.Text = "先选一个实例";
+            return;
+        }
+
+        var (minecraftVersion, loader) = InstanceVersionInfo.Derive(item.Config.VersionId);
+        var modrinthLoader = loader switch
+        {
+            "fabric-loader" => "fabric",
+            "quilt-loader" => "quilt",
+            var other => other,
+        };
+        await new ModrinthWindow(item.Config.Name, _layout, minecraftVersion, modrinthLoader).ShowDialog(this);
     }
 
     private void OnOpenFolderClick(object? sender, RoutedEventArgs e)

@@ -56,6 +56,13 @@ esluncher content remove --instance "Fabric 测试" --kind mods jei.jar
 - 加载器名映射：实例 id 的 `fabric-loader` → Modrinth 的 `fabric`；`quilt-loader` → `quilt`。
 - 路径穿越防护：包内 `../` 直接拒绝（单测 + 真实）。
 
+### UI
+
+![Modrinth 窗口](img/m8-modrinth.png)
+
+- 实例页工具栏「Modrinth」→ 弹窗按当前实例的 MC 版本 + 加载器检索，选中后直接安装到 mods。
+- 实测检索 `jei` → 4+ 条结果（JEI 86,313,860 下载）；安装后与 CLI 同一落盘路径。
+
 ## 7. 待办（M8 剩余）
 
 1. jar 内依赖版本范围与冲突提示（当前只列 id）。
