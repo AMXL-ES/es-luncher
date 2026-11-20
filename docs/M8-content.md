@@ -31,13 +31,21 @@ esluncher content remove --instance "Fabric 测试" --kind mods jei.jar
 
 | 项 | 结果 |
 |---|---|
-| 测试 | **144 passed / 0 failed**（新增 10 个内容测试：空目录/添加/移除/回收站/非法名/缺源文件/未知实例/类型解析） |
-| 实测 | `content add` → 21 B 文件落 `instances\Fabric 测试\game\mods`；`list` 显示 1 个；`remove` 后列表为空，文件在 `trash\content\Fabric 测试\20261120-192950-909-demo-mod.jar` |
+| 测试 | **148 passed / 0 failed**（内容 10 个 + 模组元数据 4 个 + 其余） |
+| 实测 | `content add` → 240 B jar 落 `instances\Fabric 测试\game\mods`；`list` 显示；`remove` 后列表为空，文件在 `trash\content\Fabric 测试\<时间戳>-example-mod.jar` |
 | 安全 | 路径穿越（`../escape.jar`、`a/b.jar`）被拒；未知实例被拒 |
+| UI | 实例页底部「内容」面板：类型切换 / 添加（文件选择器）/ 移除 / 打开目录；mods 自动读元数据（`Example Mod · 1.2.3 · fabric · 240 B`） |
+| 元数据 | `fabric.mod.json` → id/name/version/depends；`META-INF/mods.toml` → modId/version/displayName；坏 jar 不抛异常 |
 
-## 4. 待办
+## 4. 模组元数据（`Content/ModMetadata.cs`）
 
-1. UI：实例页加"内容"抽屉（list/add/remove + 打开 mods 目录）。
-2. jar 内 `fabric.mod.json` / `mods.toml` 解析（mod 名称、版本、依赖）→ 冲突提示。
-3. Modrinth/CurseForge 下载集成（M8 后续，先做本地文件）。
-4. 资源包/光影包的目录约定确认（shaderpacks 对 Iris/OptiFine 都可用）。
+- Fabric：解析 `fabric.mod.json`，依赖取 `depends` 里除 `minecraft/fabricloader/java/fabric-api` 之外的条目。
+- Forge/NeoForge：轻量解析 `META-INF/mods.toml`（`[[mods]]` 块 + `[[dependencies.*]]` 的 modId），不引第三方 TOML 库。
+- 解析失败/非模组 jar → `unknown`，UI 显示 `—`，绝不因坏 jar 崩溃。
+
+## 5. 待办（M8 剩余）
+
+1. jar 内依赖版本范围与冲突提示（当前只列 id）。
+2. Modrinth 检索/下载、`.mrpack` 导入导出、CurseForge（需 API key）。
+3. 资源包/光影包的启用/禁用（`disabled` 后缀或移动目录）。
+4. 内容列表排序/搜索与批量操作。
