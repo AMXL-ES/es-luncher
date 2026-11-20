@@ -40,6 +40,13 @@ powershell -NoProfile -File scripts\smoke-m1m3.ps1
 .\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe java
 .\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe java install --version 1.7.10
 .\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe launch --version 1.7.10 --username Dev --autostop 30
+
+# M5 验收面：实例（共享库/资源，独立配置与游戏目录）
+.\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe instance create "测试 实例" --version 1.18.2 --memory-mb 1536
+.\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe instance list
+.\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe launch --instance "测试 实例" --autostop 30
+.\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe instance export "测试 实例" --out D:\backup\pack.zip
+.\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe instance import D:\backup\pack.zip "还原 实例"
 ```
 
 ## 文档

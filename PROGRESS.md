@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M4 完成，待用户验收**（2026-11-20）：Java 运行时下载与多版本共存跑通，1.7.10/1.18.2 均在托管运行时上真实启动
+- **当前阶段**：**M5 完成，待用户验收**（2026-11-20）：实例系统跑通，两个 1.18.2 实例同时运行并各自 exit 0；产品已更名为 **ES Luncher**
 - **项目根**：`D:\dev\es-luncher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -129,8 +129,10 @@
 
 **M3 后增补（2026-11-19，20 分钟级）**：
 - `esluncher versions [--type release|snapshot|old_alpha|old_beta|all] [--limit n]`：直接列清单（实测 925 个版本）。
-- `scripts/smoke-m1m3.ps1`：一条命令跑完 build / test / accounts / launch dry-run / fetch 幂等 / versions，**6/6 通过**。
+- `scripts/smoke-m1m3.ps1`：一条命令跑完 build / test / accounts / launch dry-run / fetch 幂等 / versions / java，**7/7 通过**。
 - 测试数 91 → **97**。
+
+**重命名（2026-11-20）**：产品名改为 **ES Luncher**；目录 `D:\dev\es-luncher`、命名空间 `EsLuncher.*`、程序集 `EsLuncher` / `esluncher.exe`；数据根保持 `D:\mc-data`（复用已下载资源与运行时）。
 
 ## M4 Java 运行时（2026-11-20 本轮交付）
 
@@ -153,7 +155,27 @@
 
 **缺口**：不做运行时自动升级、不清理旧版本；Java 25/26.x 线未验证。
 
-## 下一步（M5 实例系统）
+## M5 实例系统（2026-11-20 本轮交付）
 
-按 roadmap 顺序进入 M5：版本隔离、每实例独立配置（内存/Java/参数/窗口）、多实例并存、克隆/导入/导出。
-开工前会先问 3–5 个裁剪问题（实例目录布局、是否复用 `assets/libraries`、导入已有 `.minecraft` 的边界）。
+`dotnet test` → **121 passed / 0 failed**（新增 13 个实例测试）。
+
+| 能力 | 落点 | 证据 |
+|---|---|---|
+| 实例模型 + 原子 JSON 读写 | `Instances/InstanceStore.cs`（`InstanceConfig`） | 配置往返、`Save` 更新内存/窗口尺寸 |
+| 创建/列表/克隆/删除/导出/导入 | 同上 + CLI `instance` 子命令 | 4 个实例实测；删除必须 `--force`；导入 zip-slip 被拒并清理 |
+| 实例级启动 | `launch --instance <名字>` | `-Xmx1536m`、`working: instances\测试 实例\game`、natives 自动补齐 59 文件 |
+| 并行多实例 | —— | **两个 "Minecraft 1.18.2" 窗口同时存在**，各自到主菜单，关窗后**两个都 exit 0**（各 64.4 s） |
+
+**修掉的坑**：日志文件名原来只有「版本+秒级时间」，同秒并行会文件锁冲突；现为「实例名+版本+时间+4 位随机」，标签页 `launch-测试 实例-…-9f57.log` / `launch-dev-two-…-829b.log`。
+
+**缺口**：导入其它启动器目录（.minecraft/Prism）未做；实例磁盘统计未做。
+
+## 下一步（M6 模组加载器）
+
+Fabric / Quilt / NeoForge / Forge 安装 + `inheritsFrom` 继承链解析（classpath 顺序、主类覆盖、`-D` 合并）。
+开工前会问 3–5 个裁剪问题（首版支持哪几个加载器、Fabric 直出 JSON vs 跑 installer、加载器版本选择方式、OptiFine/LiteLoader 是否暂缓）。
+
+## 待用户提供（做界面/关于页时提醒）
+
+**开发者名单**需要你提供：**工作室名称** + **工作室图标（png，最好是正方形）**。
+UI 的「关于/开发者」页（M7）与 README/发行说明（M12）会用到；做到时我会先问你再动手。
