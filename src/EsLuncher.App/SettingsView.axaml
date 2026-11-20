@@ -1,37 +1,38 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="using:EsLuncher.App"
              x:Class="EsLuncher.App.SettingsView">
   <ScrollViewer>
     <StackPanel Spacing="14" MaxWidth="760" HorizontalAlignment="Left">
-      <TextBlock Text="设置" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" />
+      <TextBlock Text="{app:T settings.title}" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" />
 
       <Border Background="#141419" CornerRadius="12" Padding="16">
         <StackPanel Spacing="10">
-          <TextBlock Text="游戏" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
-          <TextBlock Text="默认内存（MB）" Foreground="#9A9AA3" FontSize="12" />
+          <TextBlock Text="{app:T settings.game}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+          <TextBlock Text="{app:T settings.memory}" Foreground="#9A9AA3" FontSize="12" />
           <NumericUpDown x:Name="MemoryBox" Minimum="512" Maximum="32768" Increment="512" FormatString="0" Width="240" HorizontalAlignment="Left" />
-          <TextBlock Text="默认用户名（新建实例用，空 = Player）" Foreground="#9A9AA3" FontSize="12" />
+          <TextBlock Text="{app:T settings.username}" Foreground="#9A9AA3" FontSize="12" />
           <TextBox x:Name="UsernameBox" Width="240" HorizontalAlignment="Left" PlaceholderText="Player" />
-          <TextBlock Text="下载并发数（1-16）" Foreground="#9A9AA3" FontSize="12" />
+          <TextBlock Text="{app:T settings.concurrency}" Foreground="#9A9AA3" FontSize="12" />
           <NumericUpDown x:Name="ConcurrencyBox" Minimum="1" Maximum="16" Increment="1" FormatString="0" Width="240" HorizontalAlignment="Left" />
-          <CheckBox x:Name="AutoJavaBox" Content="缺少 Java 时自动下载官方运行时" Foreground="#D0D0D6" />
-          <TextBlock Text="下载源" Foreground="#9A9AA3" FontSize="12" />
+          <CheckBox x:Name="AutoJavaBox" Content="{app:T settings.autoJava}" Foreground="#D0D0D6" />
+          <TextBlock Text="{app:T settings.source}" Foreground="#9A9AA3" FontSize="12" />
           <ComboBox x:Name="SourceBox" SelectedIndex="0" Width="240" HorizontalAlignment="Left">
-            <ComboBoxItem Content="官方（Mojang）" />
-            <ComboBoxItem Content="BMCLAPI 镜像（国内加速）" />
+            <ComboBoxItem Content="{app:T settings.source.official}" />
+            <ComboBoxItem Content="{app:T settings.source.bmclapi}" />
           </ComboBox>
         </StackPanel>
       </Border>
 
       <Border Background="#141419" CornerRadius="12" Padding="16">
         <StackPanel Spacing="10">
-          <TextBlock Text="外观与语言" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
-          <TextBlock Text="主题" Foreground="#9A9AA3" FontSize="12" />
+          <TextBlock Text="{app:T settings.appearance}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+          <TextBlock Text="{app:T settings.theme}" Foreground="#9A9AA3" FontSize="12" />
           <ComboBox x:Name="ThemeBox" SelectedIndex="0" Width="240" HorizontalAlignment="Left">
-            <ComboBoxItem Content="深色" />
-            <ComboBoxItem Content="浅色" />
+            <ComboBoxItem Content="{app:T settings.theme.dark}" />
+            <ComboBoxItem Content="{app:T settings.theme.light}" />
           </ComboBox>
-          <TextBlock Text="语言（重启生效）" Foreground="#9A9AA3" FontSize="12" />
+          <TextBlock Text="{app:T settings.language}" Foreground="#9A9AA3" FontSize="12" />
           <ComboBox x:Name="LanguageBox" SelectedIndex="0" Width="240" HorizontalAlignment="Left">
             <ComboBoxItem Content="中文" />
             <ComboBoxItem Content="English" />
@@ -41,29 +42,29 @@
 
       <Border Background="#141419" CornerRadius="12" Padding="16">
         <StackPanel Spacing="10">
-          <TextBlock Text="Java" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
-          <TextBlock Text="Java 路径（留空 = 按版本自动选，托管运行时优先）" Foreground="#9A9AA3" FontSize="12" />
+          <TextBlock Text="{app:T settings.java}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+          <TextBlock Text="{app:T settings.javaPath}" Foreground="#9A9AA3" FontSize="12" />
           <TextBox x:Name="JavaBox" PlaceholderText="例如 D:\mc-data\java\jre-legacy\...\bin\java.exe" />
-          <TextBlock Text="托管运行时" Foreground="#9A9AA3" FontSize="12" />
+          <TextBlock Text="{app:T settings.managedRuntimes}" Foreground="#9A9AA3" FontSize="12" />
           <TextBlock x:Name="JavaListText" Foreground="#D0D0D6" FontSize="11" TextWrapping="Wrap" />
-          <Button Content="打开 Java 目录" Classes="ghost" HorizontalAlignment="Left" Click="OnOpenJavaDirClick" />
+          <Button Content="{app:T settings.openJava}" Classes="ghost" HorizontalAlignment="Left" Click="OnOpenJavaDirClick" />
         </StackPanel>
       </Border>
 
       <Border Background="#141419" CornerRadius="12" Padding="16">
         <StackPanel Spacing="10">
-          <TextBlock Text="数据" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
-          <TextBlock Text="数据根（重启生效）" Foreground="#9A9AA3" FontSize="12" />
+          <TextBlock Text="{app:T settings.data}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+          <TextBlock Text="{app:T settings.dataRoot}" Foreground="#9A9AA3" FontSize="12" />
           <TextBlock x:Name="DataRootText" Foreground="#D0D0D6" FontSize="12" />
           <StackPanel Orientation="Horizontal" Spacing="10">
-            <Button Content="打开数据目录" Classes="ghost" Click="OnOpenDataRootClick" />
-            <Button Content="打开回收站" Classes="ghost" Click="OnOpenTrashClick" />
+            <Button Content="{app:T settings.openData}" Classes="ghost" Click="OnOpenDataRootClick" />
+            <Button Content="{app:T settings.openTrash}" Classes="ghost" Click="OnOpenTrashClick" />
           </StackPanel>
         </StackPanel>
       </Border>
 
       <StackPanel Orientation="Horizontal" Spacing="10">
-        <Button Content="保存" Classes="primary" Click="OnSaveClick" />
+        <Button Content="{app:T settings.save}" Classes="primary" Click="OnSaveClick" />
         <TextBlock x:Name="StatusText" Foreground="#9A9AA3" VerticalAlignment="Center" FontSize="12" />
       </StackPanel>
     </StackPanel>

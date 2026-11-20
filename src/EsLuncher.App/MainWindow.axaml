@@ -110,7 +110,7 @@
                     FontSize="12" Click="OnInstancePickerClick" />
           </StackPanel>
 
-          <Button x:Name="HomeLaunchButton" Classes="primary" Content="启动游戏" FontSize="18" Padding="40,12"
+          <Button x:Name="HomeLaunchButton" Classes="primary" Content="{app:T home.launch}" FontSize="18" Padding="40,12"
                   HorizontalAlignment="Right" Click="OnLaunchClick" />
 
           <TextBlock x:Name="HomeVersionLabel" FontSize="12" Foreground="#B0B0BA"
@@ -138,13 +138,13 @@
       <!-- 实例页 -->
       <Grid x:Name="InstancesPage" IsVisible="False" Margin="24,18" ColumnDefinitions="*,430" RowDefinitions="Auto,*">
         <Grid Grid.ColumnSpan="2" ColumnDefinitions="*,Auto">
-          <TextBlock Text="实例" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+          <TextBlock Text="{app:T instances.title}" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
             <Button x:Name="RefreshButton" Classes="ghost" Content="刷新" Click="OnRefreshClick" />
-            <Button x:Name="LaunchButton" Classes="primary" Content="启动" Click="OnLaunchClick" />
-            <Button x:Name="OpenFolderButton" Classes="ghost" Content="打开目录" Click="OnOpenFolderClick" />
-            <Button x:Name="DiagnosticsButton" Classes="ghost" Content="诊断" Click="OnDiagnosticsClick" />
-              <Button x:Name="LogButton" Classes="ghost" Content="日志" Click="OnLogClick" />
+            <Button x:Name="LaunchButton" Classes="primary" Content="{app:T toolbar.launch.short}" Click="OnLaunchClick" />
+            <Button x:Name="OpenFolderButton" Classes="ghost" Content="{app:T toolbar.open}" Click="OnOpenFolderClick" />
+            <Button x:Name="DiagnosticsButton" Classes="ghost" Content="{app:T toolbar.diagnostics}" Click="OnDiagnosticsClick" />
+              <Button x:Name="LogButton" Classes="ghost" Content="{app:T toolbar.logs}" Click="OnLogClick" />
           </StackPanel>
         </Grid>
 
@@ -187,22 +187,22 @@
             <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
               <ComboBox x:Name="ContentKindBox" SelectedIndex="0" Width="104" Margin="0,0,8,6" SelectionChanged="OnContentKindChanged">
                 <ComboBoxItem Content="mods" />
-                <ComboBoxItem Content="资源包" />
-                <ComboBoxItem Content="光影" />
-                <ComboBoxItem Content="世界" />
-                <ComboBoxItem Content="数据包" />
-                <ComboBoxItem Content="截图" />
+                <ComboBoxItem Content="{app:T kind.resourcepacks}" />
+                <ComboBoxItem Content="{app:T kind.shaders}" />
+                <ComboBoxItem Content="{app:T kind.worlds}" />
+                <ComboBoxItem Content="{app:T kind.datapacks}" />
+                <ComboBoxItem Content="{app:T kind.screenshots}" />
               </ComboBox>
               <ComboBox x:Name="WorldBox" Width="140" Margin="0,0,8,6" IsVisible="False" SelectionChanged="OnWorldChanged" />
-              <Button Content="添加" Classes="ghost" Margin="0,0,8,6" Click="OnAddContentClick" />
-              <Button Content="启用/禁用" Classes="ghost" Margin="0,0,8,6" Click="OnToggleContentClick" />
-              <Button Content="移除" Classes="ghost" Margin="0,0,8,6" Click="OnRemoveContentClick" />
-              <Button Content="目录" Classes="ghost" Margin="0,0,8,6" Click="OnOpenContentFolderClick" />
-              <Button Content="下载" Classes="ghost" Margin="0,0,8,6" Click="OnDownloadContentClick" />
-              <Button x:Name="MoveUpButton" Content="上移" Classes="ghost" Margin="0,0,8,6" Click="OnMoveUpClick" IsVisible="False" />
-              <Button x:Name="MoveDownButton" Content="下移" Classes="ghost" Margin="0,0,8,6" Click="OnMoveDownClick" IsVisible="False" />
-              <Button x:Name="CheckUpdatesButton" Content="检查更新" Classes="ghost" Margin="0,0,8,6" Click="OnCheckUpdatesClick" />
-              <Button x:Name="BackupWorldButton" Content="备份世界" Classes="ghost" Margin="0,0,8,6" Click="OnBackupWorldClick" IsVisible="False" />
+              <Button Content="{app:T content.add}" Classes="ghost" Margin="0,0,8,6" Click="OnAddContentClick" />
+              <Button Content="{app:T content.toggle}" Classes="ghost" Margin="0,0,8,6" Click="OnToggleContentClick" />
+              <Button Content="{app:T content.remove}" Classes="ghost" Margin="0,0,8,6" Click="OnRemoveContentClick" />
+              <Button Content="{app:T content.folder}" Classes="ghost" Margin="0,0,8,6" Click="OnOpenContentFolderClick" />
+              <Button Content="{app:T content.download}" Classes="ghost" Margin="0,0,8,6" Click="OnDownloadContentClick" />
+              <Button x:Name="MoveUpButton" Content="{app:T content.up}" Classes="ghost" Margin="0,0,8,6" Click="OnMoveUpClick" IsVisible="False" />
+              <Button x:Name="MoveDownButton" Content="{app:T content.down}" Classes="ghost" Margin="0,0,8,6" Click="OnMoveDownClick" IsVisible="False" />
+              <Button x:Name="CheckUpdatesButton" Content="{app:T content.checkUpdates}" Classes="ghost" Margin="0,0,8,6" Click="OnCheckUpdatesClick" />
+              <Button x:Name="BackupWorldButton" Content="{app:T content.backupWorld}" Classes="ghost" Margin="0,0,8,6" Click="OnBackupWorldClick" IsVisible="False" />
             </WrapPanel>
 
             <ListBox x:Name="ContentList" Grid.Row="2" Margin="0,8,0,0" Background="Transparent">
@@ -226,34 +226,34 @@
       <!-- 其他 -->
       <Grid x:Name="OthersPage" IsVisible="False" Margin="24,18">
         <StackPanel Spacing="14" MaxWidth="820" HorizontalAlignment="Left">
-          <TextBlock Text="其他" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" />
+          <TextBlock Text="{app:T others.title}" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" />
 
           <Border Background="#141419" CornerRadius="12" Padding="16">
             <StackPanel Spacing="10">
-              <TextBlock Text="当前实例" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+              <TextBlock Text="{app:T others.current}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
               <TextBlock x:Name="OthersInstanceText" Foreground="#9A9AA3" FontSize="12" />
               <WrapPanel>
-                <Button Content="账户管理" Classes="ghost" Margin="0,0,8,8" Click="OnOthersAccountsClick" />
-                <Button Content="诊断当前实例" Classes="ghost" Margin="0,0,8,8" Click="OnOthersDiagnosticsClick" />
-                <Button Content="查看日志" Classes="ghost" Margin="0,0,8,8" Click="OnOthersLogClick" />
-                <Button Content="打开实例目录" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenInstanceClick" />
+                <Button Content="{app:T others.accounts}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersAccountsClick" />
+                <Button Content="{app:T others.diagnostics}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersDiagnosticsClick" />
+                <Button Content="{app:T others.logs}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersLogClick" />
+                <Button Content="{app:T others.openInstance}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenInstanceClick" />
               </WrapPanel>
             </StackPanel>
           </Border>
 
           <Border Background="#141419" CornerRadius="12" Padding="16">
             <StackPanel Spacing="10">
-              <TextBlock Text="工具" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+              <TextBlock Text="{app:T others.tools}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
               <WrapPanel>
-                <Button Content="打开数据目录" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenDataClick" />
-                <Button Content="打开日志目录" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenLogsClick" />
-                <Button Content="打开缓存目录" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenCacheClick" />
-                <Button Content="打开回收站" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenTrashClick" />
-                <Button Content="清空回收站" Classes="ghost" Margin="0,0,8,8" Click="OnOthersClearTrashClick" />
+                <Button Content="{app:T others.openData}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenDataClick" />
+                <Button Content="{app:T others.openLogs}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenLogsClick" />
+                <Button Content="{app:T others.openCache}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenCacheClick" />
+                <Button Content="{app:T others.openTrash}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenTrashClick" />
+                <Button Content="{app:T others.clearTrash}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersClearTrashClick" />
               </WrapPanel>
               <WrapPanel>
-                <Button Content="开发者指南" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenGuideClick" />
-                <Button Content="开源许可 / 关于" Classes="ghost" Margin="0,0,8,8" Click="OnOthersAboutClick" />
+                <Button Content="{app:T others.guide}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenGuideClick" />
+                <Button Content="{app:T others.about}" Classes="ghost" Margin="0,0,8,8" Click="OnOthersAboutClick" />
               </WrapPanel>
               <TextBlock x:Name="OthersStatus" Foreground="#6E6E76" FontSize="11" TextWrapping="Wrap" />
             </StackPanel>
@@ -276,10 +276,10 @@
                        FontSize="11" Foreground="#5C5C64" HorizontalAlignment="Center" TextAlignment="Center" />
             <Border Background="#141419" CornerRadius="10" Padding="14" Width="420" Margin="0,4,0,0">
               <StackPanel Spacing="6">
-                <TextBlock Text="开发者 / 鸣谢" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="13" />
+                <TextBlock Text="{app:T about.credits}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="13" />
                 <Grid ColumnDefinitions="2*,1*">
-                  <TextBlock Text="名字" Foreground="#9A9AA3" FontSize="12" />
-                  <TextBlock Grid.Column="1" Text="角色" Foreground="#9A9AA3" FontSize="12" />
+                  <TextBlock Text="{app:T about.name}" Foreground="#9A9AA3" FontSize="12" />
+                  <TextBlock Grid.Column="1" Text="{app:T about.role}" Foreground="#9A9AA3" FontSize="12" />
                 </Grid>
                 <ItemsControl x:Name="CreditsList">
                   <ItemsControl.ItemTemplate>
@@ -291,7 +291,7 @@
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock Text="名单可在 Assets/credits.json 增删" Foreground="#5C5C64" FontSize="10" />
+                <TextBlock Text="{app:T about.note}" Foreground="#5C5C64" FontSize="10" />
               </StackPanel>
             </Border>
           </StackPanel>

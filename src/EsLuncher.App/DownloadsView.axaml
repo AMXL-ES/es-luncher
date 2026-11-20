@@ -3,14 +3,14 @@
              xmlns:app="using:EsLuncher.App"
              x:Class="EsLuncher.App.DownloadsView">
   <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
-    <TextBlock Text="下载" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+    <TextBlock Text="{app:T downloads.title}" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
 
     <Border x:Name="ContextBorder" Grid.Row="1" Background="#141419" CornerRadius="12" Padding="12">
       <StackPanel Spacing="6">
         <StackPanel Orientation="Horizontal" Spacing="10">
-          <TextBlock Text="目标实例" Foreground="#9A9AA3" FontSize="12" VerticalAlignment="Center" />
+          <TextBlock Text="{app:T downloads.target}" Foreground="#9A9AA3" FontSize="12" VerticalAlignment="Center" />
           <ComboBox x:Name="InstanceCombo" Width="260" SelectionChanged="OnInstanceChanged" />
-          <TextBlock Text="世界（数据包）" Foreground="#9A9AA3" FontSize="12" VerticalAlignment="Center" />
+          <TextBlock Text="{app:T downloads.world}" Foreground="#9A9AA3" FontSize="12" VerticalAlignment="Center" />
           <ComboBox x:Name="WorldCombo" Width="180" SelectionChanged="OnWorldChanged" />
         </StackPanel>
         <TextBlock x:Name="ContextText" Foreground="#6E6E76" FontSize="11" />
@@ -18,30 +18,30 @@
     </Border>
 
     <TabControl x:Name="Tabs" Grid.Row="2" Background="Transparent" SelectionChanged="OnTabChanged">
-      <TabItem Header="游戏版本">
+      <TabItem Header="{app:T downloads.versionTab}">
         <Grid RowDefinitions="Auto,*,Auto" Margin="0,10,0,0" RowSpacing="10">
           <Border Background="#141419" CornerRadius="12" Padding="14">
             <StackPanel Spacing="8">
               <StackPanel Orientation="Horizontal" Spacing="10">
                 <ComboBox x:Name="FilterBox" SelectedIndex="0" Width="120" SelectionChanged="OnFilterChanged">
-                  <ComboBoxItem Content="正式版" />
-                  <ComboBoxItem Content="快照" />
-                  <ComboBoxItem Content="全部" />
+                  <ComboBoxItem Content="{app:T downloads.filter.release}" />
+                  <ComboBoxItem Content="{app:T downloads.filter.snapshot}" />
+                  <ComboBoxItem Content="{app:T downloads.filter.all}" />
                 </ComboBox>
-                <TextBlock Text="加载器" Foreground="#9A9AA3" VerticalAlignment="Center" />
+                <TextBlock Text="{app:T downloads.loader}" Foreground="#9A9AA3" VerticalAlignment="Center" />
                 <ComboBox x:Name="LoaderBox" SelectedIndex="0" Width="120">
-                  <ComboBoxItem Content="无" />
+                  <ComboBoxItem Content="{app:T downloads.loader.none}" />
                   <ComboBoxItem Content="Fabric" />
                   <ComboBoxItem Content="Quilt" />
                   <ComboBoxItem Content="Forge" />
                 </ComboBox>
-                <TextBox x:Name="InstanceNameBox" Width="200" PlaceholderText="实例名（留空=版本 id）" />
+                <TextBox x:Name="InstanceNameBox" Width="200" PlaceholderText="{app:T downloads.instanceName}" />
               </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <Button Content="刷新清单" Classes="ghost" Click="OnRefreshClick" />
-                <Button Content="下载选中" Classes="ghost" Click="OnDownloadClick" />
-                <Button Content="下载并建实例" Classes="primary" Click="OnDownloadAndCreateClick" />
-                <Button x:Name="CancelButton" Content="取消" Classes="ghost" Click="OnCancelClick" IsEnabled="False" />
+                <Button Content="{app:T downloads.refresh}" Classes="ghost" Click="OnRefreshClick" />
+                <Button Content="{app:T downloads.selected}" Classes="ghost" Click="OnDownloadClick" />
+                <Button Content="{app:T downloads.create}" Classes="primary" Click="OnDownloadAndCreateClick" />
+                <Button x:Name="CancelButton" Content="{app:T downloads.cancel}" Classes="ghost" Click="OnCancelClick" IsEnabled="False" />
               </StackPanel>
               <TextBlock x:Name="StatusText" Foreground="#9A9AA3" TextWrapping="Wrap" />
             </StackPanel>
@@ -68,19 +68,19 @@
         </Grid>
       </TabItem>
 
-      <TabItem Header="整合包">
+      <TabItem Header="{app:T downloads.modpackTab}">
         <app:ModrinthDownloadPanel x:Name="ModpackPanel" ModpackMode="True" Margin="0,10,0,0" />
       </TabItem>
-      <TabItem Header="模组">
+      <TabItem Header="{app:T downloads.modsTab}">
         <app:ModrinthDownloadPanel x:Name="ModsPanel" Kind="Mods" Margin="0,10,0,0" />
       </TabItem>
-      <TabItem Header="资源包">
+      <TabItem Header="{app:T downloads.resourcepacksTab}">
         <app:ModrinthDownloadPanel x:Name="ResourcePacksPanel" Kind="ResourcePacks" Margin="0,10,0,0" />
       </TabItem>
-      <TabItem Header="光影">
+      <TabItem Header="{app:T downloads.shadersTab}">
         <app:ModrinthDownloadPanel x:Name="ShadersPanel" Kind="ShaderPacks" Margin="0,10,0,0" />
       </TabItem>
-      <TabItem Header="数据包">
+      <TabItem Header="{app:T downloads.datapacksTab}">
         <app:ModrinthDownloadPanel x:Name="DatapacksPanel" Kind="Datapacks" Margin="0,10,0,0" />
       </TabItem>
     </TabControl>
