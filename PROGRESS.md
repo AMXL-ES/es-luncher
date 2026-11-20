@@ -229,6 +229,21 @@
 | `docs/DEVELOPER-GUIDE.md` | 架构、接口速查、扩展点、7 条必须遵守的约定、GPL 说明 |
 | `pack install --instance <新> <zip>` | 本地/下载的 .mrpack 一键建实例（依赖→原版→加载器→导入），实测 383 B 包 → 实例含 demo-mod.jar |
 
+## B/C 批：世界、更新、导入、体积（2026-11-20）
+
+`dotnet test` → **189 passed / 0 failed**。
+
+| 能力 | 证据 |
+|---|---|
+| 世界列表/体积/备份/还原/重命名 | CLI 实测：备份 zip、还原 `Demo World Restored`、重命名 `Demo World 2` |
+| 截图管理 | `ContentKind.Screenshots`（UI 类型「截图」），删除走回收站 |
+| 模组更新检测/更新 | `content outdated`：Fabric 测试 2 个均最新；`content update` 旧文件进回收站 |
+| 依赖补装 UI | 诊断窗「补齐缺失前置」按钮（同名 slug → Modrinth 安装 → 复检） |
+| 实例体积 | `instance size "FO 测试"` → 69.4 MiB |
+| 导入其它启动器内容 | `instance import-dir` 复制 mods/saves/config/options.txt，源目录不动；单测覆盖 |
+
+**未做**：实例分组/标签/搜索、数据根迁移、便携模式（下批打磨）。
+
 ## M8 内容管理器扩展（2026-11-20，完成）
 
 `dotnet test` → **174 passed / 0 failed**。
