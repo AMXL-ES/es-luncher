@@ -26,6 +26,8 @@ public partial class MainWindow : Window
 
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/es-luncher-256.png")));
         StudioLogo.Source = new Bitmap(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/endless-studio-logo.jpg")));
+        Localization.Language = AppServices.Settings.Language;
+        ApplyLanguage();
 
         RefreshInstances();
 
@@ -107,9 +109,42 @@ public partial class MainWindow : Window
 
     private InstanceItem[] _allInstances = [];
 
+    private void ApplyLanguage()
+    {
+        Title = Localization.T("title");
+        RefreshButton.Content = Localization.T("toolbar.refresh");
+        LaunchButton.Content = Localization.T("toolbar.launch");
+        OpenFolderButton.Content = Localization.T("toolbar.open");
+        DiagnosticsButton.Content = Localization.T("toolbar.diagnostics");
+        ModrinthButton.Content = Localization.T("toolbar.modrinth");
+        LogButton.Content = Localization.T("toolbar.log");
+        SearchBox.PlaceholderText = Localization.T("search.placeholder");
+
+        if (NavList.Items.Count >= 4)
+        {
+            ((ListBoxItem)NavList.Items[0]!).Content = Localization.T("nav.instances");
+            ((ListBoxItem)NavList.Items[1]!).Content = Localization.T("nav.downloads");
+            ((ListBoxItem)NavList.Items[2]!).Content = Localization.T("nav.settings");
+            ((ListBoxItem)NavList.Items[3]!).Content = Localization.T("nav.about");
+        }
+    }
+
     private void RefreshInstances()
     {
         _allInstances = _store.List().Select(config => new InstanceItem(config)).ToArray();
+
+        if (GroupBox is not null)
+        {
+            var groups = _allInstances
+                .Select(item => item.Group)
+                .Where(group => !string.IsNullOrWhiteSpace(group))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            GroupBox.ItemsSource = new[] { "全部分组" }.Concat(groups).ToArray();
+            GroupBox.SelectedIndex = 0;
+        }
+
         ApplyInstanceFilter();
     }
 
@@ -122,12 +157,15 @@ public partial class MainWindow : Window
         }
 
         var query = SearchBox?.Text?.Trim();
-        var items = string.IsNullOrWhiteSpace(query)
-            ? _allInstances
-            : _allInstances
-                .Where(item => item.Name.Contains(query!, StringComparison.OrdinalIgnoreCase)
-                    || item.Version.Contains(query!, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
+        var group = GroupBox?.SelectedItem as string;
+        var items = _allInstances
+            .Where(item => string.IsNullOrWhiteSpace(query)
+                || item.Name.Contains(query!, StringComparison.OrdinalIgnoreCase)
+                || item.Version.Contains(query!, StringComparison.OrdinalIgnoreCase))
+            .Where(item => string.IsNullOrWhiteSpace(group)
+                || group == "全部分组"
+                || string.Equals(item.Group, group, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
 
         InstanceList.ItemsSource = items;
         if (items.Length > 0)
@@ -141,6 +179,8 @@ public partial class MainWindow : Window
     }
 
     private void OnSearchChanged(object? sender, TextChangedEventArgs e) => ApplyInstanceFilter();
+
+    private void OnGroupChanged(object? sender, SelectionChangedEventArgs e) => ApplyInstanceFilter();
 
     private void OnRefreshClick(object? sender, RoutedEventArgs e) => RefreshInstances();
 
@@ -201,6 +241,8 @@ public partial class MainWindow : Window
         WorldBox.IsVisible = kind == ContentKind.Datapacks;
         CheckUpdatesButton.IsVisible = kind == ContentKind.Mods;
         BackupWorldButton.IsVisible = kind == ContentKind.Worlds;
+        MoveUpButton.IsVisible = kind == ContentKind.ResourcePacks;
+        MoveDownButton.IsVisible = kind == ContentKind.ResourcePacks;
         if (kind == ContentKind.Datapacks && string.IsNullOrWhiteSpace(SelectedWorld))
         {
             ContentList.ItemsSource = null;
@@ -210,6 +252,19 @@ public partial class MainWindow : Window
 
         var service = new InstanceContentService(_layout, _store);
         var files = service.List(item.Config.Name, kind, SelectedWorld);
+        if (kind == ContentKind.ResourcePacks)
+        {
+            var order = new ResourcePackOrder(_layout, _store).List(item.Config.Name);
+            var rank = order
+                .Select((id, index) => (Name: Path.GetFileName(id), Index: index))
+                .GroupBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group2 => group2.Key, group2 => group2.First().Index, StringComparer.OrdinalIgnoreCase);
+            files = files
+                .OrderBy(file => rank.TryGetValue(file.Name, out var index) ? index : int.MaxValue)
+                .ThenBy(file => file.Name, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
         ContentList.ItemsSource = files
             .Select(file => new ContentItem(
                 file,
@@ -306,6 +361,42 @@ public partial class MainWindow : Window
         {
             ContentStatus.Text = exception.Message;
         }
+    }
+
+    private void OnLogClick(object? sender, RoutedEventArgs e)
+    {
+        if (InstanceList.SelectedItem is not InstanceItem item)
+        {
+            StatusText.Text = "先选一个实例";
+            return;
+        }
+
+        new LogWindow(item.Config.Name, _layout).Show(this);
+    }
+
+    private void OnMoveUpClick(object? sender, RoutedEventArgs e) => MoveSelectedPack(-1);
+
+    private void OnMoveDownClick(object? sender, RoutedEventArgs e) => MoveSelectedPack(1);
+
+    private void MoveSelectedPack(int delta)
+    {
+        if (InstanceList.SelectedItem is not InstanceItem item || ContentList.SelectedItem is not ContentItem content)
+        {
+            ContentStatus.Text = "先选中一个资源包";
+            return;
+        }
+
+        var order = new ResourcePackOrder(_layout, _store);
+        var packId = order.List(item.Config.Name).FirstOrDefault(id =>
+            string.Equals(Path.GetFileName(id), content.File.Name, StringComparison.OrdinalIgnoreCase));
+        if (packId is null)
+        {
+            ContentStatus.Text = "这个资源包不在 options.txt 的顺序里";
+            return;
+        }
+
+        ContentStatus.Text = order.Move(item.Config.Name, packId, delta) ? "顺序已调整（已备份 options.txt.bak）" : "已经到顶/到底";
+        RefreshContent();
     }
 
     private async void OnCheckUpdatesClick(object? sender, RoutedEventArgs e)
@@ -511,7 +602,11 @@ public sealed class InstanceItem(InstanceConfig config)
 
     public string Version => Config.VersionId;
 
-    public string Detail => $"{Config.MemoryMb} MB · {Config.Username ?? "Player"} · {Config.CreatedAt:yyyy-MM-dd}";
+    public string? Group => Config.Group;
+
+    public string Detail
+        => $"{Config.MemoryMb} MB · {Config.Username ?? "Player"} · {Config.CreatedAt:yyyy-MM-dd}"
+           + (string.IsNullOrWhiteSpace(Config.Group) ? string.Empty : $" · {Config.Group}");
 }
 
 /// <summary>内容列表的展示项。</summary>

@@ -1,0 +1,21 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EsLuncher.App.LogWindow"
+        Title="日志"
+        Width="900"
+        Height="620"
+        WindowStartupLocation="CenterOwner"
+        Background="#0E0E10">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="18">
+    <TextBlock x:Name="TitleText" Text="日志" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" />
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,8,0,0">
+      <TextBox x:Name="SearchBox" Width="300" PlaceholderText="过滤日志（关键词）" />
+      <CheckBox x:Name="AutoScrollBox" Content="自动滚动" IsChecked="True" Foreground="#D0D0D6" />
+      <TextBlock x:Name="StatusText" Foreground="#8A8A93" VerticalAlignment="Center" />
+    </StackPanel>
+    <TextBox x:Name="LogBox" Grid.Row="2" Margin="0,10,0,0" IsReadOnly="True" AcceptsReturn="True"
+             FontFamily="Consolas" FontSize="11" TextWrapping="NoWrap"
+             Background="#141418" Foreground="#D0D0D6" />
+    <TextBlock x:Name="PathText" Grid.Row="3" Margin="0,8,0,0" Foreground="#5C5C64" FontSize="11" TextTrimming="CharacterEllipsis" />
+  </Grid>
+</Window>

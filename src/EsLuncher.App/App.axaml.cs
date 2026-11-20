@@ -17,6 +17,7 @@ public partial class App : Application
             RequestedThemeVariant = AppServices.Settings.Theme == LauncherSettings.ThemeLight
                 ? ThemeVariant.Light
                 : ThemeVariant.Dark;
+            Localization.Language = AppServices.Settings.Language;
             desktop.MainWindow = new MainWindow();
         }
 

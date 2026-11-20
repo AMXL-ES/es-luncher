@@ -16,6 +16,7 @@ public partial class SettingsView : UserControl
         MemoryBox.Value = settings.DefaultMemoryMb;
         JavaBox.Text = settings.JavaPath ?? string.Empty;
         ThemeBox.SelectedIndex = settings.Theme == LauncherSettings.ThemeLight ? 1 : 0;
+        LanguageBox.SelectedIndex = settings.Language == "en" ? 1 : 0;
     }
 
     private void OnOpenDataRootClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -32,7 +33,7 @@ public partial class SettingsView : UserControl
             Theme = theme,
             DefaultMemoryMb = (int)(MemoryBox.Value ?? 2048),
             JavaPath = string.IsNullOrWhiteSpace(JavaBox.Text) ? null : JavaBox.Text!.Trim(),
-            Language = AppServices.Settings.Language,
+            Language = LanguageBox.SelectedIndex == 1 ? "en" : "zh",
         };
 
         AppServices.SaveSettings(settings);
@@ -41,6 +42,6 @@ public partial class SettingsView : UserControl
             app.RequestedThemeVariant = theme == LauncherSettings.ThemeLight ? ThemeVariant.Light : ThemeVariant.Dark;
         }
 
-        StatusText.Text = "已保存（主题立即生效）";
+        StatusText.Text = "已保存（主题立即生效，语言重启后生效）";
     }
 }

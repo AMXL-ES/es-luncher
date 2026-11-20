@@ -113,10 +113,11 @@ mods：46 个
 
 ## 10. 世界 / 截图 / 更新 / 导入（2026-11-20 第二批）
 
-![世界面板](img/m8-worlds.png)
+![资源包顺序](img/m8-resourcepacks.png)
 
 | 能力 | CLI | 实测 |
 |---|---|---|
+| 资源包排序 | UI「上移/下移」 | 改 `options.txt` 的 `resourcePacks` 数组，写前 `options.txt.bak` |
 | 世界列表/体积 | `world list --instance` / `world size` | Demo World 0.0 MiB（示例） |
 | 世界备份 | `world backup --instance <n> <世界> --out <zip>` | `demo-world.zip` |
 | 世界还原 | `world restore --instance <n> <zip> --world <新名>` | 还原为 `Demo World Restored` 并可重命名 |

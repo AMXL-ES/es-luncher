@@ -20,6 +20,12 @@
         <ComboBoxItem Content="浅色" />
       </ComboBox>
 
+      <TextBlock Text="语言（重启生效）" Foreground="#9A9AA3" />
+      <ComboBox x:Name="LanguageBox" SelectedIndex="0">
+        <ComboBoxItem Content="中文" />
+        <ComboBoxItem Content="English" />
+      </ComboBox>
+
       <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,0">
         <Button Content="保存" Click="OnSaveClick" />
         <TextBlock x:Name="StatusText" Foreground="#9A9AA3" VerticalAlignment="Center" />

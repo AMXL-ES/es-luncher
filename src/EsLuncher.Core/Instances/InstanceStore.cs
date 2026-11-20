@@ -31,6 +31,9 @@ public sealed record InstanceConfig
 
     public int? WindowHeight { get; init; }
 
+    /// <summary>自由分组/标签（界面里做筛选用），可为空。</summary>
+    public string? Group { get; init; }
+
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 }
 

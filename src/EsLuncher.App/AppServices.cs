@@ -10,7 +10,13 @@ public static class AppServices
 
     public static SettingsStore SettingsStore { get; } = new(Layout);
 
-    public static LauncherSettings Settings { get; private set; } = SettingsStore.Load();
+    public static LauncherSettings Settings { get; private set; } = ApplyOverrides(SettingsStore.Load());
+
+    private static LauncherSettings ApplyOverrides(LauncherSettings settings)
+    {
+        var language = Environment.GetEnvironmentVariable("ESLUNCHER_LANGUAGE");
+        return string.IsNullOrWhiteSpace(language) ? settings : settings with { Language = language };
+    }
 
     public static event Action? SettingsChanged;
 

@@ -1188,6 +1188,20 @@ internal static class Program
                 return 0;
             }
 
+            case "group":
+            {
+                if (positionals.Count < 2)
+                {
+                    return Fail("instance group 需要 <实例名> <分组名>（分组名传空字符串可清除）");
+                }
+
+                var config = store.TryLoad(positionals[0])
+                    ?? throw new InvalidOperationException($"实例不存在：{positionals[0]}");
+                store.Save(config with { Group = string.IsNullOrWhiteSpace(positionals[1]) ? null : positionals[1] });
+                Console.WriteLine($"已分组 {positionals[0]} → {(string.IsNullOrWhiteSpace(positionals[1]) ? "(无)" : positionals[1])}");
+                return 0;
+            }
+
             default:
                 return Fail($"未知 instance 动作：{action}（create|list|delete|clone|export|import）");
         }
