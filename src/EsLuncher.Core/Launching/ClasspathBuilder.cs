@@ -17,12 +17,21 @@ public static class ClasspathBuilder
 
         foreach (var library in version.Libraries)
         {
-            if (!library.IsAllowed(environment) || library.Artifact is null)
+            if (!library.IsAllowed(environment))
             {
                 continue;
             }
 
-            var relative = library.Artifact.Path ?? MavenCoordinate.Parse(library.Name).ToMavenPath();
+            // 加载器 profile（Fabric/Quilt）常常只给 name + url（maven 基址），没有 downloads.artifact。
+            var relative = library.Artifact?.Path
+                ?? (library.Artifact is null && library.BaseUrl is null
+                    ? null
+                    : MavenCoordinate.Parse(library.Name).ToMavenPath());
+            if (relative is null)
+            {
+                continue;
+            }
+
             var full = Path.Combine(layout.LibrariesDir, relative.Replace('/', Path.DirectorySeparatorChar));
             if (seen.Add(full))
             {
@@ -30,8 +39,15 @@ public static class ClasspathBuilder
             }
         }
 
-        var clientJar = layout.ClientJar(version.Id);
-        if (seen.Add(clientJar))
+        var clientJar = layout.ClientJar(version.ClientJarVersionId ?? version.Id);
+
+        // Forge/NeoForge 1.17+ 用 BootstrapLauncher，原版 jar 由 srg/module 方式加载；
+        // 再把它塞进 -cp 会与模块系统冲突（module minecraft vs _1_18_2 重复导出包）。
+        var usesBootstrapLauncher = string.Equals(
+            version.MainClass,
+            "cpw.mods.bootstraplauncher.BootstrapLauncher",
+            StringComparison.Ordinal);
+        if (!usesBootstrapLauncher && seen.Add(clientJar))
         {
             entries.Add(clientJar);
         }

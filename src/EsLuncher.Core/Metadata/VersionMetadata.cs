@@ -38,6 +38,12 @@ public sealed record VersionMetadata
     public int? ComplianceLevel { get; init; }
 
     public DateTimeOffset? ReleaseTime { get; init; }
+
+    /// <summary>
+    /// 客户端 jar 实际所在的版本目录 id。加载器版本（inheritsFrom）自己没有 client.jar，
+    /// 合并时指向原版父版本；普通版本为 null（即自身 id）。
+    /// </summary>
+    public string? ClientJarVersionId { get; init; }
 }
 
 /// <summary>资源索引。597 KB 一次下载，之后按哈希前 2 位分目录。</summary>

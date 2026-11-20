@@ -46,6 +46,34 @@ public sealed class VersionFetcher
         _planBuilder = new DownloadPlanBuilder(layout);
     }
 
+    private async Task<VersionMetadata> ResolveInheritanceAsync(
+        VersionMetadata version,
+        VersionManifest manifest,
+        bool refresh,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(version.InheritsFrom))
+        {
+            return version;
+        }
+
+        var parents = new Dictionary<string, VersionMetadata>(StringComparer.Ordinal);
+        var pending = version;
+        while (!string.IsNullOrWhiteSpace(pending.InheritsFrom))
+        {
+            var parentId = pending.InheritsFrom!;
+            if (!parents.TryGetValue(parentId, out var parent))
+            {
+                parent = await _catalog.GetVersionAsync(parentId, manifest, refresh, cancellationToken).ConfigureAwait(false);
+                parents[parentId] = parent;
+            }
+
+            pending = parent;
+        }
+
+        return Loaders.VersionMerger.Resolve(version, id => parents[id]);
+    }
+
     /// <summary>
     /// 确保实例的 natives 目录就绪：库 jar 已在共享目录里，这里只做解压。
     /// 返回本次解压的文件数（已存在会覆盖，代价很小）。
@@ -80,6 +108,7 @@ public sealed class VersionFetcher
         var manifest = await _catalog.GetManifestAsync(options.Refresh, cancellationToken).ConfigureAwait(false);
         var version = await _catalog.GetVersionAsync(versionId, manifest, options.Refresh, cancellationToken)
             .ConfigureAwait(false);
+        version = await ResolveInheritanceAsync(version, manifest, options.Refresh, cancellationToken).ConfigureAwait(false);
         var plan = _planBuilder.Build(version, LaunchEnvironment.Detect(), versionId, options.Selection);
         return (version, plan);
     }

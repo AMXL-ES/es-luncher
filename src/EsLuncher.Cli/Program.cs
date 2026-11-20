@@ -4,6 +4,7 @@ using EsLuncher.Core.Downloads;
 using EsLuncher.Core.Instances;
 using EsLuncher.Core.Java;
 using EsLuncher.Core.Launching;
+using EsLuncher.Core.Loaders;
 using EsLuncher.Core.Metadata;
 
 namespace EsLuncher.Cli;
@@ -25,7 +26,12 @@ internal static class Program
             var command = args[0].ToLowerInvariant();
             if (command == "instance")
             {
-                return InstanceCommand(args);
+                return await InstanceCommand(args).ConfigureAwait(false);
+            }
+
+            if (command == "loader")
+            {
+                return await LoaderCommandAsync(args).ConfigureAwait(false);
             }
 
             if (command == "java")
@@ -283,7 +289,137 @@ internal static class Program
         ];
     }
 
-    private static int InstanceCommand(string[] args)
+    private static (List<string> Positionals, string[] OptionTokens) SplitOptions(string[] tokens)
+    {
+        var positionals = new List<string>();
+        var options = new List<string>();
+        HashSet<string> booleanFlags = new(StringComparer.Ordinal) { "--force", "--dry-run", "--refresh", "--install-java" };
+
+        for (var i = 0; i < tokens.Length; i++)
+        {
+            var token = tokens[i];
+            if (!token.StartsWith("--", StringComparison.Ordinal))
+            {
+                positionals.Add(token);
+                continue;
+            }
+
+            options.Add(token);
+            if (!booleanFlags.Contains(token) && i + 1 < tokens.Length && !tokens[i + 1].StartsWith("--", StringComparison.Ordinal))
+            {
+                options.Add(tokens[++i]);
+            }
+        }
+
+        return (positionals, options.ToArray());
+    }
+
+    private static LoaderKind ParseLoader(string value) => value.ToLowerInvariant() switch
+    {
+        "fabric" => LoaderKind.Fabric,
+        "quilt" => LoaderKind.Quilt,
+        "forge" => LoaderKind.Forge,
+        "neoforge" or "neo" => LoaderKind.NeoForge,
+        _ => throw new ArgumentException($"未知加载器：{value}（fabric|quilt|forge|neoforge）"),
+    };
+
+    private static async Task<JavaRuntime?> SelectJavaForVersionAsync(
+        DataLayout layout,
+        FileDownloader downloader,
+        string mcVersion,
+        CommandOptions options,
+        CancellationToken cancellationToken)
+    {
+        var catalog = new VersionCatalog(layout, downloader);
+        var manifest = await catalog.GetManifestAsync(options.Refresh, cancellationToken).ConfigureAwait(false);
+        var version = await catalog.GetVersionAsync(mcVersion, manifest, options.Refresh, cancellationToken).ConfigureAwait(false);
+        var required = version.JavaVersion?.MajorVersion ?? 8;
+        return JavaSelector.Select(required, JavaDiscovery.Discover([layout.JavaDir]), null).Runtime;
+    }
+
+    private static async Task<int> LoaderCommandAsync(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            return Fail("用法：esluncher loader <list|install> --version <mc> --loader <fabric|quilt|forge|neoforge>");
+        }
+
+        var action = args[1].ToLowerInvariant();
+        var (_, optionTokens) = SplitOptions(args[2..]);
+        var options = CommandOptions.Parse(optionTokens);
+        if (string.IsNullOrWhiteSpace(options.Loader))
+        {
+            return Fail("loader 命令需要 --loader <fabric|quilt|forge|neoforge>");
+        }
+
+        var kind = ParseLoader(options.Loader!);
+        var mcVersion = options.RequireVersion();
+        var layout = new DataLayout(options.DataRoot);
+        using var client = new HttpRemoteFileClient();
+        var downloader = new FileDownloader(client);
+        var provisioner = new LoaderProvisioner(layout, downloader, client);
+
+        switch (action)
+        {
+            case "list":
+            {
+                var versions = await provisioner.GetVersionsAsync(kind, mcVersion, CancellationToken.None).ConfigureAwait(false);
+                Console.WriteLine($"{kind} / MC {mcVersion}：{versions.Count} 个版本（新→旧）");
+                foreach (var version in versions.Take(options.Limit))
+                {
+                    Console.WriteLine($"  {version.Version,-24} {(version.Stable ? "stable" : "beta")}");
+                }
+
+                return 0;
+            }
+
+            case "install":
+            {
+                var java = kind is LoaderKind.Forge or LoaderKind.NeoForge
+                    ? await SelectJavaForVersionAsync(layout, downloader, mcVersion, options, CancellationToken.None).ConfigureAwait(false)
+                    : null;
+                var installed = await provisioner
+                    .InstallAsync(kind, mcVersion, options.LoaderVersion, java, CancellationToken.None)
+                    .ConfigureAwait(false);
+                Console.WriteLine($"已安装 {kind} → 版本 id：{installed}");
+                return 0;
+            }
+
+            default:
+                return Fail($"未知 loader 动作：{action}（list|install）");
+        }
+    }
+
+    private static async Task<VersionMetadata> ResolveInheritanceAsync(
+        VersionMetadata version,
+        VersionCatalog catalog,
+        VersionManifest manifest,
+        bool refresh,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(version.InheritsFrom))
+        {
+            return version;
+        }
+
+        var parents = new Dictionary<string, VersionMetadata>(StringComparer.Ordinal);
+        var pending = version;
+        while (!string.IsNullOrWhiteSpace(pending.InheritsFrom))
+        {
+            var parentId = pending.InheritsFrom!;
+            if (!parents.TryGetValue(parentId, out var parent))
+            {
+                parent = await catalog.GetVersionAsync(parentId, manifest, refresh, cancellationToken).ConfigureAwait(false);
+                parents[parentId] = parent;
+            }
+
+            pending = parent;
+        }
+
+        return VersionMerger.Resolve(version, id => parents[id]);
+    }
+
+    private static async Task<int> InstanceCommand(string[] args)
     {
         if (args.Length < 2)
         {
@@ -291,28 +427,8 @@ internal static class Program
         }
 
         var action = args[1].ToLowerInvariant();
-        var rest = args[2..];
-        var positionals = new List<string>();
-        var optionTokens = new List<string>();
-        HashSet<string> booleanFlags = new(StringComparer.Ordinal) { "--force", "--dry-run", "--refresh", "--install-java" };
-
-        for (var i = 0; i < rest.Length; i++)
-        {
-            var token = rest[i];
-            if (!token.StartsWith("--", StringComparison.Ordinal))
-            {
-                positionals.Add(token);
-                continue;
-            }
-
-            optionTokens.Add(token);
-            if (!booleanFlags.Contains(token) && i + 1 < rest.Length && !rest[i + 1].StartsWith("--", StringComparison.Ordinal))
-            {
-                optionTokens.Add(rest[++i]);
-            }
-        }
-
-        var options = CommandOptions.Parse(optionTokens.ToArray());
+        var (positionals, optionTokens) = SplitOptions(args[2..]);
+        var options = CommandOptions.Parse(optionTokens);
         var layout = new DataLayout(options.DataRoot);
         var store = new InstanceStore(layout);
 
@@ -325,7 +441,23 @@ internal static class Program
                     return Fail("instance create 需要实例名：esluncher instance create <名字> --version <id>");
                 }
 
-                var config = store.Create(positionals[0], options.RequireVersion(), options.MemoryMb, options.Username);
+                var versionId = options.RequireVersion();
+                if (!string.IsNullOrWhiteSpace(options.Loader))
+                {
+                    var kind = ParseLoader(options.Loader!);
+                    using var client = new HttpRemoteFileClient();
+                    var downloader = new FileDownloader(client);
+                    var java = kind is LoaderKind.Forge or LoaderKind.NeoForge
+                        ? await SelectJavaForVersionAsync(layout, downloader, versionId, options, CancellationToken.None).ConfigureAwait(false)
+                        : null;
+                    var provisioner = new LoaderProvisioner(layout, downloader, client);
+                    versionId = await provisioner
+                        .InstallAsync(kind, versionId, options.LoaderVersion, java, CancellationToken.None)
+                        .ConfigureAwait(false);
+                    Console.WriteLine($"已安装 {kind} → {versionId}");
+                }
+
+                var config = store.Create(positionals[0], versionId, options.MemoryMb, options.Username);
                 Console.WriteLine($"已创建实例 {config.Name} ← {config.VersionId}，内存 {config.MemoryMb} MB");
                 Console.WriteLine($"目录：{layout.InstanceDir(config.Name)}");
                 return 0;
@@ -416,6 +548,8 @@ internal static class Program
 
         var manifest = await catalog.GetManifestAsync(options.Refresh, CancellationToken.None).ConfigureAwait(false);
         var version = await catalog.GetVersionAsync(versionId, manifest, options.Refresh, CancellationToken.None)
+            .ConfigureAwait(false);
+        version = await ResolveInheritanceAsync(version, catalog, manifest, options.Refresh, CancellationToken.None)
             .ConfigureAwait(false);
 
         var environment = LaunchEnvironment.Detect();
@@ -675,6 +809,9 @@ internal static class Program
           esluncher instance clone <来源> <目标>
           esluncher instance export <名字> [--out <zip>]
           esluncher instance import <zip 路径> <名字>
+          esluncher loader list --version <mc> --loader <fabric|quilt|forge|neoforge>
+          esluncher loader install --version <mc> --loader <kind> [--loader-version <v>]
+          esluncher instance create <名字> --version <mc> --loader <kind> [--loader-version <v>]
           esluncher java
           esluncher java install --component <组件> | --version <id>
           esluncher versions [--type <t>] [--limit <n>]
@@ -704,6 +841,8 @@ internal static class Program
           --install-java     launch: 缺 Java 时自动安装 Mojang 运行时
           --force            instance delete: 确认删除（否则拒绝）
           --out <zip>        instance export: 输出路径
+          --loader <kind>    fabric|quilt|forge|neoforge（loader/instance create）
+          --loader-version <v> 指定加载器版本（默认最新稳定）
 
         示例:
           esluncher fetch  --version 1.7.10 --dry-run
@@ -781,6 +920,10 @@ internal sealed class CommandOptions
     public bool Force { get; private set; }
 
     public string? Out { get; private set; }
+
+    public string? Loader { get; private set; }
+
+    public string? LoaderVersion { get; private set; }
 
     /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
     public string RequireVersion()
@@ -862,6 +1005,12 @@ internal sealed class CommandOptions
                     break;
                 case "--out":
                     options.Out = Next(args, ref i);
+                    break;
+                case "--loader":
+                    options.Loader = Next(args, ref i);
+                    break;
+                case "--loader-version":
+                    options.LoaderVersion = Next(args, ref i);
                     break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");

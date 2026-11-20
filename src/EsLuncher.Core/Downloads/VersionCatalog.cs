@@ -43,10 +43,22 @@ public sealed class VersionCatalog(DataLayout layout, FileDownloader downloader)
         bool refresh,
         CancellationToken cancellationToken)
     {
-        var entry = manifest.Versions.FirstOrDefault(v => string.Equals(v.Id, versionId, StringComparison.Ordinal))
-            ?? throw new InvalidOperationException($"版本 '{versionId}' 不在 manifest 中（共 {manifest.Versions.Count} 个版本）");
+        var entry = manifest.Versions.FirstOrDefault(v => string.Equals(v.Id, versionId, StringComparison.Ordinal));
 
         var path = layout.VersionJson(versionId);
+        if (entry is null)
+        {
+            // 加载器版本（Fabric/Quilt/Forge/NeoForge）不在官方 manifest 里，但本地已安装。
+            if (File.Exists(path))
+            {
+                var localJson = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
+                return VersionMetadataParser.Parse(localJson);
+            }
+
+            throw new InvalidOperationException(
+                $"版本 '{versionId}' 不在 manifest 中，本地也没有已安装的 version.json（共 {manifest.Versions.Count} 个官方版本）");
+        }
+
         if (refresh && File.Exists(path))
         {
             File.Delete(path);
