@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="using:EsLuncher.App"
+             x:Class="EsLuncher.App.ModrinthDownloadPanel">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+    <StackPanel Orientation="Horizontal" Spacing="10">
+      <TextBox x:Name="QueryBox" Width="300" PlaceholderText="搜索（例如 jei / sodium / complementary）" />
+      <Button Content="搜索" Classes="ghost" Click="OnSearchClick" />
+      <TextBox x:Name="NameBox" Width="200" PlaceholderText="新实例名" IsVisible="False" />
+      <Button x:Name="InstallButton" Content="安装选中" Classes="primary" Click="OnInstallClick" />
+    </StackPanel>
+
+    <TextBlock x:Name="StatusText" Grid.Row="1" Foreground="#9A9AA3" TextWrapping="Wrap" />
+
+    <Border Grid.Row="2" Background="#141419" CornerRadius="12" Padding="10">
+      <ListBox x:Name="HitsList" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="app:ModrinthItem">
+            <Border Background="#1A1A22" CornerRadius="10" Padding="12" Margin="0,0,0,6">
+              <StackPanel Spacing="2">
+                <TextBlock Text="{Binding Title}" Foreground="#FFFFFF" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Detail}" Foreground="#8A8A93" FontSize="11" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
+
+    <ProgressBar x:Name="ProgressBar" Grid.Row="3" Height="4" IsVisible="False" />
+  </Grid>
+</UserControl>

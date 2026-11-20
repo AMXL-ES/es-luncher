@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using EsLuncher.Core.Content;
 using EsLuncher.Core.Downloads;
 using EsLuncher.Core.Instances;
 using EsLuncher.Core.Java;
@@ -13,11 +14,96 @@ public partial class DownloadsView : UserControl
 {
     private VersionManifest? _manifest;
     private CancellationTokenSource? _cancellation;
+    private InstanceConfig[] _instances = [];
 
     public DownloadsView()
     {
         InitializeComponent();
-        Loaded += async (_, _) => await LoadManifestAsync(refresh: false);
+        Loaded += async (_, _) =>
+        {
+            LoadInstances();
+            await LoadManifestAsync(refresh: false);
+        };
+    }
+
+    private void LoadInstances()
+    {
+        _instances = new InstanceStore(AppServices.Layout).List().ToArray();
+        InstanceCombo.ItemsSource = _instances.Select(instance => instance.Name).ToArray();
+        if (_instances.Length > 0 && InstanceCombo.SelectedIndex < 0)
+        {
+            InstanceCombo.SelectedIndex = 0;
+        }
+
+        UpdateContext();
+    }
+
+    private InstanceConfig? SelectedInstance
+    {
+        get
+        {
+            var index = InstanceCombo.SelectedIndex;
+            return index >= 0 && index < _instances.Length ? _instances[index] : null;
+        }
+    }
+
+    private void OnInstanceChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        UpdateContext();
+        LoadWorlds();
+    }
+
+    private void OnWorldChanged(object? sender, SelectionChangedEventArgs e) => UpdateContext();
+
+    private void OnTabChanged(object? sender, SelectionChangedEventArgs e) => UpdateContext();
+
+    private void LoadWorlds()
+    {
+        if (WorldCombo is null || SelectedInstance is null)
+        {
+            return;
+        }
+
+        var service = new InstanceContentService(AppServices.Layout, new InstanceStore(AppServices.Layout));
+        var worlds = service.List(SelectedInstance.Name, ContentKind.Worlds).Select(world => world.Name).ToArray();
+        WorldCombo.ItemsSource = worlds;
+        if (worlds.Length > 0)
+        {
+            WorldCombo.SelectedIndex = 0;
+        }
+
+        UpdateContext();
+    }
+
+    private void UpdateContext()
+    {
+        if (ModsPanel is null)
+        {
+            return;
+        }
+
+        var instance = SelectedInstance;
+        var (minecraftVersion, loader) = instance is null
+            ? ("1.18.2", (string?)null)
+            : InstanceVersionInfo.Derive(instance.VersionId);
+        var modrinthLoader = loader switch
+        {
+            "fabric-loader" => "fabric",
+            "quilt-loader" => "quilt",
+            var other => other,
+        };
+        var world = WorldCombo?.SelectedItem as string;
+
+        ModpackPanel.SetContext(instance?.Name, minecraftVersion, modrinthLoader, null);
+        ModsPanel.SetContext(instance?.Name, minecraftVersion, modrinthLoader, null);
+        ResourcePacksPanel.SetContext(instance?.Name, minecraftVersion, modrinthLoader, null);
+        ShadersPanel.SetContext(instance?.Name, minecraftVersion, modrinthLoader, null);
+        DatapacksPanel.SetContext(instance?.Name, minecraftVersion, modrinthLoader, world);
+
+        ContextText.Text = instance is null
+            ? "还没有实例：先用「游戏版本」页下载并创建"
+            : $"当前：{instance.Name} · MC {minecraftVersion}{(loader is null ? string.Empty : " / " + loader)}" +
+              (string.IsNullOrWhiteSpace(world) ? string.Empty : $" · 世界 {world}");
     }
 
     private async Task LoadManifestAsync(bool refresh)
@@ -154,6 +240,7 @@ public partial class DownloadsView : UserControl
                 AppServices.Settings.DefaultMemoryMb,
                 username: null);
             StatusText.Text = $"已创建实例 {instance.Name} ← {instance.VersionId}（可在「实例」页启动）";
+            LoadInstances();
         }
         catch (OperationCanceledException)
         {
@@ -175,12 +262,11 @@ public partial class DownloadsView : UserControl
         ProgressBar.Value = 0;
         using var client = new HttpRemoteFileClient();
         var fetcher = new VersionFetcher(AppServices.Layout, new FileDownloader(client));
-        var report = await fetcher.FetchAsync(
+        return await fetcher.FetchAsync(
             versionId,
             new FetchOptions { Concurrency = 8 },
             MakeProgress(),
             cancellationToken);
-        return report;
     }
 
     private Progress<DownloadProgress> MakeProgress() => new(value =>
