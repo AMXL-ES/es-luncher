@@ -10,7 +10,7 @@
 | 认证抽象 + 离线身份 | `Auth/AuthModels.cs`、`Launching/OfflineIdentity.cs` | ✅ 完成，M2 已用 |
 | 微软设备码全链路 | `Auth/MicrosoftAuthClient.cs` | ✅ 代码完成，单元测试覆盖；⏸ 真实登录待 client ID |
 | 凭据加密落盘（DPAPI） | `Auth/Dpapi.cs`、`Auth/TokenStore.cs` | ✅ 完成，实测密文落盘 |
-| CLI | `glauncher login/accounts/logout`、`launch --account` | ✅ 完成 |
+| CLI | `esluncher login/accounts/logout`、`launch --account` | ✅ 完成 |
 | 皮肤站外置登录 | —— | ⏸ 按裁剪暂缓（留 `IAuthProvider` 扩展点） |
 
 ## 2. 微软链路（全部官方公开接口，不伪造任何身份）
@@ -43,15 +43,15 @@ profile id + name
 ## 4. CLI
 
 ```powershell
-glauncher login --provider offline --username Dev        # 保存离线账号（DPAPI）
-glauncher accounts                                       # 列出账号（不含 token）
-glauncher login --provider microsoft --client-id <id>    # 设备码登录
-glauncher launch --version 1.18.2 --account dev --autostop 30
-glauncher logout --account dev
+esluncher login --provider offline --username Dev        # 保存离线账号（DPAPI）
+esluncher accounts                                       # 列出账号（不含 token）
+esluncher login --provider microsoft --client-id <id>    # 设备码登录
+esluncher launch --version 1.18.2 --account dev --autostop 30
+esluncher logout --account dev
 ```
 
 - `launch --account` 会加载会话并把 profile id / token / userType 填进启动参数；离线会话仍是 `userType=legacy`、token `0`。
-- 微软客户端 ID 也可用环境变量 `GLAUNCHER_MSA_CLIENT_ID` 提供；缺失时 CLI 直接给出注册步骤并 exit 2，**不会拿别人的 client ID 顶替**。
+- 微软客户端 ID 也可用环境变量 `ESLUNCHER_MSA_CLIENT_ID` 提供；缺失时 CLI 直接给出注册步骤并 exit 2，**不会拿别人的 client ID 顶替**。
 
 ## 5. 验收记录（2026-11-19）
 

@@ -48,7 +48,7 @@
 
 ## 与红线的兼容性
 
-- 引擎 `GLauncher.Core` 是纯 `net10.0` 类库，Avalonia 只在 `GLauncher.App` → 壳可换。
+- 引擎 `EsLuncher.Core` 是纯 `net10.0` 类库，Avalonia 只在 `EsLuncher.App` → 壳可换。
 - 跨平台：Avalonia 本身跨 Win/macOS/Linux；本机只验收 Windows。
 
 ## 何时重评

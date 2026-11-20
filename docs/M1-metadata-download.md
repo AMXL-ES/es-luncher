@@ -55,7 +55,7 @@
 1. **natives 解压放在 M1**（旧版本 ≤1.12.2 需要；实测 1.0 就有 4 个 natives 库）。
 2. 下载并发默认 **8**，可配置。
 3. fixture：**26.3 + 1.12.2 + 1.7.10** 三份最小样本。
-4. M1 验收面含 `glauncher fetch --version <id>` 纯 CLI（不启动游戏）。
+4. M1 验收面含 `esluncher fetch --version <id>` 纯 CLI（不启动游戏）。
 5. 镜像降级：**单文件连续失败 3 次，或连接直接失败**即切镜像，可手动覆盖。
 
 ## 5. 尚未验证（标 `TODO(需验证)`）
@@ -66,7 +66,7 @@
 
 ## 6. 解析器对真实 JSON 的交叉验证（2026-11-19）
 
-用临时控制台工具（已删除）让 `GLauncher.Core` 直接吃 Mojang 原始文件：
+用临时控制台工具（已删除）让 `EsLuncher.Core` 直接吃 Mojang 原始文件：
 
 | 文件 | libs | 带 rules | 带 natives | 参数格式 | javaVersion | client 字节 |
 |---|---|---|---|---|---|---|
@@ -94,8 +94,8 @@
 
 | 项 | 结果 |
 |---|---|
-| dry-run 计划 | `glauncher fetch --version 1.7.10 --dry-run` → 36 个基础文件 / 26.0 MiB（client + 索引 + 日志 + 33 库），4 个 natives 解压目标 |
-| 全量执行 | `glauncher fetch --version 1.7.10` → **exit 0，710 文件 / 133.1 MiB / 0 失败 / 237 s**（并发 8，官方源） |
+| dry-run 计划 | `esluncher fetch --version 1.7.10 --dry-run` → 36 个基础文件 / 26.0 MiB（client + 索引 + 日志 + 33 库），4 个 natives 解压目标 |
+| 全量执行 | `esluncher fetch --version 1.7.10` → **exit 0，710 文件 / 133.1 MiB / 0 失败 / 237 s**（并发 8，官方源） |
 | 资产 | 索引 686 条 → **674 个唯一对象**（12 个重复哈希被去重）/ 107 MiB |
 | 独立复核（不用下载器代码） | 674 个对象逐个核对 size + SHA1：**0 bad / 0 missing**；client jar SHA1 与 version.json 一致 |
 | natives | 14 个文件解压到 `instances/1.7.10/natives`（jinput-dx8.dll 等） |

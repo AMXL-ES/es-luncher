@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>EsLuncher.App</RootNamespace>
+    <AssemblyName>EsLuncher</AssemblyName>
+    <!-- 只做「壳」：任何能被单测的业务逻辑都不许写在这里，写进 EsLuncher.Core。 -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EsLuncher.Core\EsLuncher.Core.csproj" />
+  </ItemGroup>
+</Project>

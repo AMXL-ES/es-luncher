@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>EsLuncher.Cli</RootNamespace>
+    <AssemblyName>esluncher</AssemblyName>
+    <!-- 纯 CLI：M1/M2 的验收面，不允许引用任何 UI 框架。 -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EsLuncher.Core\EsLuncher.Core.csproj" />
+  </ItemGroup>
+</Project>

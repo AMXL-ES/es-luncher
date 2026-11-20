@@ -1,7 +1,7 @@
 ﻿#requires -Version 5.1
 <#
 .SYNOPSIS
-  GLauncher 网络探活：实测官方源 / 镜像 / 认证 / 模组站的可达性、状态码与延迟。
+  EsLuncher 网络探活：实测官方源 / 镜像 / 认证 / 模组站的可达性、状态码与延迟。
 .DESCRIPTION
   只读探测，不写工程文件。依赖 Windows 自带的 curl.exe（Win10 1803+ 均自带）。
   退出码 0 = 全部符合预期；1 = 有目标不符合预期。

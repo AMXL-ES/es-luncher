@@ -1,36 +1,36 @@
-# PROGRESS · GLauncher
+# PROGRESS · ES Luncher
 
 > 唯一事实源：本文件回答「现在在哪」。历史细节进 `docs/`，决策进 `docs/adr/`，默认值进 `docs/DECISIONS.md`。
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
 - **当前阶段**：**M4 完成，待用户验收**（2026-11-20）：Java 运行时下载与多版本共存跑通，1.7.10/1.18.2 均在托管运行时上真实启动
-- **项目根**：`D:\dev\mc-launcher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
+- **项目根**：`D:\dev\es-luncher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
 ## 已定（不可逆，已确认）
 
 | 决策 | 值 |
 |---|---|
-| 技术栈 | .NET 10（SDK 10.0.401）+ Avalonia 12.1.6；引擎 `GLauncher.Core` 零 UI 依赖 |
+| 技术栈 | .NET 10（SDK 10.0.401）+ Avalonia 12.1.6；引擎 `EsLuncher.Core` 零 UI 依赖 |
 | 许可证 | **GPL-3.0-or-later**（现在公开）→ 可合法移植 Prism/MultiMC，须保留声明 |
 | 平台 | Windows 优先，架构跨平台 |
 | 认证 | **先只做离线**；为微软正版（M3b，阻塞于 Azure client ID）与皮肤站（M3c，authlib-injector）预留 Provider 接口 |
 | 用户定位 | 专业玩家/开发者，信息密度优先，不做"简单模式" |
 | 交付顺序 | 自底向上：先引擎（CLI 验收），M7 之前不写 UI 业务逻辑 |
 | 下载源 | 官方优先 → 失败降级镜像 → 手动可切换 |
-| 目录 | 工程 `D:\dev\mc-launcher`，数据 `D:\mc-data` |
+| 目录 | 工程 `D:\dev\es-luncher`，数据 `D:\mc-data` |
 
 ## M0 验收证据（2026-11-19）
 
 | 判据 | 命令 | 结果 |
 |---|---|---|
-| 构建零警告 | `dotnet build GLauncher.slnx -c Release` | **exit 0，0 warning / 0 error**；产物 `src/GLauncher.App/bin/Release/net10.0/GLauncher.exe`（0.2 MB，framework-dependent） |
+| 构建零警告 | `dotnet build EsLuncher.slnx -c Release` | **exit 0，0 warning / 0 error**；产物 `src/EsLuncher.App/bin/Release/net10.0/EsLuncher.exe`（0.2 MB，framework-dependent） |
 | 空窗口能开能关 | `powershell -NoProfile -File scripts\smoke-m0.ps1` | **exit 0**；冷启动 **933 ms / 696 ms**（两次）；工作集 **102.3 / 99.0 MB**；`CloseMainWindow` 正常退出，exit=0 |
 | 探活表成型 | `powershell -NoProfile -File scripts\probe-network.ps1 -JsonOut D:\mc-data\logs\net.json` | **8/8 符合预期**；官方 manifest 1.43 s、BMCLAPI 0.18 s、CurseForge 403（需 key） |
-| 测试骨架可用 | `dotnet test GLauncher.slnx -c Release` | exit 0；**2 passed / 0 failed**（含架构守卫 `Core_must_not_reference_any_ui_framework`） |
+| 测试骨架可用 | `dotnet test EsLuncher.slnx -c Release` | exit 0；**2 passed / 0 failed**（含架构守卫 `Core_must_not_reference_any_ui_framework`） |
 | 事实源 | —— | `PROGRESS.md` / `ROADMAP.md` / `AGENTS.md` / `docs/env-report.md` + ADR 0001/0002 |
-| 版本库 | `git log --oneline` | 首提交 `chore: scaffold GLauncher M0` |
+| 版本库 | `git log --oneline` | 首提交 `chore: scaffold ES Luncher M0` |
 
 ## 已知环境限制（会一直影响后文）
 
@@ -51,7 +51,7 @@
 
 ## M1 进展（2026-11-19 本轮交付：元数据解析层）
 
-`dotnet test GLauncher.slnx -c Release` → **33 passed / 0 failed**（0 warning）。
+`dotnet test EsLuncher.slnx -c Release` → **33 passed / 0 failed**（0 warning）。
 
 | 能力 | 落点 | 证据 |
 |---|---|---|
@@ -76,13 +76,13 @@
 | 镜像改写（BMCLAPI maven / assets / version client，全部实测 206） | `Downloads/Mirrors` | 计划断言 + 探活 |
 | 清单与 version.json 缓存 + sha1 校验 | `Downloads/VersionCatalog` | 3 个单测（缓存命中、校验、未知版本） |
 | natives 解压（跳过 `META-INF/`、防 zip slip） | `Downloads/NativesExtractor` | 2 个单测 |
-| CLI 验收面 `glauncher fetch --version <id> [--dry-run] [--only ...] [--concurrency n]` | `src/GLauncher.Cli` | 下列真实下载 |
+| CLI 验收面 `esluncher fetch --version <id> [--dry-run] [--only ...] [--concurrency n]` | `src/EsLuncher.Cli` | 下列真实下载 |
 
 **真实下载证据（1.7.10 全量）**：
 
 | 项 | 结果 |
 |---|---|
-| 命令 | `glauncher.exe fetch --version 1.7.10` |
+| 命令 | `esluncher.exe fetch --version 1.7.10` |
 | 结果 | exit 0，**710 文件 / 133.1 MiB / 0 失败**，耗时 237 s（8 并发） |
 | 资产 | 索引 686 条目 → 674 个唯一对象 / 107 MiB |
 | 独立复核（不复用下载器代码） | 674 个对象逐个校验 size + SHA1：**0 bad / 0 missing**；client jar SHA1 与 version.json 一致 |
@@ -98,14 +98,14 @@
 
 | 能力 | 落点 | 证据 |
 |---|---|---|
-| Java 发现（只扫 JAVA_HOME + 常见目录，绝不读 PATH）+ 精确主版本匹配 | `Launching/JavaRuntime.cs` | `glauncher java` 找到 17/21；1.7.10 被拒绝并解释（exit 3） |
+| Java 发现（只扫 JAVA_HOME + 常见目录，绝不读 PATH）+ 精确主版本匹配 | `Launching/JavaRuntime.cs` | `esluncher java` 找到 17/21；1.7.10 被拒绝并解释（exit 3） |
 | classpath（元数据顺序、旧版 natives 不进、客户端最后） | `Launching/ClasspathBuilder.cs` | 3 个单测；1.18.2 实测 37 entries / missing 0 |
 | 命令组装（双格式参数、logging、-Xmx、JVM 参数、工作目录） | `Launching/LaunchCommandBuilder.cs` | 5 个单测；`--dump` 可导出完整命令行 |
 | 进程封装（日志落盘、到点杀进程树、退出码） | `Launching/ProcessRunner.cs` | 真实启动 38.1 s，窗口关闭后 exit 0 |
 | 离线身份（MD5 v3 UUID） | `Launching/OfflineIdentity.cs` | 2 个单测；日志 `Setting user: Dev` |
-| CLI `launch` / `java` | `src/GLauncher.Cli` | 见 M2 文档验收表 |
+| CLI `launch` / `java` | `src/EsLuncher.Cli` | 见 M2 文档验收表 |
 
-**真实启动证据**：`glauncher launch --version 1.18.2 --username Dev` → 窗口 "Minecraft 1.18.2" 出现，
+**真实启动证据**：`esluncher launch --version 1.18.2 --username Dev` → 窗口 "Minecraft 1.18.2" 出现，
 日志含 `Backend library: LWJGL version 3.2.2`、`OpenAL initialized`、`Sound engine started`；
 手动关窗后游戏进程 exit 0，CLI 报 `autoStopped=False / exit=0`；`--autostop 30` 路径也验证通过。
 
@@ -120,7 +120,7 @@
 | 离线身份 + 会话模型 | `Auth/AuthModels.cs`、`Launching/OfflineIdentity.cs` | 离线账号 `Dev` 的 UUID 与 OfflinePlayer 规则一致 |
 | 微软设备码全链路（MSA→XBL→XSTS→MC→profile） | `Auth/MicrosoftAuthClient.cs` | 6 个测试覆盖成功链路 / pending / slow_down / 过期 / XSTS 错误码 / 401 |
 | DPAPI 凭据落盘 | `Auth/Dpapi.cs`、`Auth/TokenStore.cs` | 文件头 `01 00 00 00 d0 8c 9d df`；文件内搜不到明文名字与 token |
-| CLI `login/accounts/logout` + `launch --account` | `src/GLauncher.Cli` | 实测保存/列出/删除；`launch --account dev` 正确注入身份 |
+| CLI `login/accounts/logout` + `launch --account` | `src/EsLuncher.Cli` | 实测保存/列出/删除；`launch --account dev` 正确注入身份 |
 
 **未验证（要你提供）**：真实微软设备码登录需要 Azure 客户端 ID（公共客户端应用，个人账号免费）。
 没有它时 CLI 只打印注册步骤并 exit 2，**不内置任何第三方 client ID**。
@@ -128,7 +128,7 @@
 **按裁剪暂缓**：皮肤站（authlib-injector 外置登录）。
 
 **M3 后增补（2026-11-19，20 分钟级）**：
-- `glauncher versions [--type release|snapshot|old_alpha|old_beta|all] [--limit n]`：直接列清单（实测 925 个版本）。
+- `esluncher versions [--type release|snapshot|old_alpha|old_beta|all] [--limit n]`：直接列清单（实测 925 个版本）。
 - `scripts/smoke-m1m3.ps1`：一条命令跑完 build / test / accounts / launch dry-run / fetch 幂等 / versions，**6/6 通过**。
 - 测试数 91 → **97**。
 
@@ -141,8 +141,8 @@
 | Mojang 运行时目录解析（8 个平台键） | `Java/JavaRuntimeCatalog.cs` | all.json 13,391 B；windows-x64 8 个组件 |
 | 组件 manifest 解析 + 路径安全 | `Java/JavaRuntimeManifest.cs` | jre-legacy 208 条（192 file/16 dir）；`..`/绝对路径被拒（单测） |
 | 安装（SHA1 逐文件、幂等、可执行位） | `Java/JavaRuntimeInstaller.cs` | jre-legacy **143.2 MiB/44.2 s**；java-runtime-beta **86.9 MiB/103.3 s** |
-| 发现与选择（托管优先） | `Launching/JavaRuntime.cs` | `glauncher java` 列出 4 个（21/17 托管/17 系统/8 托管） |
-| CLI | `glauncher java` / `java install` / `launch --install-java` | 见下 |
+| 发现与选择（托管优先） | `Launching/JavaRuntime.cs` | `esluncher java` 列出 4 个（21/17 托管/17 系统/8 托管） |
+| CLI | `esluncher java` / `java install` / `launch --install-java` | 见下 |
 
 **真实启动证据**：
 

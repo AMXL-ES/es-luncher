@@ -22,7 +22,7 @@
 | 组件 manifest 解析（含路径安全校验） | `Java/JavaRuntimeManifest.cs` |
 | 下载安装（逐文件 SHA1、断点复用、防路径穿越、可执行位） | `Java/JavaRuntimeInstaller.cs` |
 | 发现与选择 | `Launching/JavaRuntime.cs`（`JavaDiscovery` / `JavaSelector`） |
-| CLI | `glauncher java` / `glauncher java install` / `launch --install-java` |
+| CLI | `esluncher java` / `esluncher java install` / `launch --install-java` |
 
 约定：
 
@@ -40,7 +40,7 @@
 | 测试 | `dotnet test` → **108 passed / 0 failed**（新增 16 个 M4 测试：目录解析、manifest 解析、路径穿越拒绝、安装、幂等） |
 | 安装 jre-legacy | `java install --version 1.7.10` → **143.2 MiB / 192 文件 / 44.2 s**，探测到 **Java 8** |
 | 安装 java-runtime-beta | `java install --version 1.18.2`（该版本元数据要 `java-runtime-beta`）→ **86.9 MiB / 403 文件 / 103.3 s**，探测到 **Java 17** |
-| 多版本共存 | `glauncher java` → Java 21（系统）、Java 17（托管）、Java 17（系统）、Java 8（托管），共 4 个 |
+| 多版本共存 | `esluncher java` → Java 21（系统）、Java 17（托管）、Java 17（系统）、Java 8（托管），共 4 个 |
 | 旧版本真实启动 | `launch --version 1.7.10 --username Dev --autostop 40` → exit 0；`latest.log`：`LWJGL Version: 2.9.1`、`Sound engine started`、贴图 atlas 创建成功 |
 | 现代版本真实启动 | `launch --version 1.18.2 --autostop 30`（**托管 Java 17**）→ exit 0，全部 atlas 创建成功 |
 | 选择优先级 | 1.18.2 选中 `D:\mc-data\java\java-runtime-beta\17.0.15\bin\java.exe`（托管），而非系统 JDK 17 |

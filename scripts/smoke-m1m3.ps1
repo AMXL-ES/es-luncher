@@ -35,18 +35,18 @@ function Add-Result {
 
 Push-Location $ProjectDir
 try {
-    $cli = Join-Path $ProjectDir 'src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe'
+    $cli = Join-Path $ProjectDir 'src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe'
     if (-not (Test-Path $cli)) {
         Write-Host "找不到 CLI：$cli，先跑 dotnet build -c Release" -ForegroundColor Red
         exit 1
     }
 
     Write-Host '=== 1/7 build ==='
-    $out = (& dotnet build GLauncher.slnx -c Release --nologo 2>&1) | Out-String
+    $out = (& dotnet build EsLuncher.slnx -c Release --nologo 2>&1) | Out-String
     Add-Result 'build (exit 0, 0 warning)' ($LASTEXITCODE -eq 0) $out.Trim()
 
     Write-Host '=== 2/7 test ==='
-    $out = (& dotnet test GLauncher.slnx -c Release --nologo 2>&1) | Out-String
+    $out = (& dotnet test EsLuncher.slnx -c Release --nologo 2>&1) | Out-String
     $testsOk = ($LASTEXITCODE -eq 0) -and ($out -match '失败:\s*0')
     $passed = if ($out -match '通过:\s*(\d+)') { $Matches[1] } else { '?' }
     Add-Result "test ($passed passed, 0 failed)" $testsOk $out.Trim()

@@ -5,10 +5,10 @@
 
 ## 1. 项目身份
 
-- **GLauncher**：Minecraft Java 版桌面启动器，Windows 优先、架构跨平台。
+- **ES Luncher**：Minecraft Java 版桌面启动器，Windows 优先、架构跨平台。
 - 技术栈：**.NET 10（SDK 10.0.401）+ Avalonia 12.1.6**；许可证 **GPL-3.0**。
-- 工程根 `D:\dev\mc-launcher`；运行数据根 `D:\mc-data`（**C 盘不落盘**，仅剩 ~33 GB）。
-- 引擎 `src/GLauncher.Core`：零 UI 依赖、可单测、可 CLI 复用。UI 只是壳。
+- 工程根 `D:\dev\es-luncher`；运行数据根 `D:\mc-data`（**C 盘不落盘**，仅剩 ~33 GB）。
+- 引擎 `src/EsLuncher.Core`：零 UI 依赖、可单测、可 CLI 复用。UI 只是壳。
 
 ## 2. 红线（违反即返工，不许找理由）
 
@@ -24,10 +24,10 @@
 ## 3. 目录约定
 
 ```
-D:\dev\mc-launcher\
-  src/GLauncher.Core/      纯引擎（无 UI）
-  src/GLauncher.App/       Avalonia 壳
-  tests/GLauncher.Core.Tests/
+D:\dev\es-luncher\
+  src/EsLuncher.Core/      纯引擎（无 UI）
+  src/EsLuncher.App/       Avalonia 壳
+  tests/EsLuncher.Core.Tests/
   docs/                    事实源：env-report / adr / 里程碑文档
   scripts/                 探活、冒烟、构建辅助
 D:\mc-data\                运行数据：instances / libraries / assets / jdks / logs

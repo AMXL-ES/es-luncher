@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EsLuncher.App/EsLuncher.App.csproj" />
+    <Project Path="src/EsLuncher.Cli/EsLuncher.Cli.csproj" />
+    <Project Path="src/EsLuncher.Core/EsLuncher.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EsLuncher.Core.Tests/EsLuncher.Core.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,4 +1,4 @@
-# 环境实测报告 · GLauncher
+# 环境实测报告 · ES Luncher
 
 > 采集时间：2026-11-19 21:0x（本地 UTC+8）｜采集方式：本机只读命令 + curl 实测，全部命令见文末。
 > 本文件只记录**实测到的事实**；估算值单独标注，不许混写。下一次采集请新建小节并保留旧值（趋势比单点更有用）。
@@ -18,7 +18,7 @@
 
 | 工具 | 状态 | 备注 |
 |---|---|---|
-| git | **2.56.0.windows.4**（`D:\dev\git\cmd\git.exe`） | 全局 `user.name/email` 未配置 → 本仓库已设 repo-local 占位 `HP <hp@mc-launcher.local>`，可由用户改 |
+| git | **2.56.0.windows.4**（`D:\dev\git\cmd\git.exe`） | 全局 `user.name/email` 未配置 → 本仓库已设 repo-local 占位 `HP <hp@es-luncher.local>`，可由用户改 |
 | .NET SDK | **10.0.401**（唯一 SDK） | `dotnet --list-sdks` |
 | JDK 21 | **21.0.13.0.2 LTS (Microsoft)**，`D:\dev\jdk-21`，可执行 | `D:\dev\jdk-21\bin\java.exe -version` |
 | JDK 17 | **17.0.12 (Microsoft)**，`C:\Program Files\Microsoft\jdk-17.0.12.7-hotspot` | 题目基线漏了这一套，实测存在 |
@@ -77,7 +77,7 @@
 Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
 Get-PSDrive -PSProvider FileSystem | Where-Object Name -in 'C','D','E'
 # 工具链
-cd D:\dev\mc-launcher; dotnet --list-sdks; git --version
+cd D:\dev\es-luncher; dotnet --list-sdks; git --version
 & 'D:\dev\jdk-21\bin\java.exe' -version; where.exe java
 # 网络（本机只有 Windows PowerShell 5.1，没有 pwsh 7）
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\probe-network.ps1 -JsonOut D:\mc-data\logs\net.json

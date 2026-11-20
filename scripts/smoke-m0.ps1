@@ -21,15 +21,15 @@ if (-not $ProjectDir) {
 
 Push-Location $ProjectDir
 try {
-    $buildOut = & dotnet build GLauncher.slnx -c $Configuration --nologo 2>&1
+    $buildOut = & dotnet build EsLuncher.slnx -c $Configuration --nologo 2>&1
     $buildCode = $LASTEXITCODE
     $buildOut | Select-Object -Last 5
     if ($buildCode -ne 0) { throw "build failed: exit $buildCode" }
 
-    $binDir = Join-Path $ProjectDir "src/GLauncher.App/bin/$Configuration"
-    $exe = Get-ChildItem -Path $binDir -Filter 'GLauncher.exe' -Recurse -File |
+    $binDir = Join-Path $ProjectDir "src/EsLuncher.App/bin/$Configuration"
+    $exe = Get-ChildItem -Path $binDir -Filter 'EsLuncher.exe' -Recurse -File |
            Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if (-not $exe) { throw "找不到 GLauncher.exe：$binDir" }
+    if (-not $exe) { throw "找不到 EsLuncher.exe：$binDir" }
 
     "exe: $($exe.FullName)"
     $sizeMb = [math]::Round($exe.Length / 1MB, 1)

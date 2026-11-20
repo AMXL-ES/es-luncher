@@ -12,7 +12,7 @@
 | classpath | `Launching/ClasspathBuilder.cs` | 按元数据顺序，只放"规则允许且带 artifact"的库，客户端 jar 最后 |
 | 离线身份 | `Launching/OfflineIdentity.cs` | `MD5("OfflinePlayer:"+name)` 置 v3，仅本地离线用 |
 | 命令组装 | `Launching/LaunchCommandBuilder.cs` | JVM 参数 + 日志配置 + `-cp` + 主类 + game 参数 |
-| 验收面 | `src/GLauncher.Cli`（`launch` / `java`） | 打印命令行、检查 classpath、真实启动 |
+| 验收面 | `src/EsLuncher.Cli`（`launch` / `java`） | 打印命令行、检查 classpath、真实启动 |
 
 ## 2. 关键约定（不可随意改）
 
@@ -46,7 +46,7 @@ java.exe
 
 | 项 | 结果 |
 |---|---|
-| Java 发现 | `glauncher java` → **Java 21** `D:\dev\jdk-21`、**Java 17** `C:\Program Files\Microsoft\jdk-17.0.12.7-hotspot`；PATH 上的坏 java 被忽略 |
+| Java 发现 | `esluncher java` → **Java 21** `D:\dev\jdk-21`、**Java 17** `C:\Program Files\Microsoft\jdk-17.0.12.7-hotspot`；PATH 上的坏 java 被忽略 |
 | 选不中时拒绝 | `launch --version 1.7.10 --dry-run` → **exit 3**，"这个版本需要 Java 8，但本机没有。本机可用: Java 21, Java 17" |
 | 精确匹配 | `launch --version 1.18.2` → 自动选 **Java 17** |
 | 命令自检 | classpath **37 entries / missing 0**；natives 38 文件；参数 35 条 |
