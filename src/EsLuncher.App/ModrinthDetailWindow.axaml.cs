@@ -86,8 +86,10 @@ public partial class ModrinthDetailWindow : Window
             var versions = await _client.GetVersionsAsync(_hit.Slug, _minecraftVersion, _loader, CancellationToken.None);
             VersionsList.ItemsSource = versions
                 .Select(version => new VersionInfoItem(
-                    $"{version.VersionNumber}   {string.Join(", ", version.GameVersions ?? [])}"))
+                    $"{version.VersionNumber}   {string.Join(", ", version.GameVersions ?? [])}",
+                    version))
                 .ToArray();
+            VersionsList.SelectedIndex = versions.Count > 0 ? 0 : -1;
             StatusText.Text = $"可用版本：{versions.Count} 个 · 目标 MC {_minecraftVersion}";
         }
         catch (Exception exception)
@@ -104,20 +106,26 @@ public partial class ModrinthDetailWindow : Window
             return;
         }
 
+        if (VersionsList.SelectedItem is not VersionInfoItem selected)
+        {
+            StatusText.Text = "先选中一个版本";
+            return;
+        }
+
         try
         {
-            StatusText.Text = "安装中 …";
+            StatusText.Text = $"安装 {selected.Version.VersionNumber} …";
             var content = new InstanceContentService(AppServices.Layout, new InstanceStore(AppServices.Layout));
-            var file = await _client.InstallAsync(
+            var file = await _client.InstallVersionAsync(
                 content,
                 _instanceName!,
-                _hit.Slug,
-                _minecraftVersion,
-                _loader,
-                CancellationToken.None,
+                selected.Version,
                 _kind,
-                _world);
-            StatusText.Text = $"已安装 → {file}";
+                _world,
+                CancellationToken.None);
+            var required = selected.Version.Dependencies.Count(dependency => dependency.DependencyType == "required");
+            StatusText.Text = $"已安装 → {file}" +
+                              (required > 0 ? $"（该版本有 {required} 个必需前置，安装后可在诊断里检查）" : string.Empty);
         }
         catch (Exception exception)
         {
@@ -138,4 +146,4 @@ public partial class ModrinthDetailWindow : Window
     }
 }
 
-public sealed record VersionInfoItem(string Label);
+public sealed record VersionInfoItem(string Label, ModrinthVersion Version);

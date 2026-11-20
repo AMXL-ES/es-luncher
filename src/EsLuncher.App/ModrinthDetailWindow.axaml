@@ -40,7 +40,7 @@
         </ListBox>
       </Border>
       <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="8" VerticalAlignment="Center">
-        <Button x:Name="InstallButton" Content="安装最新" Classes="primary" Click="OnInstallClick" />
+        <Button x:Name="InstallButton" Content="安装选中版本" Classes="primary" Click="OnInstallClick" />
         <Button Content="关闭" Click="OnCloseClick" />
       </StackPanel>
     </Grid>

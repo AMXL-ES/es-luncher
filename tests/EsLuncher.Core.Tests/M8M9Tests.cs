@@ -36,6 +36,21 @@ public class ModrinthTests
     }
 
     [Fact]
+    public void Parses_version_dependencies()
+    {
+        const string json = """
+        [{"id":"V1","version_number":"1.0","files":[],
+          "dependencies":[{"project_id":"P9","dependency_type":"required"},
+                          {"project_id":"P8","dependency_type":"optional"}]}]
+        """;
+
+        var versions = DomainContent.ModrinthClient.ParseVersions(json);
+
+        Assert.Equal(2, versions[0].Dependencies.Count);
+        Assert.Contains(versions[0].Dependencies, dependency => dependency.DependencyType == "required");
+    }
+
+    [Fact]
     public void Parses_versions_and_primary_file()
     {
         const string json = """

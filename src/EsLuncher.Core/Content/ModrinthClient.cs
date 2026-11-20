@@ -10,7 +10,12 @@ public sealed record ModrinthHit(string ProjectId, string Slug, string Title, st
 
 public sealed record ModrinthFile(string Url, string Filename, string Sha1, bool Primary, long Size);
 
-public sealed record ModrinthVersion(string Id, string VersionNumber, IReadOnlyList<ModrinthFile> Files, IReadOnlyList<string>? GameVersions = null);
+public sealed record ModrinthDependency(string? ProjectId, string? VersionId, string? DependencyType);
+
+public sealed record ModrinthVersion(string Id, string VersionNumber, IReadOnlyList<ModrinthFile> Files, IReadOnlyList<string>? GameVersions = null)
+{
+    public IReadOnlyList<ModrinthDependency> Dependencies { get; init; } = [];
+}
 
 public sealed record ModrinthProject(
     string Id,
@@ -130,35 +135,49 @@ public sealed class ModrinthClient(IRemoteFileClient client)
             return [];
         }
 
-        var versions = new List<ModrinthVersion>();
-        foreach (var version in document.RootElement.EnumerateArray())
-        {
-            var files = new List<ModrinthFile>();
-            if (version.TryGetProperty("files", out var fileArray) && fileArray.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var file in fileArray.EnumerateArray())
-                {
-                    files.Add(new ModrinthFile(
-                        file.TryGetProperty("url", out var url) ? url.GetString() ?? string.Empty : string.Empty,
-                        file.TryGetProperty("filename", out var filename) ? filename.GetString() ?? string.Empty : string.Empty,
-                        file.TryGetProperty("hashes", out var hashes) && hashes.TryGetProperty("sha1", out var sha1)
-                            ? sha1.GetString() ?? string.Empty
-                            : string.Empty,
-                        file.TryGetProperty("primary", out var primary) && primary.ValueKind == JsonValueKind.True,
-                        file.TryGetProperty("size", out var size) && size.ValueKind == JsonValueKind.Number ? size.GetInt64() : 0));
-                }
-            }
+        return document.RootElement.EnumerateArray().Select(ParseVersion).ToArray();
+    }
 
-            versions.Add(new ModrinthVersion(
-                version.TryGetProperty("id", out var id) ? id.GetString() ?? string.Empty : string.Empty,
-                version.TryGetProperty("version_number", out var number) ? number.GetString() ?? string.Empty : string.Empty,
-                files,
-                version.TryGetProperty("game_versions", out var gameVersions) && gameVersions.ValueKind == JsonValueKind.Array
-                    ? gameVersions.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString() ?? string.Empty).ToArray()
-                    : null));
+    private static ModrinthVersion ParseVersion(JsonElement version)
+    {
+        var files = new List<ModrinthFile>();
+        if (version.TryGetProperty("files", out var fileArray) && fileArray.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var file in fileArray.EnumerateArray())
+            {
+                files.Add(new ModrinthFile(
+                    file.TryGetProperty("url", out var url) ? url.GetString() ?? string.Empty : string.Empty,
+                    file.TryGetProperty("filename", out var filename) ? filename.GetString() ?? string.Empty : string.Empty,
+                    file.TryGetProperty("hashes", out var hashes) && hashes.TryGetProperty("sha1", out var sha1)
+                        ? sha1.GetString() ?? string.Empty
+                        : string.Empty,
+                    file.TryGetProperty("primary", out var primary) && primary.ValueKind == JsonValueKind.True,
+                    file.TryGetProperty("size", out var size) && size.ValueKind == JsonValueKind.Number ? size.GetInt64() : 0));
+            }
         }
 
-        return versions;
+        var dependencies = new List<ModrinthDependency>();
+        if (version.TryGetProperty("dependencies", out var dependencyArray) && dependencyArray.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var dependency in dependencyArray.EnumerateArray())
+            {
+                dependencies.Add(new ModrinthDependency(
+                    dependency.TryGetProperty("project_id", out var projectId) ? projectId.GetString() : null,
+                    dependency.TryGetProperty("version_id", out var versionId) ? versionId.GetString() : null,
+                    dependency.TryGetProperty("dependency_type", out var type) ? type.GetString() : null));
+            }
+        }
+
+        return new ModrinthVersion(
+            version.TryGetProperty("id", out var id) ? id.GetString() ?? string.Empty : string.Empty,
+            version.TryGetProperty("version_number", out var number) ? number.GetString() ?? string.Empty : string.Empty,
+            files,
+            version.TryGetProperty("game_versions", out var gameVersions) && gameVersions.ValueKind == JsonValueKind.Array
+                ? gameVersions.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString() ?? string.Empty).ToArray()
+                : null)
+        {
+            Dependencies = dependencies,
+        };
     }
 
     public async Task<IReadOnlyList<ModrinthHit>> SearchAsync(
@@ -235,6 +254,43 @@ public sealed class ModrinthClient(IRemoteFileClient client)
     {
         var json = await GetStringAsync(BuildVersionsUri(project, mcVersion, loader), cancellationToken).ConfigureAwait(false);
         return ParseVersions(json);
+    }
+
+    /// <summary>安装指定版本（详情页选版本用）。</summary>
+    public async Task<string> InstallVersionAsync(
+        InstanceContentService content,
+        string instanceName,
+        ModrinthVersion version,
+        ContentKind kind,
+        string? world,
+        CancellationToken cancellationToken)
+    {
+        var file = version.Files.FirstOrDefault(candidate => candidate.Primary) ?? version.Files.FirstOrDefault()
+            ?? throw new InvalidOperationException($"版本 {version.VersionNumber} 没有可下载文件");
+        var targetDirectory = content.DirectoryFor(instanceName, kind, world);
+        Directory.CreateDirectory(targetDirectory);
+        var target = Path.Combine(targetDirectory, file.Filename);
+        await DownloadToAsync(new Uri(file.Url), target, cancellationToken).ConfigureAwait(false);
+        return file.Filename;
+    }
+
+    public async Task<ModrinthVersion?> GetVersionAsync(string versionId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var json = await GetStringAsync(
+                    new Uri($"{BaseUrl}/version/{Uri.EscapeDataString(versionId)}"),
+                    cancellationToken)
+                .ConfigureAwait(false);
+            using var document = JsonDocument.Parse(json);
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                ? ParseVersion(document.RootElement)
+                : null;
+        }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
     }
 
     /// <summary>下载某个项目最新的匹配版本的主文件，装到实例对应目录，返回落盘文件名。</summary>
