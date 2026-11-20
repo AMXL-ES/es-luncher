@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
@@ -26,6 +27,7 @@ public partial class MainWindow : Window
 
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/es-luncher-256.png")));
         StudioLogo.Source = new Bitmap(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/endless-studio-logo.jpg")));
+        LoadCredits();
         Localization.Language = AppServices.Settings.Language;
         ApplyLanguage();
 
@@ -108,6 +110,26 @@ public partial class MainWindow : Window
     }
 
     private InstanceItem[] _allInstances = [];
+
+    private void LoadCredits()
+    {
+        try
+        {
+            using var stream = AssetLoader.Open(new Uri("avares://EsLuncher/Assets/credits.json"));
+            using var document = JsonDocument.Parse(stream);
+            var credits = document.RootElement.GetProperty("credits")
+                .EnumerateArray()
+                .Select(entry => new CreditItem(
+                    entry.GetProperty("name").GetString() ?? string.Empty,
+                    entry.TryGetProperty("role", out var role) ? role.GetString() ?? string.Empty : string.Empty))
+                .ToArray();
+            CreditsList.ItemsSource = credits;
+        }
+        catch (Exception exception) when (exception is IOException or JsonException or KeyNotFoundException)
+        {
+            CreditsList.ItemsSource = new[] { new CreditItem("(credits.json 读取失败)", string.Empty) };
+        }
+    }
 
     private void ApplyLanguage()
     {
@@ -608,6 +630,9 @@ public sealed class InstanceItem(InstanceConfig config)
         => $"{Config.MemoryMb} MB · {Config.Username ?? "Player"} · {Config.CreatedAt:yyyy-MM-dd}"
            + (string.IsNullOrWhiteSpace(Config.Group) ? string.Empty : $" · {Config.Group}");
 }
+
+/// <summary>鸣谢名单的一行（来源 Assets/credits.json）。</summary>
+public sealed record CreditItem(string Name, string Role);
 
 /// <summary>内容列表的展示项。</summary>
 public sealed class ContentItem(ContentFile file, string? metadata)

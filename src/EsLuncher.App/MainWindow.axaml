@@ -126,7 +126,7 @@
 
       <!-- 关于页 -->
       <Grid x:Name="AboutPage" IsVisible="False">
-        <StackPanel Spacing="14" VerticalAlignment="Center" HorizontalAlignment="Center">
+        <StackPanel Spacing="12" VerticalAlignment="Center" HorizontalAlignment="Center" Width="460">
           <Border CornerRadius="20" ClipToBounds="True" Width="132" Height="132" HorizontalAlignment="Center">
             <Image x:Name="StudioLogo" Width="132" Height="132" Stretch="UniformToFill" />
           </Border>
@@ -149,6 +149,27 @@
                      FontSize="11"
                      Foreground="#5C5C64"
                      HorizontalAlignment="Center" />
+
+          <Border Background="#141418" CornerRadius="10" Padding="14" Width="420" Margin="0,4,0,0">
+            <StackPanel Spacing="6">
+              <TextBlock Text="开发者 / 鸣谢" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="13" />
+              <Grid ColumnDefinitions="2*,1*">
+                <TextBlock Text="名字" Foreground="#9A9AA3" FontSize="12" />
+                <TextBlock Grid.Column="1" Text="角色" Foreground="#9A9AA3" FontSize="12" />
+              </Grid>
+              <ItemsControl x:Name="CreditsList">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="app:CreditItem">
+                    <Grid ColumnDefinitions="2*,1*" Margin="0,3,0,0">
+                      <TextBlock Text="{Binding Name}" Foreground="#FFFFFF" FontSize="12" />
+                      <TextBlock Grid.Column="1" Text="{Binding Role}" Foreground="#9A9AA3" FontSize="12" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Text="名单可在 Assets/credits.json 增删" Foreground="#5C5C64" FontSize="10" />
+            </StackPanel>
+          </Border>
         </StackPanel>
       </Grid>
     </Grid>
