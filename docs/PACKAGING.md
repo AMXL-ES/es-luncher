@@ -31,16 +31,15 @@ powershell -NoProfile -File scripts\publish-portable.ps1 -Version 0.1.0 -SelfCon
 
 > 安装包会打包 `artifacts\EsLuncher-0.1.0-win-x64\`；如果上一步用了 `-SelfContained`，安装后不依赖 .NET 运行时。
 
-## 3. 签名（可选，需要证书）
+'## 3. 签名（可选）
 
-```powershell
-signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f cert.pfx /p <密码> `
-  artifacts\ESLuncher-0.1.0-setup.exe
-```
+证书怎么申请、Token/云 HSM 怎么用、免费开源方案，见 **[CODE-SIGNING.md](CODE-SIGNING.md)**。
 
-无证书时 SmartScreen 会提示“未知发布者”，这是预期。
+- 没有证书：照常发，附 `SHA256SUMS-<version>.txt`，说明 SmartScreen 可能提示
+- 有 Token：`signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /a /n "Endless Studio" <文件>`
+- Azure Trusted Signing：按文档用 dlib 命令签
 
-## 4. 发布前最后检查
+'## 4. 发布前最后检查
 
 ```powershell
 dotnet build EsLuncher.slnx -c Release

@@ -28,4 +28,13 @@ Copy-Item (Join-Path $root "docs\RELEASE-CHECK.md") $outDir -Force -ErrorAction 
 
 if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path (Join-Path $outDir "*") -DestinationPath $zip -Force
+
+$sums = Join-Path $root "artifacts\SHA256SUMS-$Version.txt"
+$zipHash = (Get-FileHash $zip -Algorithm SHA256).Hash
+$exeHash = (Get-FileHash (Join-Path $outDir "EsLuncher.exe") -Algorithm SHA256).Hash
+@(
+    "$zipHash  EsLuncher-$Version-$Runtime.zip",
+    "$exeHash  EsLuncher.exe"
+) | Set-Content -Path $sums -Encoding ascii
 Write-Host "done -> $zip"
+Write-Host "sha256 -> $sums"
