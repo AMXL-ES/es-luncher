@@ -111,6 +111,25 @@ mods：46 个
 
 > 该整合包自带 Crash Assistant，首次启动它会弹出独立窗口；这是第三方行为，与启动器安装链路无关。其余 46 个 mod 与 Fabric 0.19.3 由本启动器装齐。
 
+## 10. 世界 / 截图 / 更新 / 导入（2026-11-20 第二批）
+
+![世界面板](img/m8-worlds.png)
+
+| 能力 | CLI | 实测 |
+|---|---|---|
+| 世界列表/体积 | `world list --instance` / `world size` | Demo World 0.0 MiB（示例） |
+| 世界备份 | `world backup --instance <n> <世界> --out <zip>` | `demo-world.zip` |
+| 世界还原 | `world restore --instance <n> <zip> --world <新名>` | 还原为 `Demo World Restored` 并可重命名 |
+| 世界重命名 | `world rename --instance <n> <旧> <新>` | `Demo World Restored → Demo World 2` |
+| 截图浏览 | `content list --kind screenshots` + UI「截图」类型 | 支持查看/删除（回收站） |
+| 模组更新检测 | `content outdated --instance <n>` | Fabric 测试：2 个模组均「已是最新」 |
+| 模组一键更新 | `content update --instance <n>` | 旧文件进回收站 |
+| 实例体积 | `instance size <名字>` | `FO 测试: 游戏目录 69.4 MiB` |
+| **导入其它启动器内容** | `instance import-dir <名字> --source <目录> --version <id>` | 复制 mods/saves/config/options.txt，**源目录只读** |
+
+- 版本比较是启发式：去掉 `1.18.2-` 前缀后比较字母数字，避免 MC 前缀造成假更新。
+- 更新/补装都只动 mods 目录，旧文件一律进回收站。
+
 ## 9. 待办（M8 剩余）
 
 1. jar 内依赖版本范围与冲突提示（当前只列 id）。

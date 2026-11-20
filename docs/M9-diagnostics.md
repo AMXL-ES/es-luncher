@@ -28,6 +28,10 @@ esluncher deps --instance "Fabric 测试"
 - `/deps` 的静态依赖检查也并进提示：缺前置时提示「可用 modrinth install 补装」。
 - 依赖检查规则：读 mods 里每个 jar 的 modId/depends；内置 id（minecraft/fabricloader/java/forge/neoforge/quilt）不算缺失；**装了 fabric-api / quilt-api 视为其子模块已满足**（Fabric API 一个 jar 里是几十个虚拟模块）。
 
+## 2.2 依赖补装（UI）
+
+诊断窗新增「补齐缺失前置」：读 mods 的 modId/depends → 对每个缺失项按同名 slug 去 Modrinth 找 → 直接装进 mods；完成后复检并显示剩余缺失。
+
 ## 3. 验收记录（2026-11-20）
 
 | 场景 | 结果 |

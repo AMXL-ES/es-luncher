@@ -38,7 +38,12 @@ internal static class Program
 
             if (command == "content")
             {
-                return ContentCommand(args);
+                return await ContentCommandAsync(args).ConfigureAwait(false);
+            }
+
+            if (command == "world")
+            {
+                return WorldCommand(args);
             }
 
             if (command == "modrinth")
@@ -131,11 +136,11 @@ internal static class Program
         return 0;
     }
 
-    private static int ContentCommand(string[] args)
+    private static async Task<int> ContentCommandAsync(string[] args)
     {
         if (args.Length < 2)
         {
-            return Fail("用法：esluncher content <list|add|remove|enable|disable> --instance <名字> [--kind mods|resourcepacks|shaderpacks|worlds|datapacks] [--world <世界>] [文件]");
+            return Fail("用法：esluncher content <list|add|remove|enable|disable|outdated|update> --instance <名字> [--kind ...] [--world <世界>] [文件]");
         }
 
         var action = args[1].ToLowerInvariant();
@@ -229,8 +234,142 @@ internal static class Program
                 }
             }
 
+            case "outdated":
+            case "update":
+            {
+                var store = new InstanceStore(layout);
+                var instance = store.TryLoad(options.InstanceId!)
+                    ?? throw new InvalidOperationException($"实例不存在：{options.InstanceId}");
+                var (minecraftVersion, loader) = InstanceVersionInfo.Derive(instance.VersionId);
+                loader = ModrinthLoaderName(loader);
+                using var client = new HttpRemoteFileClient();
+                var updater = new ModUpdater(service, new ModrinthClient(client));
+
+                if (action == "outdated")
+                {
+                    var statuses = await updater.CheckAsync(instance.Name, minecraftVersion, loader, CancellationToken.None)
+                        .ConfigureAwait(false);
+                    foreach (var status in statuses)
+                    {
+                        Console.WriteLine($"  {ModUpdater.Describe(status)}");
+                    }
+
+                    Console.WriteLine($"共 {statuses.Count(status => status.UpdateAvailable)} 个可更新");
+                    return 0;
+                }
+
+                var updated = await updater.UpdateAsync(instance.Name, minecraftVersion, loader, null, CancellationToken.None)
+                    .ConfigureAwait(false);
+                Console.WriteLine($"已更新 {updated} 个模组（旧文件在 trash/content）");
+                return 0;
+            }
+
             default:
-                return Fail($"未知 content 动作：{action}（list|add|remove|enable|disable）");
+                return Fail($"未知 content 动作：{action}（list|add|remove|enable|disable|outdated|update）");
+        }
+    }
+
+    private static int WorldCommand(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            return Fail("用法：esluncher world <list|size|backup|restore|rename> --instance <名字> ...");
+        }
+
+        var action = args[1].ToLowerInvariant();
+        var (positionals, optionTokens) = SplitOptions(args[2..]);
+        var options = CommandOptions.Parse(optionTokens);
+        if (string.IsNullOrWhiteSpace(options.InstanceId))
+        {
+            return Fail("world 命令需要 --instance <名字>");
+        }
+
+        var layout = new DataLayout(options.DataRoot);
+        var manager = new WorldManager(layout, new InstanceStore(layout));
+        var instanceName = options.InstanceId!;
+
+        switch (action)
+        {
+            case "list":
+            {
+                var worlds = manager.List(instanceName);
+                if (worlds.Count == 0)
+                {
+                    Console.WriteLine($"{instanceName} 没有世界");
+                    return 0;
+                }
+
+                Console.WriteLine($"{instanceName} 的世界（{worlds.Count} 个）：");
+                foreach (var world in worlds)
+                {
+                    Console.WriteLine($"  {world.Name,-28} {world.SizeBytes / 1048576.0,8:F1} MiB  {world.Modified:yyyy-MM-dd HH:mm}");
+                }
+
+                return 0;
+            }
+
+            case "size":
+            {
+                var name = positionals.Count > 0 ? positionals[0] : options.World;
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    var path = Path.Combine(manager.SavesDirectory(instanceName), name!);
+                    Console.WriteLine($"{name}: {manager.DirectorySize(path) / 1048576.0:F1} MiB");
+                    return 0;
+                }
+
+                var worlds = manager.List(instanceName);
+                foreach (var world in worlds)
+                {
+                    Console.WriteLine($"  {world.Name,-28} {world.SizeBytes / 1048576.0,8:F1} MiB");
+                }
+
+                return 0;
+            }
+
+            case "backup":
+            {
+                var world = positionals.Count > 0 ? positionals[0] : options.World;
+                if (string.IsNullOrWhiteSpace(world))
+                {
+                    return Fail("world backup 需要世界名");
+                }
+
+                var outPath = string.IsNullOrWhiteSpace(options.Out)
+                    ? Path.Combine(Environment.CurrentDirectory, $"{world}-backup.zip")
+                    : options.Out!;
+                Console.WriteLine($"已备份 → {manager.Backup(instanceName, world!, outPath)}");
+                return 0;
+            }
+
+            case "restore":
+            {
+                if (positionals.Count < 1)
+                {
+                    return Fail("world restore 需要 <zip 路径>（世界名用 --world）");
+                }
+
+                var name = string.IsNullOrWhiteSpace(options.World)
+                    ? Path.GetFileNameWithoutExtension(positionals[0])
+                    : options.World!;
+                Console.WriteLine($"已还原 → {manager.Restore(instanceName, positionals[0], name)}");
+                return 0;
+            }
+
+            case "rename":
+            {
+                if (positionals.Count < 2)
+                {
+                    return Fail("world rename 需要 <旧名> <新名>");
+                }
+
+                manager.Rename(instanceName, positionals[0], positionals[1]);
+                Console.WriteLine($"已重命名 {positionals[0]} → {positionals[1]}");
+                return 0;
+            }
+
+            default:
+                return Fail($"未知 world 动作：{action}（list|size|backup|restore|rename）");
         }
     }
 
@@ -1017,6 +1156,38 @@ internal static class Program
                 return 0;
             }
 
+            case "import-dir":
+            {
+                if (positionals.Count < 1)
+                {
+                    return Fail("instance import-dir 需要实例名（--source <目录> --version <id>）");
+                }
+
+                if (string.IsNullOrWhiteSpace(options.Source))
+                {
+                    return Fail("instance import-dir 需要 --source <目录>");
+                }
+
+                var importer = new InstanceImporter(layout, store);
+                var imported = importer.Import(positionals[0], options.Source!, options.RequireVersion(), options.MemoryMb);
+                Console.WriteLine($"已导入实例 {imported.Name} ← {imported.VersionId}（来源 {options.Source}）");
+                return 0;
+            }
+
+            case "size":
+            {
+                var name = positionals.Count > 0 ? positionals[0] : options.InstanceId;
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    return Fail("instance size 需要实例名");
+                }
+
+                var manager = new WorldManager(layout, store);
+                var total = manager.DirectorySize(layout.GameDir(name!));
+                Console.WriteLine($"{name}: 游戏目录 {total / 1048576.0:F1} MiB");
+                return 0;
+            }
+
             default:
                 return Fail($"未知 instance 动作：{action}（create|list|delete|clone|export|import）");
         }
@@ -1294,6 +1465,10 @@ internal static class Program
           esluncher instance clone <来源> <目标>
           esluncher instance export <名字> [--out <zip>]
           esluncher instance import <zip 路径> <名字>
+          esluncher instance import-dir <名字> --source <目录> --version <id>
+          esluncher instance size <名字>
+          esluncher world list|size|backup|restore|rename --instance <名字> ...
+          esluncher content outdated|update --instance <名字>
           esluncher loader list --version <mc> --loader <fabric|quilt|forge|neoforge>
           esluncher loader install --version <mc> --loader <kind> [--loader-version <v>]
           esluncher instance create <名字> --version <mc> --loader <kind> [--loader-version <v>]
@@ -1344,6 +1519,7 @@ internal static class Program
           --export <zip>     diagnose: 导出诊断包路径
           --world <名字>     data pack: 目标世界（content/datapacks 必填）
           --fix              deps: 自动从 Modrinth 补装缺失前置
+          --source <目录>     instance import-dir: 源目录（.minecraft / Prism 游戏目录）
 
         示例:
           esluncher fetch  --version 1.7.10 --dry-run
@@ -1433,6 +1609,8 @@ internal sealed class CommandOptions
     public string? World { get; private set; }
 
     public bool Fix { get; private set; }
+
+    public string? Source { get; private set; }
 
     /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
     public string RequireVersion()
@@ -1535,6 +1713,9 @@ internal sealed class CommandOptions
                     break;
                 case "--fix":
                     options.Fix = true;
+                    break;
+                case "--source":
+                    options.Source = Next(args, ref i);
                     break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");

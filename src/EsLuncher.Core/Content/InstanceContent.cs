@@ -10,6 +10,7 @@ public enum ContentKind
     ShaderPacks,
     Worlds,
     Datapacks,
+    Screenshots,
 }
 
 /// <param name="Name">展示名（已去掉 .disabled 后缀）。</param>
@@ -31,6 +32,7 @@ public sealed class InstanceContentService(DataLayout layout, InstanceStore inst
         ContentKind.ShaderPacks => "shaderpacks",
         ContentKind.Worlds => "saves",
         ContentKind.Datapacks => "datapacks",
+        ContentKind.Screenshots => "screenshots",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
@@ -53,6 +55,9 @@ public sealed class InstanceContentService(DataLayout layout, InstanceStore inst
             case "datapacks" or "datapack":
                 kind = ContentKind.Datapacks;
                 return true;
+            case "screenshots" or "screenshot" or "shots":
+                kind = ContentKind.Screenshots;
+                return true;
             default:
                 kind = default;
                 return false;
@@ -67,6 +72,7 @@ public sealed class InstanceContentService(DataLayout layout, InstanceStore inst
         {
             ContentKind.Worlds => Path.Combine(game, "saves"),
             ContentKind.Datapacks => Path.Combine(game, "saves", RequireWorld(world), "datapacks"),
+            ContentKind.Screenshots => Path.Combine(game, "screenshots"),
             _ => Path.Combine(game, FolderName(kind)),
         };
     }

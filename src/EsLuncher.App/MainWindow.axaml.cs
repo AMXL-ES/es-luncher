@@ -127,6 +127,7 @@ public partial class MainWindow : Window
         2 => ContentKind.ShaderPacks,
         3 => ContentKind.Worlds,
         4 => ContentKind.Datapacks,
+        5 => ContentKind.Screenshots,
         _ => ContentKind.Mods,
     };
 
@@ -175,6 +176,8 @@ public partial class MainWindow : Window
 
         var kind = CurrentContentKind;
         WorldBox.IsVisible = kind == ContentKind.Datapacks;
+        CheckUpdatesButton.IsVisible = kind == ContentKind.Mods;
+        BackupWorldButton.IsVisible = kind == ContentKind.Worlds;
         if (kind == ContentKind.Datapacks && string.IsNullOrWhiteSpace(SelectedWorld))
         {
             ContentList.ItemsSource = null;
@@ -279,6 +282,63 @@ public partial class MainWindow : Window
         catch (NotSupportedException exception)
         {
             ContentStatus.Text = exception.Message;
+        }
+    }
+
+    private async void OnCheckUpdatesClick(object? sender, RoutedEventArgs e)
+    {
+        if (InstanceList.SelectedItem is not InstanceItem item)
+        {
+            ContentStatus.Text = "先选一个实例";
+            return;
+        }
+
+        try
+        {
+            ContentStatus.Text = "检查更新中（Modrinth）…";
+            var (minecraftVersion, loader) = InstanceVersionInfo.Derive(item.Config.VersionId);
+            var modrinthLoader = loader == "fabric-loader" ? "fabric" : loader == "quilt-loader" ? "quilt" : loader;
+            using var client = new HttpRemoteFileClient();
+            var updater = new ModUpdater(new InstanceContentService(_layout, _store), new ModrinthClient(client));
+            var statuses = await updater.CheckAsync(item.Config.Name, minecraftVersion, modrinthLoader, CancellationToken.None);
+            var updatable = statuses.Count(status => status.UpdateAvailable);
+            ContentStatus.Text = updatable == 0
+                ? "模组都是最新（静态检查）"
+                : $"{updatable} 个模组可更新（CLI：esluncher content update --instance \"{item.Config.Name}\"）";
+        }
+        catch (Exception exception)
+        {
+            ContentStatus.Text = $"检查更新失败：{exception.Message}";
+        }
+    }
+
+    private async void OnBackupWorldClick(object? sender, RoutedEventArgs e)
+    {
+        if (InstanceList.SelectedItem is not InstanceItem item || ContentList.SelectedItem is not ContentItem content)
+        {
+            ContentStatus.Text = "先选中一个世界";
+            return;
+        }
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "备份世界",
+            SuggestedFileName = $"{content.File.Name}-backup.zip",
+            DefaultExtension = "zip",
+        });
+        if (file is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var path = new WorldManager(_layout, _store).Backup(item.Config.Name, content.File.Name, file.Path.LocalPath);
+            ContentStatus.Text = $"已备份 → {path}";
+        }
+        catch (Exception exception)
+        {
+            ContentStatus.Text = $"备份失败：{exception.Message}";
         }
     }
 
