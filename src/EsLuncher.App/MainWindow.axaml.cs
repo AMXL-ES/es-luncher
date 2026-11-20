@@ -6,6 +6,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using EsLuncher.Core.Content;
+using EsLuncher.Core.Auth;
 using EsLuncher.Core.Downloads;
 using EsLuncher.Core.Instances;
 
@@ -16,6 +17,7 @@ public partial class MainWindow : Window
     private readonly DataLayout _layout;
     private readonly InstanceStore _store;
     private readonly LaunchService _launcher;
+    private readonly DpapiTokenStore _accounts;
 
     public MainWindow()
     {
@@ -24,6 +26,7 @@ public partial class MainWindow : Window
         _layout = AppServices.Layout;
         _store = new InstanceStore(_layout);
         _launcher = new LaunchService(_layout);
+        _accounts = new DpapiTokenStore(_layout);
 
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/es-luncher-256.png")));
         HeaderLogo.Source = new Bitmap(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/es-luncher-256.png")));
@@ -139,6 +142,54 @@ public partial class MainWindow : Window
         HomeVersion.Text = item.Version;
         HomeMeta.Text = item.Detail;
         HomeSummary.Text = $"共 {_allInstances.Length} 个实例 · 当前数据根 {_layout.Root}";
+        HomeRecent.ItemsSource = _allInstances.Take(8).ToArray();
+        RefreshAccount(item);
+    }
+
+    private void RefreshAccount(InstanceItem? item)
+    {
+        if (AccountName is null)
+        {
+            return;
+        }
+
+        var key = item?.Config.AccountKey;
+        string? name = null;
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            try
+            {
+                name = _accounts.LoadAsync(key!, CancellationToken.None).GetAwaiter().GetResult()?.Profile.Name;
+            }
+            catch (Exception)
+            {
+                name = null;
+            }
+        }
+
+        name ??= item?.Config.Username;
+        name ??= "Player";
+        AccountName.Text = (item?.Config.AccountKey is null ? "离线 · " : string.Empty) + name;
+        AccountInitial.Text = string.IsNullOrEmpty(name) ? "?" : name[..1].ToUpperInvariant();
+    }
+
+    private void OnAccountsClick(object? sender, RoutedEventArgs e)
+    {
+        new AccountsWindow(_layout, InstanceList.SelectedItem is InstanceItem item ? item.Config : null).ShowDialog(this);
+    }
+
+    private void OnRecentInstanceClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string name })
+        {
+            return;
+        }
+
+        var match = _allInstances.FirstOrDefault(candidate => candidate.Name == name);
+        if (match is not null)
+        {
+            InstanceList.SelectedItem = match;
+        }
     }
 
     private InstanceItem[] _allInstances = [];

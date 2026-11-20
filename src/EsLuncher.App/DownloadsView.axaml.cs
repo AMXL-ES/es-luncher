@@ -222,4 +222,7 @@ public partial class DownloadsView : UserControl
     }
 }
 
-public sealed record VersionItem(string Id, string Type);
+public sealed record VersionItem(string Id, string Type)
+{
+    public string Badge => Type == "release" ? "正式版" : "快照";
+}

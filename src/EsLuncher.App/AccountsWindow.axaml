@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="using:EsLuncher.App"
+        x:Class="EsLuncher.App.AccountsWindow"
+        Title="账户"
+        Width="560"
+        Height="460"
+        WindowStartupLocation="CenterOwner"
+        Background="#0E0E12">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20">
+    <TextBlock x:Name="TitleText" Text="账户" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" />
+    <TextBlock Grid.Row="1" Text="已保存的账户（离线登录用即启动器账号）；微软登录仍在 CLI 完成"
+               FontSize="11" Foreground="#8A8A93" Margin="0,6,0,0" TextWrapping="Wrap" />
+    <ListBox x:Name="AccountsList" Grid.Row="2" Margin="0,12,0,0" Background="Transparent">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="app:AccountItem">
+          <Border Background="#1A1A22" CornerRadius="10" Padding="12" Margin="0,0,0,6">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <Border Width="36" Height="36" CornerRadius="10" Background="#4C8DF6">
+                <TextBlock Text="{Binding Initial}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#8A8A93" />
+              </StackPanel>
+              <TextBlock Grid.Column="2" Text="{Binding State}" FontSize="11" Foreground="#6E6E76" VerticalAlignment="Center" />
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+    <TextBlock x:Name="StatusText" Grid.Row="3" Foreground="#6E6E76" FontSize="11" Margin="0,8,0,0" TextWrapping="Wrap" />
+  </Grid>
+</Window>
