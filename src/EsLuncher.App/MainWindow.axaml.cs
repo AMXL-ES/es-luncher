@@ -36,8 +36,19 @@ public partial class MainWindow : Window
         Localization.Language = AppServices.Settings.Language;
         ApplyLanguage();
 
+        if (int.TryParse(Environment.GetEnvironmentVariable("ESLUNCHER_UI_WIDTH"), out var width))
+        {
+            Width = width;
+        }
+
+        if (int.TryParse(Environment.GetEnvironmentVariable("ESLUNCHER_UI_HEIGHT"), out var height))
+        {
+            Height = height;
+        }
+
         RefreshInstances();
         ApplyNav("home");
+        KeyDown += OnWindowKeyDown;
 
         // 开发/验收用：ESLUNCHER_UI_INSTANCE=<实例名> 直接选中该实例。
         var instanceName = Environment.GetEnvironmentVariable("ESLUNCHER_UI_INSTANCE");
@@ -458,6 +469,20 @@ public partial class MainWindow : Window
     private void OnGroupChanged(object? sender, SelectionChangedEventArgs e) => ApplyInstanceFilter();
 
     private void OnRefreshClick(object? sender, RoutedEventArgs e) => RefreshInstances();
+
+    private void OnWindowKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+    {
+        if (e.Key == Avalonia.Input.Key.F5)
+        {
+            RefreshInstances();
+            e.Handled = true;
+        }
+        else if (e.Key == Avalonia.Input.Key.L && e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control))
+        {
+            OnLogClick(sender, new RoutedEventArgs());
+            e.Handled = true;
+        }
+    }
 
     private ContentKind CurrentContentKind => ContentKindBox.SelectedIndex switch
     {

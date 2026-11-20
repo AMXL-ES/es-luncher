@@ -45,7 +45,7 @@
     <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="10" Margin="0,12,0,0">
       <Button Content="导出诊断包" Click="OnExportClick" />
       <Button Content="补齐缺失前置" Click="OnFixDependenciesClick" />
-      <Button Content="关闭" Click="OnCloseClick" />
+      <Button Content="关闭" IsCancel="True" Click="OnCloseClick" />
       <TextBlock x:Name="StatusText" Foreground="#9A9AA3" VerticalAlignment="Center" />
     </StackPanel>
   </Grid>

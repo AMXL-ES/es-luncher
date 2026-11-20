@@ -11,6 +11,7 @@
     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,8,0,0">
       <TextBox x:Name="SearchBox" Width="300" PlaceholderText="过滤日志（关键词）" TextChanged="OnSearchChanged" />
       <CheckBox x:Name="AutoScrollBox" Content="自动滚动" IsChecked="True" Foreground="#D0D0D6" />
+      <Button Content="关闭" IsCancel="True" Click="OnCloseClick" />
       <TextBlock x:Name="StatusText" Foreground="#8A8A93" VerticalAlignment="Center" />
     </StackPanel>
     <TextBox x:Name="LogBox" Grid.Row="2" Margin="0,10,0,0" IsReadOnly="True" AcceptsReturn="True"

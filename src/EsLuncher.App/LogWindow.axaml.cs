@@ -104,4 +104,6 @@ public partial class LogWindow : Window
     }
 
     private void OnSearchChanged(object? sender, TextChangedEventArgs e) => UpdateText();
+
+    private void OnCloseClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => Close();
 }
