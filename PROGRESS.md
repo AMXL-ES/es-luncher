@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M5 完成，待用户验收**（2026-11-20）：实例系统跑通，两个 1.18.2 实例同时运行并各自 exit 0；产品已更名为 **ES Luncher**
+- **当前阶段**：**M6 进行中**（2026-11-20）：Fabric / Quilt / Forge 在 1.18.2 上真实启动；NeoForge 被网络与授权阻断
 - **项目根**：`D:\dev\es-luncher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -170,10 +170,28 @@
 
 **缺口**：导入其它启动器目录（.minecraft/Prism）未做；实例磁盘统计未做。
 
-## 下一步（M6 模组加载器）
+## M6 模组加载器（2026-11-20 本轮交付）
 
-Fabric / Quilt / NeoForge / Forge 安装 + `inheritsFrom` 继承链解析（classpath 顺序、主类覆盖、`-D` 合并）。
-开工前会问 3–5 个裁剪问题（首版支持哪几个加载器、Fabric 直出 JSON vs 跑 installer、加载器版本选择方式、OptiFine/LiteLoader 是否暂缓）。
+`dotnet test` → **131 passed / 0 failed**（新增 10 个合并/加载器测试）。
+
+| 能力 | 落点 | 证据 |
+|---|---|---|
+| `inheritsFrom` 合并（库/参数/主类/资产继承、client jar 指向父版本） | `Loaders/VersionMerger.cs` | 5 个测试（顺序、覆盖、循环、缺父） |
+| Fabric/Quilt：meta API 直出 profile JSON | `Loaders/LoaderProvisioner.cs` | Fabric 0.20.1、Quilt 0.20.0-beta.9 安装成功 |
+| Forge/NeoForge：官方 installer + `--installClient` | 同上 | Forge 40.3.0 安装 92.7 s 成功 |
+| CLI `loader list/install` + `instance create --loader` | `src/EsLuncher.Cli` | 见 M6 文档 |
+
+**真实启动（1.18.2）**：Fabric classpath 45 → 主菜单 exit 0；Quilt 51 → exit 0；Forge 65（排除原版 jar）→ exit 0。
+
+**修掉的坑**：① Fabric 库只有 `name+url` 导致 classpath 漏加载器库；② Forge installer 需要 `launcher_profiles.json`；③ Forge BootstrapLauncher 与原版 jar 的模块冲突。
+
+**阻塞**：NeoForge —— `maven.neoforged.net` 本网络不可达（curl 000），且 1.20.1 资源 624.3 MiB 超过 500 MB 授权线。
+
+## 下一步（M7 UI/UX）
+
+M7：把空窗口换成真正的启动器界面（实例列表、下载、设置、进度与错误呈现、深浅主题、高对比度、键盘可达、i18n、高 DPI）。
+**开工前需要你给两样东西**：**工作室名称** + **工作室图标**（开发者/关于页要用）。
+另外 NeoForge 若要继续：需要放通 `maven.neoforged.net` 并授权下载 1.20.1 资源（624.3 MiB）。
 
 ## 待用户提供（做界面/关于页时提醒）
 

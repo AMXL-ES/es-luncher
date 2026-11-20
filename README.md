@@ -47,6 +47,12 @@ powershell -NoProfile -File scripts\smoke-m1m3.ps1
 .\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe launch --instance "测试 实例" --autostop 30
 .\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe instance export "测试 实例" --out D:\backup\pack.zip
 .\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe instance import D:\backup\pack.zip "还原 实例"
+
+# M6 验收面：模组加载器（Fabric/Quilt/Forge 已真机验证）
+.\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe loader list --version 1.18.2 --loader fabric
+.\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe instance create "Fabric 测试" --version 1.18.2 --loader fabric
+.\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe fetch --version fabric-loader-0.20.1-1.18.2 --only libraries
+.\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe launch --instance "Fabric 测试" --autostop 30
 ```
 
 ## 文档
