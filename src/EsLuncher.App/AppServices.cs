@@ -15,6 +15,10 @@ public static class AppServices
     private static LauncherSettings ApplyOverrides(LauncherSettings settings)
     {
         var language = Environment.GetEnvironmentVariable("ESLUNCHER_LANGUAGE");
+        var source = Environment.GetEnvironmentVariable("ESLUNCHER_DOWNLOAD_SOURCE") ?? settings.DownloadSource;
+        DownloadSourcePolicy.Source = string.Equals(source, "bmclapi", StringComparison.OrdinalIgnoreCase)
+            ? DownloadSource.Bmclapi
+            : DownloadSource.Official;
         return string.IsNullOrWhiteSpace(language) ? settings : settings with { Language = language };
     }
 

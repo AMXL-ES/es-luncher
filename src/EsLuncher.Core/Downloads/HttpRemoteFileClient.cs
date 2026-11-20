@@ -33,6 +33,21 @@ public sealed class HttpRemoteFileClient : IRemoteFileClient, IDisposable
 
     public async Task<RemoteFileResponse> GetAsync(Uri uri, long rangeFrom, CancellationToken cancellationToken)
     {
+        var target = DownloadSourcePolicy.Rewrite(uri);
+        var response = await SendAsync(target, rangeFrom, cancellationToken).ConfigureAwait(false);
+
+        // 镜像失败自动回退官方源
+        if (target != uri && !response.IsSuccess)
+        {
+            response.Dispose();
+            response = await SendAsync(uri, rangeFrom, cancellationToken).ConfigureAwait(false);
+        }
+
+        return response;
+    }
+
+    private async Task<RemoteFileResponse> SendAsync(Uri uri, long rangeFrom, CancellationToken cancellationToken)
+    {
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         if (rangeFrom > 0)
         {
@@ -56,8 +71,9 @@ public sealed class HttpRemoteFileClient : IRemoteFileClient, IDisposable
 
         if (!response.IsSuccessStatusCode)
         {
+            var status = (int)response.StatusCode;
             response.Dispose();
-            return new RemoteFileResponse((int)response.StatusCode, null, null);
+            return new RemoteFileResponse(status, null, null);
         }
 
         var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);

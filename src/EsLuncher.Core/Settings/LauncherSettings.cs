@@ -22,6 +22,9 @@ public sealed record LauncherSettings
     /// <summary>缺少 Java 时自动下载官方运行时。</summary>
     public bool AutoInstallJava { get; init; }
 
+    /// <summary>下载源：official / bmclapi（镜像失败自动回退官方）。</summary>
+    public string DownloadSource { get; init; } = "official";
+
     /// <summary>下载并发数（1-16）。</summary>
     public int Concurrency { get; init; } = 8;
 

@@ -20,6 +20,7 @@ public partial class SettingsView : UserControl
         UsernameBox.Text = settings.DefaultUsername ?? string.Empty;
         ConcurrencyBox.Value = settings.Concurrency;
         AutoJavaBox.IsChecked = settings.AutoInstallJava;
+        SourceBox.SelectedIndex = settings.DownloadSource == "bmclapi" ? 1 : 0;
         JavaBox.Text = settings.JavaPath ?? string.Empty;
         ThemeBox.SelectedIndex = settings.Theme == LauncherSettings.ThemeLight ? 1 : 0;
         LanguageBox.SelectedIndex = settings.Language == "en" ? 1 : 0;
@@ -70,6 +71,7 @@ public partial class SettingsView : UserControl
             DefaultUsername = string.IsNullOrWhiteSpace(UsernameBox.Text) ? null : UsernameBox.Text!.Trim(),
             Concurrency = Math.Clamp((int)(ConcurrencyBox.Value ?? 8), 1, 16),
             AutoInstallJava = AutoJavaBox.IsChecked == true,
+            DownloadSource = SourceBox.SelectedIndex == 1 ? "bmclapi" : "official",
             JavaPath = string.IsNullOrWhiteSpace(JavaBox.Text) ? null : JavaBox.Text!.Trim(),
             Language = LanguageBox.SelectedIndex == 1 ? "en" : "zh",
         };
