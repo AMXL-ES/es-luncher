@@ -74,13 +74,17 @@ public partial class MainWindow : Window
 
         // 开发/验收用：ESLUNCHER_UI_DIALOG=diagnostics|modrinth 自动打开弹窗（截图用）。
         var dialog = Environment.GetEnvironmentVariable("ESLUNCHER_UI_DIALOG")?.ToLowerInvariant();
-        if (dialog is "diagnostics" or "modrinth" && InstanceList.SelectedItem is InstanceItem selected)
+        if (dialog is "diagnostics" or "modrinth" or "accounts" && InstanceList.SelectedItem is InstanceItem selected)
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
             {
                 if (dialog == "diagnostics")
                 {
                     await new DiagnosticsWindow(selected.Config.Name, _layout).ShowDialog(this);
+                }
+                else if (dialog == "accounts")
+                {
+                    await new AccountsWindow(_layout, selected.Config).ShowDialog(this);
                 }
                 else
                 {
@@ -173,9 +177,16 @@ public partial class MainWindow : Window
         AccountInitial.Text = string.IsNullOrEmpty(name) ? "?" : name[..1].ToUpperInvariant();
     }
 
-    private void OnAccountsClick(object? sender, RoutedEventArgs e)
+    private async void OnAccountsClick(object? sender, RoutedEventArgs e)
     {
-        new AccountsWindow(_layout, InstanceList.SelectedItem is InstanceItem item ? item.Config : null).ShowDialog(this);
+        await new AccountsWindow(
+                _layout,
+                InstanceList.SelectedItem is InstanceItem item ? item.Config : null)
+            .ShowDialog(this);
+        if (InstanceList.SelectedItem is InstanceItem current)
+        {
+            RefreshAccount(current);
+        }
     }
 
     private void OnRecentInstanceClick(object? sender, RoutedEventArgs e)

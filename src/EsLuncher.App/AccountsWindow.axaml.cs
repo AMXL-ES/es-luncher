@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
 using EsLuncher.Core.Auth;
 using EsLuncher.Core.Downloads;
 using EsLuncher.Core.Instances;
@@ -7,6 +9,11 @@ namespace EsLuncher.App;
 
 public partial class AccountsWindow : Window
 {
+    private readonly DataLayout _layout;
+    private readonly DpapiTokenStore _store;
+    private readonly InstanceConfig? _current;
+    private CancelationHolder _cancel = new();
+
     /// <summary>设计器/XAML 加载用。</summary>
     public AccountsWindow()
         : this(AppServices.Layout, null)
@@ -16,17 +23,24 @@ public partial class AccountsWindow : Window
     public AccountsWindow(DataLayout layout, InstanceConfig? current)
     {
         InitializeComponent();
-        var store = new DpapiTokenStore(layout);
-        var keys = store.ListAccounts();
-        var items = new List<AccountItem>();
+        _layout = layout;
+        _store = new DpapiTokenStore(layout);
+        _current = current;
+        HintText.Text = current is null ? "从「账户」进入时未指定实例" : $"「使用」会把账户绑定到实例：{current.Name}";
+        LoadAccounts();
+    }
 
+    private void LoadAccounts()
+    {
+        var keys = _store.ListAccounts();
+        var items = new List<AccountItem>();
         foreach (var key in keys)
         {
             string name = key;
             string kind = "offline";
             try
             {
-                var session = store.LoadAsync(key, CancellationToken.None).GetAwaiter().GetResult();
+                var session = _store.LoadAsync(key, CancellationToken.None).GetAwaiter().GetResult();
                 if (session is not null)
                 {
                     name = session.Profile.Name;
@@ -35,26 +49,131 @@ public partial class AccountsWindow : Window
             }
             catch (Exception)
             {
-                // 读不出来就显示 key
             }
 
             items.Add(new AccountItem(
                 name,
                 $"{kind} · {key}",
-                current?.AccountKey == key ? "当前实例" : string.Empty));
+                _current?.AccountKey == key ? "当前实例" : string.Empty,
+                key));
         }
 
         if (items.Count == 0)
         {
-            items.Add(new AccountItem("Player", "离线身份（未保存账户）", "默认"));
+            items.Add(new AccountItem("Player", "离线身份（未保存账户）", "默认", string.Empty));
         }
 
         AccountsList.ItemsSource = items;
-        StatusText.Text = $"共 {items.Count} 个账户 · CLI：esluncher login --provider offline --username <名字>";
+        StatusText.Text = $"共 {items.Count} 个账户";
+    }
+
+    private void OnCloseClick(object? sender, RoutedEventArgs e) => Close();
+
+    private void OnCancelClick(object? sender, RoutedEventArgs e) => _cancel.Cancel();
+
+    private void OnUseClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string key } || string.IsNullOrEmpty(key))
+        {
+            StatusText.Text = "这个身份没有可绑定的账户（离线默认）";
+            return;
+        }
+
+        if (_current is null)
+        {
+            StatusText.Text = "请从实例页进入以绑定账户";
+            return;
+        }
+
+        var session = _store.LoadAsync(key, CancellationToken.None).GetAwaiter().GetResult();
+        var username = session?.Profile.Name ?? key;
+        new InstanceStore(_layout).Save(_current with { AccountKey = key, Username = username });
+        StatusText.Text = $"已把 {username} 绑定到实例 {_current.Name}";
+        LoadAccounts();
+    }
+
+    private async void OnDeleteClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string key } || string.IsNullOrEmpty(key))
+        {
+            return;
+        }
+
+        await _store.DeleteAsync(key, CancellationToken.None);
+        StatusText.Text = $"已删除账户 {key}";
+        LoadAccounts();
+    }
+
+    private async void OnAddOfflineClick(object? sender, RoutedEventArgs e)
+    {
+        var username = UsernameBox.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            StatusText.Text = "先输入离线用户名";
+            return;
+        }
+
+        try
+        {
+            var session = await new OfflineAuthProvider(username).LoginAsync(CancellationToken.None);
+            await _store.SaveAsync(session.Profile.Name.ToLowerInvariant(), session, CancellationToken.None);
+            UsernameBox.Text = string.Empty;
+            StatusText.Text = $"已保存离线账户：{session.Profile.Name}";
+            LoadAccounts();
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"保存失败：{exception.Message}";
+        }
+    }
+
+    private async void OnMicrosoftLoginClick(object? sender, RoutedEventArgs e)
+    {
+        var clientId = Environment.GetEnvironmentVariable("ESLUNCHER_MSA_CLIENT_ID")
+            ?? Environment.GetEnvironmentVariable("ESLUNCHER_MS_CLIENT_ID");
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            StatusText.Text = "微软登录需要 Azure 公共客户端 ID：设置环境变量 ESLUNCHER_MSA_CLIENT_ID 后重开";
+            return;
+        }
+
+        _cancel = new CancelationHolder();
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+            var client = new MicrosoftAuthClient(http, clientId);
+            var session = await client.LoginAsync(
+                flow => Dispatcher.UIThread.Post(() =>
+                    StatusText.Text = $"浏览器打开 {flow.VerificationUri}，输入代码 {flow.UserCode}（等待中…）"),
+                _cancel.Token);
+            await _store.SaveAsync(session.Profile.Name.ToLowerInvariant(), session, CancellationToken.None);
+            StatusText.Text = $"已保存微软账户：{session.Profile.Name}";
+            LoadAccounts();
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "已取消微软登录";
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"微软登录失败：{exception.Message}";
+        }
+    }
+
+    private sealed class CancelationHolder
+    {
+        private CancellationTokenSource _source = new();
+
+        public CancellationToken Token => _source.Token;
+
+        public void Cancel()
+        {
+            _source.Cancel();
+        }
     }
 }
 
-public sealed record AccountItem(string Name, string Detail, string State)
+public sealed record AccountItem(string Name, string Detail, string State, string Key)
 {
     public string Initial => string.IsNullOrEmpty(Name) ? "?" : Name[..1].ToUpperInvariant();
 }

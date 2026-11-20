@@ -3,33 +3,56 @@
         xmlns:app="using:EsLuncher.App"
         x:Class="EsLuncher.App.AccountsWindow"
         Title="账户"
-        Width="560"
-        Height="460"
+        Width="640"
+        Height="560"
         WindowStartupLocation="CenterOwner"
         Background="#0E0E12">
-  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20">
+  <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" Margin="20" RowSpacing="10">
     <TextBlock x:Name="TitleText" Text="账户" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" />
-    <TextBlock Grid.Row="1" Text="已保存的账户（离线登录用即启动器账号）；微软登录仍在 CLI 完成"
-               FontSize="11" Foreground="#8A8A93" Margin="0,6,0,0" TextWrapping="Wrap" />
-    <ListBox x:Name="AccountsList" Grid.Row="2" Margin="0,12,0,0" Background="Transparent">
-      <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="app:AccountItem">
-          <Border Background="#1A1A22" CornerRadius="10" Padding="12" Margin="0,0,0,6">
-            <Grid ColumnDefinitions="Auto,*,Auto">
-              <Border Width="36" Height="36" CornerRadius="10" Background="#4C8DF6">
-                <TextBlock Text="{Binding Initial}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"
-                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-              </Border>
-              <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="2" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#FFFFFF" />
-                <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#8A8A93" />
-              </StackPanel>
-              <TextBlock Grid.Column="2" Text="{Binding State}" FontSize="11" Foreground="#6E6E76" VerticalAlignment="Center" />
-            </Grid>
-          </Border>
-        </DataTemplate>
-      </ListBox.ItemTemplate>
-    </ListBox>
-    <TextBlock x:Name="StatusText" Grid.Row="3" Foreground="#6E6E76" FontSize="11" Margin="0,8,0,0" TextWrapping="Wrap" />
+    <TextBlock Grid.Row="1" Text="离线账户免登录；微软账户走设备代码（需要 Azure 公共客户端 ID，环境变量 ESLUNCHER_MSA_CLIENT_ID）"
+               FontSize="11" Foreground="#8A8A93" TextWrapping="Wrap" />
+
+    <Border Grid.Row="2" Background="#141419" CornerRadius="12" Padding="10">
+      <ListBox x:Name="AccountsList" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="app:AccountItem">
+            <Border Background="#1A1A22" CornerRadius="10" Padding="12" Margin="0,0,0,6">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <Border Width="40" Height="40" CornerRadius="10" Background="#4C8DF6">
+                  <TextBlock Text="{Binding Initial}" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="2" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                  <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#8A8A93" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <Button Content="使用" Tag="{Binding Key}" Click="OnUseClick" />
+                  <Button Content="删除" Tag="{Binding Key}" Click="OnDeleteClick" />
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
+
+    <Border Grid.Row="3" Background="#141419" CornerRadius="12" Padding="14">
+      <StackPanel Spacing="8">
+        <TextBlock Text="添加账户" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="13" />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <TextBox x:Name="UsernameBox" Width="220" PlaceholderText="离线用户名" />
+          <Button Content="添加离线账户" Click="OnAddOfflineClick" />
+          <Button Content="微软登录（设备代码）" Click="OnMicrosoftLoginClick" />
+          <Button Content="取消等待" Click="OnCancelClick" />
+        </StackPanel>
+        <TextBlock x:Name="StatusText" Foreground="#9A9AA3" FontSize="11" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="10">
+      <Button Content="关闭" Click="OnCloseClick" />
+      <TextBlock x:Name="HintText" Foreground="#5C5C64" FontSize="11" VerticalAlignment="Center" />
+    </StackPanel>
   </Grid>
 </Window>
