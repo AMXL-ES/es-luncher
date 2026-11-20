@@ -26,6 +26,7 @@
 | `RELEASE-CHECK.md` | 发布前检查清单与结论 | 2026-11-20 |
 | `PACKAGING.md` | 便携包与 Inno 安装包打包步骤 | 2026-11-20 |
 | `CODE-SIGNING.md` | 代码签名证书申请与签名命令 | 2026-11-20 |
+| `SIGNPATH-SETUP.md` | GitHub Actions + SignPath 自动签名接入 | 2026-11-20 |
 | `ISSUES.md` | 复查：已修问题、遗留问题与优化建议 | 2026-11-20 |
 
 ## 待建（按里程碑顺序）
