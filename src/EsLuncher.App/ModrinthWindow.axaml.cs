@@ -12,6 +12,8 @@ public partial class ModrinthWindow : Window
     private readonly DataLayout _layout;
     private readonly string _minecraftVersion;
     private readonly string? _loader;
+    private readonly ContentKind _kind;
+    private readonly string? _world;
     private readonly ModrinthClient _client = new(new HttpRemoteFileClient());
 
     /// <summary>设计器/XAML 加载用的无参构造。</summary>
@@ -20,14 +22,30 @@ public partial class ModrinthWindow : Window
     {
     }
 
-    public ModrinthWindow(string instanceName, DataLayout layout, string minecraftVersion, string? loader)
+    public ModrinthWindow(
+        string instanceName,
+        DataLayout layout,
+        string minecraftVersion,
+        string? loader,
+        ContentKind kind = ContentKind.Mods,
+        string? world = null)
     {
         InitializeComponent();
         _instance = instanceName;
         _layout = layout;
         _minecraftVersion = minecraftVersion;
         _loader = loader;
-        TitleText.Text = $"Modrinth · {instanceName}（MC {minecraftVersion}{(loader is null ? string.Empty : " / " + loader)}）";
+        _kind = kind;
+        _world = world;
+
+        var kindLabel = kind switch
+        {
+            ContentKind.ResourcePacks => "资源包",
+            ContentKind.ShaderPacks => "光影",
+            ContentKind.Datapacks => $"数据包 · {world}",
+            _ => "mods",
+        };
+        TitleText.Text = $"Modrinth · {instanceName}（MC {minecraftVersion} / {kindLabel}）";
 
         Loaded += async (_, _) =>
         {
@@ -56,7 +74,7 @@ public partial class ModrinthWindow : Window
         try
         {
             StatusText.Text = "搜索中 …";
-            var hits = await _client.SearchAsync(query, _minecraftVersion, _loader, 20, CancellationToken.None);
+            var hits = await _client.SearchAsync(query, _minecraftVersion, _loader, 20, CancellationToken.None, _kind);
             HitsList.ItemsSource = hits
                 .Select(hit => new ModrinthItem(hit, $"{hit.Downloads:N0} 下载 · {hit.Description}"))
                 .ToArray();
@@ -80,7 +98,7 @@ public partial class ModrinthWindow : Window
         {
             StatusText.Text = $"安装 {item.Hit.Title} …";
             var content = new InstanceContentService(_layout, new InstanceStore(_layout));
-            var file = await _client.InstallAsync(content, _instance, item.Hit.Slug, _minecraftVersion, _loader, CancellationToken.None);
+            var file = await _client.InstallAsync(content, _instance, item.Hit.Slug, _minecraftVersion, _loader, CancellationToken.None, _kind, _world);
             StatusText.Text = $"已安装 → {file}";
         }
         catch (Exception exception)

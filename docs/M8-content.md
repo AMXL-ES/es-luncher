@@ -63,7 +63,36 @@ esluncher content remove --instance "Fabric 测试" --kind mods jei.jar
 - 实例页工具栏「Modrinth」→ 弹窗按当前实例的 MC 版本 + 加载器检索，选中后直接安装到 mods。
 - 实测检索 `jei` → 4+ 条结果（JEI 86,313,860 下载）；安装后与 CLI 同一落盘路径。
 
-## 7. 待办（M8 剩余）
+## 8. 内容管理器扩展（2026-11-20）
+
+![内容面板·数据包](img/m8-content-datapacks.png)
+
+| 能力 | 说明 |
+|---|---|
+| 内容类型 | **mods / 资源包 / 光影 / 世界 / 数据包** |
+| 世界 | `saves/<世界>` 目录；列出、添加（目录选择器）、移除（回收站） |
+| 数据包 | `saves/<世界>/datapacks`；界面有世界下拉，CLI 需 `--world <世界>` |
+| 启用/禁用 | 文件或目录改名加/去 `.disabled` 后缀（不改内容）；世界不支持 |
+| 删除 | 统一移入 `trash/content/<实例>/<时间戳>-<名字>` |
+| 从 Modrinth 下载 | 按类型走 `project_type`：mod / resourcepack / shader / datapack，装到对应目录 |
+| 本地添加 | 文件选择器（mods/资源包/光影/数据包）或目录选择器（世界） |
+
+CLI：
+
+```powershell
+esluncher content list    --instance "Fabric 测试" --kind worlds
+esluncher content list    --instance "Fabric 测试" --kind datapacks --world "Demo World"
+esluncher content enable  --instance "Fabric 测试" --kind mods jei-....jar
+esluncher content disable --instance "Fabric 测试" --kind mods jei-....jar
+esluncher modrinth search  --query complementary --kind shaders
+esluncher modrinth install --instance "Fabric 测试" --kind shaders --version 1.18.2 complementary-reimagined
+```
+
+实测：JEI 禁用→列表显示 `[禁用]`→启用恢复；添加 `Demo World` 世界；数据包落到该世界；资源包/光影各 1 个；Modrinth 光影安装 `ComplementaryReimagined_r5.10.zip`（567 KB）。
+
+> 约定说明：`.disabled` 是启动器层面的启用/禁用约定（MC 不加载非 zip 资源包，Iris 也不加载 .disabled 光影），改名可逆。
+
+## 9. 待办（M8 剩余）
 
 1. jar 内依赖版本范围与冲突提示（当前只列 id）。
 2. Modrinth 检索/下载、`.mrpack` 导入导出、CurseForge（需 API key）。

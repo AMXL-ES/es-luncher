@@ -20,15 +20,15 @@ public sealed class ModrinthClient(IRemoteFileClient client)
 {
     private const string BaseUrl = "https://api.modrinth.com/v2";
 
-    public static Uri BuildSearchUri(string query, string? mcVersion, string? loader, int limit)
+    public static Uri BuildSearchUri(string query, string? mcVersion, string? loader, int limit, ContentKind kind = ContentKind.Mods)
     {
-        var facets = new List<string>();
+        var facets = new List<string> { $"[\"project_type:{ProjectType(kind)}\"]" };
         if (!string.IsNullOrWhiteSpace(mcVersion))
         {
             facets.Add($"[\"versions:{mcVersion}\"]");
         }
 
-        if (!string.IsNullOrWhiteSpace(loader))
+        if (kind == ContentKind.Mods && !string.IsNullOrWhiteSpace(loader))
         {
             facets.Add($"[\"categories:{loader}\"]");
         }
@@ -38,6 +38,15 @@ public sealed class ModrinthClient(IRemoteFileClient client)
             : "&facets=" + Uri.EscapeDataString("[" + string.Join(",", facets) + "]");
         return new Uri($"{BaseUrl}/search?query={Uri.EscapeDataString(query)}&limit={limit}{facetsPart}");
     }
+
+    public static string ProjectType(ContentKind kind) => kind switch
+    {
+        ContentKind.Mods => "mod",
+        ContentKind.ResourcePacks => "resourcepack",
+        ContentKind.ShaderPacks => "shader",
+        ContentKind.Datapacks => "datapack",
+        _ => throw new NotSupportedException($"{kind} 不支持从 Modrinth 安装"),
+    };
 
     public static Uri BuildVersionsUri(string project, string? mcVersion, string? loader)
     {
@@ -121,9 +130,10 @@ public sealed class ModrinthClient(IRemoteFileClient client)
         string? mcVersion,
         string? loader,
         int limit,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ContentKind kind = ContentKind.Mods)
     {
-        var json = await GetStringAsync(BuildSearchUri(query, mcVersion, loader, limit), cancellationToken).ConfigureAwait(false);
+        var json = await GetStringAsync(BuildSearchUri(query, mcVersion, loader, limit, kind), cancellationToken).ConfigureAwait(false);
         return ParseSearch(json);
     }
 
@@ -137,21 +147,23 @@ public sealed class ModrinthClient(IRemoteFileClient client)
         return ParseVersions(json);
     }
 
-    /// <summary>下载某个项目最新的匹配版本的主文件，返回落盘文件名。</summary>
+    /// <summary>下载某个项目最新的匹配版本的主文件，装到实例对应目录，返回落盘文件名。</summary>
     public async Task<string> InstallAsync(
         InstanceContentService content,
         string instanceName,
         string project,
         string? mcVersion,
         string? loader,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ContentKind kind = ContentKind.Mods,
+        string? world = null)
     {
         var versions = await GetVersionsAsync(project, mcVersion, loader, cancellationToken).ConfigureAwait(false);
         var version = versions.FirstOrDefault() ?? throw new InvalidOperationException($"Modrinth 上没有匹配的版本：{project}");
         var file = version.Files.FirstOrDefault(candidate => candidate.Primary) ?? version.Files.FirstOrDefault()
             ?? throw new InvalidOperationException($"版本 {version.VersionNumber} 没有可下载文件");
 
-        var targetDirectory = content.DirectoryFor(instanceName, ContentKind.Mods);
+        var targetDirectory = content.DirectoryFor(instanceName, kind, world);
         Directory.CreateDirectory(targetDirectory);
         var target = Path.Combine(targetDirectory, file.Filename);
         await DownloadToAsync(new Uri(file.Url), target, cancellationToken).ConfigureAwait(false);

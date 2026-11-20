@@ -103,6 +103,82 @@ public sealed class InstanceContentTests : IDisposable
         Assert.Equal(ContentKind.Mods, mods);
         Assert.True(InstanceContentService.TryParseKind("resourcepacks", out var packs));
         Assert.Equal(ContentKind.ResourcePacks, packs);
-        Assert.False(InstanceContentService.TryParseKind("worlds", out _));
+        Assert.True(InstanceContentService.TryParseKind("worlds", out var worlds));
+        Assert.Equal(ContentKind.Worlds, worlds);
+        Assert.True(InstanceContentService.TryParseKind("datapacks", out var datapacks));
+        Assert.Equal(ContentKind.Datapacks, datapacks);
+        Assert.False(InstanceContentService.TryParseKind("mystery", out _));
+    }
+
+    [Fact]
+    public void Enable_disable_roundtrip_uses_suffix()
+    {
+        var source = Path.Combine(_root, "toggle.jar");
+        File.WriteAllText(source, "bytes");
+        _content.Add("dev", ContentKind.Mods, source);
+
+        Assert.True(_content.SetEnabled("dev", ContentKind.Mods, "toggle.jar", false));
+        var modsDir = Path.Combine(_layout.GameDir("dev"), "mods");
+        Assert.False(File.Exists(Path.Combine(modsDir, "toggle.jar")));
+        Assert.True(File.Exists(Path.Combine(modsDir, "toggle.jar.disabled")));
+
+        var listed = _content.List("dev", ContentKind.Mods);
+        Assert.Single(listed);
+        Assert.False(listed[0].Enabled);
+        Assert.Equal("toggle.jar", listed[0].Name);
+
+        Assert.True(_content.SetEnabled("dev", ContentKind.Mods, "toggle.jar", true));
+        Assert.True(File.Exists(Path.Combine(modsDir, "toggle.jar")));
+    }
+
+    [Fact]
+    public void Worlds_are_directories_in_saves()
+    {
+        var world = Path.Combine(_layout.GameDir("dev"), "saves", "My World");
+        Directory.CreateDirectory(world);
+        File.WriteAllText(Path.Combine(world, "level.dat"), "world");
+
+        var list = _content.List("dev", ContentKind.Worlds);
+
+        Assert.Single(list);
+        Assert.Equal("My World", list[0].Name);
+        Assert.True(list[0].IsDirectory);
+    }
+
+    [Fact]
+    public void Datapacks_need_a_world()
+    {
+        Assert.Throws<ArgumentException>(() => _content.List("dev", ContentKind.Datapacks));
+    }
+
+    [Fact]
+    public void Datapacks_listed_under_selected_world()
+    {
+        var datapacks = Path.Combine(_layout.GameDir("dev"), "saves", "world1", "datapacks");
+        Directory.CreateDirectory(datapacks);
+        File.WriteAllText(Path.Combine(datapacks, "pack.zip"), "zip");
+
+        var list = _content.List("dev", ContentKind.Datapacks, "world1");
+
+        Assert.Single(list);
+        Assert.Equal("pack.zip", list[0].Name);
+    }
+
+    [Fact]
+    public void Worlds_cannot_be_toggled()
+    {
+        Assert.Throws<NotSupportedException>(() => _content.SetEnabled("dev", ContentKind.Worlds, "w", false));
+    }
+
+    [Fact]
+    public void Remove_finds_disabled_suffix()
+    {
+        var source = Path.Combine(_root, "off.jar");
+        File.WriteAllText(source, "bytes");
+        _content.Add("dev", ContentKind.Mods, source);
+        _content.SetEnabled("dev", ContentKind.Mods, "off.jar", false);
+
+        Assert.True(_content.Remove("dev", ContentKind.Mods, "off.jar"));
+        Assert.Empty(_content.List("dev", ContentKind.Mods));
     }
 }

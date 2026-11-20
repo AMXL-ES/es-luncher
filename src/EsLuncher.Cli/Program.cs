@@ -135,7 +135,7 @@ internal static class Program
     {
         if (args.Length < 2)
         {
-            return Fail("用法：esluncher content <list|add|remove> --instance <名字> [--kind mods|resourcepacks|shaderpacks] [文件]");
+            return Fail("用法：esluncher content <list|add|remove|enable|disable> --instance <名字> [--kind mods|resourcepacks|shaderpacks|worlds|datapacks] [--world <世界>] [文件]");
         }
 
         var action = args[1].ToLowerInvariant();
@@ -150,27 +150,31 @@ internal static class Program
         if (!string.IsNullOrWhiteSpace(options.Kind)
             && !InstanceContentService.TryParseKind(options.Kind!, out kind))
         {
-            return Fail($"未知内容类型：{options.Kind}（mods|resourcepacks|shaderpacks）");
+            return Fail($"未知内容类型：{options.Kind}（mods|resourcepacks|shaderpacks|worlds|datapacks）");
         }
 
         var layout = new DataLayout(options.DataRoot);
         var service = new InstanceContentService(layout, new InstanceStore(layout));
+        var world = options.World;
+        var label = InstanceContentService.FolderName(kind) + (kind == ContentKind.Datapacks ? $"（世界 {world}）" : string.Empty);
 
         switch (action)
         {
             case "list":
             {
-                var files = service.List(options.InstanceId!, kind);
+                var files = service.List(options.InstanceId!, kind, world);
                 if (files.Count == 0)
                 {
-                    Console.WriteLine($"{options.InstanceId} 的 {InstanceContentService.FolderName(kind)}：空");
+                    Console.WriteLine($"{options.InstanceId} 的 {label}：空");
                     return 0;
                 }
 
-                Console.WriteLine($"{options.InstanceId} 的 {InstanceContentService.FolderName(kind)}（{files.Count} 个）：");
+                Console.WriteLine($"{options.InstanceId} 的 {label}（{files.Count} 个）：");
                 foreach (var file in files)
                 {
-                    Console.WriteLine($"  {file.Name,-40} {file.Size,10} B  {file.Modified:yyyy-MM-dd HH:mm}");
+                    var state = file.Enabled ? "启用" : "禁用";
+                    var size = file.IsDirectory ? "<目录>" : $"{file.Size} B";
+                    Console.WriteLine($"  [{state}] {file.Name,-40} {size,10}  {file.Modified:yyyy-MM-dd HH:mm}");
                 }
 
                 return 0;
@@ -180,11 +184,11 @@ internal static class Program
             {
                 if (positionals.Count < 1)
                 {
-                    return Fail("content add 需要文件路径");
+                    return Fail("content add 需要文件或目录路径");
                 }
 
-                var added = service.Add(options.InstanceId!, kind, positionals[0]);
-                Console.WriteLine($"已添加 {added.Name}（{added.Size} 字节）→ {service.DirectoryFor(options.InstanceId!, kind)}");
+                var added = service.Add(options.InstanceId!, kind, positionals[0], world);
+                Console.WriteLine($"已添加 {added.Name} → {service.DirectoryFor(options.InstanceId!, kind, world)}");
                 return 0;
             }
 
@@ -195,15 +199,38 @@ internal static class Program
                     return Fail("content remove 需要文件名");
                 }
 
-                var removed = service.Remove(options.InstanceId!, kind, positionals[0]);
+                var removed = service.Remove(options.InstanceId!, kind, positionals[0], world);
                 Console.WriteLine(removed
                     ? $"已移除 {positionals[0]}（移入数据根 trash/content，可手动找回）"
-                    : $"没有这个文件：{positionals[0]}");
+                    : $"没有这个内容：{positionals[0]}");
                 return removed ? 0 : 1;
             }
 
+            case "enable":
+            case "disable":
+            {
+                if (positionals.Count < 1)
+                {
+                    return Fail($"content {action} 需要文件名");
+                }
+
+                try
+                {
+                    var enabled = action == "enable";
+                    var changed = service.SetEnabled(options.InstanceId!, kind, positionals[0], enabled, world);
+                    Console.WriteLine(changed
+                        ? $"已{(enabled ? "启用" : "禁用")} {positionals[0]}"
+                        : $"没有这个内容：{positionals[0]}");
+                    return changed ? 0 : 1;
+                }
+                catch (NotSupportedException exception)
+                {
+                    return Fail(exception.Message);
+                }
+            }
+
             default:
-                return Fail($"未知 content 动作：{action}（list|add|remove）");
+                return Fail($"未知 content 动作：{action}（list|add|remove|enable|disable）");
         }
     }
 
@@ -309,6 +336,16 @@ internal static class Program
         var layout = new DataLayout(options.DataRoot);
         using var client = new HttpRemoteFileClient();
         var modrinth = new ModrinthClient(client);
+        var kind = ContentKind.Mods;
+        if (!string.IsNullOrWhiteSpace(options.Kind) && !InstanceContentService.TryParseKind(options.Kind!, out kind))
+        {
+            return Fail($"未知内容类型：{options.Kind}");
+        }
+
+        if (kind == ContentKind.Worlds)
+        {
+            return Fail("世界不支持从 Modrinth 安装");
+        }
 
         switch (action)
         {
@@ -320,7 +357,7 @@ internal static class Program
                     return Fail("modrinth search 需要 --query <关键词>");
                 }
 
-                var hits = await modrinth.SearchAsync(query, options.Version, options.Loader, options.Limit, CancellationToken.None)
+                var hits = await modrinth.SearchAsync(query, options.Version, options.Loader, options.Limit, CancellationToken.None, kind)
                     .ConfigureAwait(false);
                 if (hits.Count == 0)
                 {
@@ -348,13 +385,21 @@ internal static class Program
                 var instance = store.TryLoad(options.InstanceId!)
                     ?? throw new InvalidOperationException($"实例不存在：{options.InstanceId}");
                 var (mcVersion, loader) = InstanceVersionInfo.Derive(instance.VersionId);
-                loader = options.Loader ?? ModrinthLoaderName(loader);
+                loader = kind == ContentKind.Mods ? options.Loader ?? ModrinthLoaderName(loader) : null;
 
                 var content = new InstanceContentService(layout, store);
                 var file = await modrinth
-                    .InstallAsync(content, instance.Name, positionals[0], options.Version ?? mcVersion, loader, CancellationToken.None)
+                    .InstallAsync(
+                        content,
+                        instance.Name,
+                        positionals[0],
+                        options.Version ?? mcVersion,
+                        loader,
+                        CancellationToken.None,
+                        kind,
+                        options.World)
                     .ConfigureAwait(false);
-                Console.WriteLine($"已安装 {positionals[0]} → {file}（MC {options.Version ?? mcVersion}, 加载器 {loader ?? "vanilla"}）");
+                Console.WriteLine($"已安装 {positionals[0]} → {file}（MC {options.Version ?? mcVersion}, 类型 {InstanceContentService.FolderName(kind)}）");
                 return 0;
             }
 
@@ -1249,6 +1294,8 @@ internal sealed class CommandOptions
 
     public string? Query { get; private set; }
 
+    public string? World { get; private set; }
+
     /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
     public string RequireVersion()
     {
@@ -1344,6 +1391,9 @@ internal sealed class CommandOptions
                     break;
                 case "--query":
                     options.Query = Next(args, ref i);
+                    break;
+                case "--world":
+                    options.World = Next(args, ref i);
                     break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");
