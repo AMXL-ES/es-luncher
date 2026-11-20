@@ -56,10 +56,13 @@ public partial class AccountsWindow : Window
             var avatar = uuid is null
                 ? null
                 : await IconCache.GetAsync($"https://crafatar.com/avatars/{uuid}?size=64&overlay");
+            var state = _current?.AccountKey == key
+                ? "当前实例"
+                : AppServices.Settings.DefaultAccountKey == key ? "默认" : string.Empty;
             items.Add(new AccountItem(
                 name,
                 $"{kind} · {key}",
-                _current?.AccountKey == key ? "当前实例" : string.Empty,
+                state,
                 key,
                 kind,
                 avatar));
@@ -109,6 +112,25 @@ public partial class AccountsWindow : Window
         await _store.DeleteAsync(key, CancellationToken.None);
         StatusText.Text = $"已删除账户 {key}";
         _ = LoadAccountsAsync();
+    }
+
+    private void OnSetDefaultClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string key } || string.IsNullOrEmpty(key))
+        {
+            return;
+        }
+
+        AppServices.SaveSettings(AppServices.Settings with { DefaultAccountKey = key });
+        StatusText.Text = $"已设为默认账户：{key}（实例未绑定账户时启动使用）";
+        _ = LoadAccountsAsync();
+    }
+
+    private async void OnRefreshAvatarsClick(object? sender, RoutedEventArgs e)
+    {
+        IconCache.ClearAll();
+        await LoadAccountsAsync();
+        StatusText.Text = "头像缓存已清空并重新加载";
     }
 
     private async void OnAddOfflineClick(object? sender, RoutedEventArgs e)

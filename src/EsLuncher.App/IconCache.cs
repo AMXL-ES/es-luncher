@@ -10,6 +10,25 @@ public static class IconCache
 {
     private static readonly Dictionary<string, Bitmap?> Memory = new(StringComparer.OrdinalIgnoreCase);
 
+    public static void ClearAll()
+    {
+        Memory.Clear();
+        try
+        {
+            var directory = Path.Combine(AppServices.Layout.Root, "cache", "icons");
+            if (Directory.Exists(directory))
+            {
+                foreach (var file in Directory.EnumerateFiles(directory))
+                {
+                    File.Delete(file);
+                }
+            }
+        }
+        catch (IOException)
+        {
+        }
+    }
+
     public static async Task<Bitmap?> GetAsync(string? url)
     {
         if (string.IsNullOrWhiteSpace(url))

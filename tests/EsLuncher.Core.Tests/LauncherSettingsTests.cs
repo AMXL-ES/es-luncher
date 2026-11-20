@@ -48,6 +48,7 @@ public sealed class LauncherSettingsTests : IDisposable
             Concurrency = 4,
             AutoInstallJava = true,
             DownloadSource = "bmclapi",
+            DefaultAccountKey = "dev",
         });
 
         var loaded = _store.Load();
@@ -59,6 +60,7 @@ public sealed class LauncherSettingsTests : IDisposable
         Assert.Equal(4, loaded.Concurrency);
         Assert.True(loaded.AutoInstallJava);
         Assert.Equal("bmclapi", loaded.DownloadSource);
+        Assert.Equal("dev", loaded.DefaultAccountKey);
     }
 
     [Fact]

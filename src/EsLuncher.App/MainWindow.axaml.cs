@@ -813,10 +813,23 @@ public partial class MainWindow : Window
 
         try
         {
+            var config = item.Config;
+            if (string.IsNullOrWhiteSpace(config.AccountKey)
+                && string.IsNullOrWhiteSpace(config.Username)
+                && !string.IsNullOrWhiteSpace(AppServices.Settings.DefaultAccountKey))
+            {
+                var session = await _accounts.LoadAsync(AppServices.Settings.DefaultAccountKey!, CancellationToken.None);
+                if (session is not null)
+                {
+                    config = config with { Username = session.Profile.Name };
+                }
+            }
+
             var outcome = await _launcher.LaunchAsync(
-                item.Config,
+                config,
                 message => Avalonia.Threading.Dispatcher.UIThread.Post(() => StatusText.Text = message),
-                CancellationToken.None);
+                CancellationToken.None,
+                AppServices.Settings.AutoInstallJava);
             StatusText.Text = outcome.Message;
         }
         catch (Exception exception)
