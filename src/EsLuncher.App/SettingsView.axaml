@@ -11,7 +11,7 @@
       <NumericUpDown x:Name="MemoryBox" Minimum="512" Maximum="32768" Increment="512" FormatString="0" />
 
       <TextBlock Text="Java 路径（留空 = 按版本自动选，托管运行时优先）" Foreground="#9A9AA3" />
-      <TextBox x:Name="JavaBox" Watermark="例如 D:\mc-data\java\jre-legacy\...\bin\java.exe" />
+      <TextBox x:Name="JavaBox" PlaceholderText="例如 D:\mc-data\java\jre-legacy\...\bin\java.exe" />
 
       <TextBlock Text="主题" Foreground="#9A9AA3" />
       <ComboBox x:Name="ThemeBox" SelectedIndex="0">

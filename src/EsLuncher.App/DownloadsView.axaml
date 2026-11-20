@@ -24,7 +24,7 @@
         <ComboBoxItem Content="Quilt" />
         <ComboBoxItem Content="Forge" />
       </ComboBox>
-      <TextBox x:Name="InstanceNameBox" Width="220" Watermark="实例名（留空=版本 id）" />
+      <TextBox x:Name="InstanceNameBox" Width="220" PlaceholderText="实例名（留空=版本 id）" />
     </StackPanel>
 
     <TextBlock x:Name="StatusText" Grid.Row="2" Margin="0,10,0,0" Foreground="#9A9AA3" TextWrapping="Wrap" />
