@@ -6,7 +6,8 @@
         Width="760"
         Height="640"
         WindowStartupLocation="CenterOwner"
-        Background="#0E0E10">
+        Background="#0E0E10"
+        KeyboardNavigation.TabNavigation="Cycle">
   <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20">
     <TextBlock x:Name="TitleText" Text="诊断" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" />
     <TextBlock x:Name="LogText" Grid.Row="1" Margin="0,6,0,0" Foreground="#8A8A93" FontSize="12" TextWrapping="Wrap" />

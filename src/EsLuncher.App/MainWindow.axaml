@@ -195,15 +195,15 @@
                 <ComboBoxItem Content="{app:T kind.screenshots}" />
               </ComboBox>
               <ComboBox x:Name="WorldBox" Width="140" Margin="0,0,8,6" IsVisible="False" SelectionChanged="OnWorldChanged" />
-              <Button Content="{app:T content.add}" Classes="ghost" Margin="0,0,8,6" Click="OnAddContentClick" />
-              <Button Content="{app:T content.toggle}" Classes="ghost" Margin="0,0,8,6" Click="OnToggleContentClick" />
-              <Button Content="{app:T content.remove}" Classes="ghost" Margin="0,0,8,6" Click="OnRemoveContentClick" />
-              <Button Content="{app:T content.folder}" Classes="ghost" Margin="0,0,8,6" Click="OnOpenContentFolderClick" />
-              <Button Content="{app:T content.download}" Classes="ghost" Margin="0,0,8,6" Click="OnDownloadContentClick" />
-              <Button x:Name="MoveUpButton" Content="{app:T content.up}" Classes="ghost" Margin="0,0,8,6" Click="OnMoveUpClick" IsVisible="False" />
-              <Button x:Name="MoveDownButton" Content="{app:T content.down}" Classes="ghost" Margin="0,0,8,6" Click="OnMoveDownClick" IsVisible="False" />
-              <Button x:Name="CheckUpdatesButton" Content="{app:T content.checkUpdates}" Classes="ghost" Margin="0,0,8,6" Click="OnCheckUpdatesClick" />
-              <Button x:Name="BackupWorldButton" Content="{app:T content.backupWorld}" Classes="ghost" Margin="0,0,8,6" Click="OnBackupWorldClick" IsVisible="False" />
+              <Button Content="{app:T content.add}" AutomationProperties.Name="{app:T content.add}" Classes="ghost" Margin="0,0,8,6" Click="OnAddContentClick" />
+              <Button Content="{app:T content.toggle}" AutomationProperties.Name="{app:T content.toggle}" Classes="ghost" Margin="0,0,8,6" Click="OnToggleContentClick" />
+              <Button Content="{app:T content.remove}" AutomationProperties.Name="{app:T content.remove}" Classes="ghost" Margin="0,0,8,6" Click="OnRemoveContentClick" />
+              <Button Content="{app:T content.folder}" AutomationProperties.Name="{app:T content.folder}" Classes="ghost" Margin="0,0,8,6" Click="OnOpenContentFolderClick" />
+              <Button Content="{app:T content.download}" AutomationProperties.Name="{app:T content.download}" Classes="ghost" Margin="0,0,8,6" Click="OnDownloadContentClick" />
+              <Button x:Name="MoveUpButton" Content="{app:T content.up}" AutomationProperties.Name="{app:T content.up}" Classes="ghost" Margin="0,0,8,6" Click="OnMoveUpClick" IsVisible="False" />
+              <Button x:Name="MoveDownButton" Content="{app:T content.down}" AutomationProperties.Name="{app:T content.down}" Classes="ghost" Margin="0,0,8,6" Click="OnMoveDownClick" IsVisible="False" />
+              <Button x:Name="CheckUpdatesButton" Content="{app:T content.checkUpdates}" AutomationProperties.Name="{app:T content.checkUpdates}" Classes="ghost" Margin="0,0,8,6" Click="OnCheckUpdatesClick" />
+              <Button x:Name="BackupWorldButton" Content="{app:T content.backupWorld}" AutomationProperties.Name="{app:T content.backupWorld}" Classes="ghost" Margin="0,0,8,6" Click="OnBackupWorldClick" IsVisible="False" />
             </WrapPanel>
 
             <ListBox x:Name="ContentList" Grid.Row="2" Margin="0,8,0,0" Background="Transparent">
@@ -306,7 +306,7 @@
     <Border Grid.Row="2" Background="#131318" Padding="16,0">
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock x:Name="StatusText" FontSize="11" Foreground="#9A9AA3" VerticalAlignment="Center" />
-        <TextBlock Grid.Column="1" Text="GPL-3.0 · 数据根 D:\mc-data" FontSize="11" Foreground="#5C5C64" VerticalAlignment="Center" />
+        <TextBlock x:Name="StatusBarRightText" Grid.Column="1" Text="GPL-3.0" FontSize="11" Foreground="#5C5C64" VerticalAlignment="Center" />
       </Grid>
     </Border>
   </Grid>

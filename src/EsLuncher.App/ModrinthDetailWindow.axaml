@@ -6,7 +6,8 @@
         Width="760"
         Height="660"
         WindowStartupLocation="CenterOwner"
-        Background="#0E0E12">
+        Background="#0E0E12"
+        KeyboardNavigation.TabNavigation="Cycle">
   <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" Margin="20" RowSpacing="10">
     <Grid ColumnDefinitions="Auto,*,Auto">
       <Border Width="56" Height="56" CornerRadius="12" Background="#262631">

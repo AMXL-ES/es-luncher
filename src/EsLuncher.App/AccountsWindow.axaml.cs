@@ -74,31 +74,31 @@ public partial class AccountsWindow : Window
         }
 
         AccountsList.ItemsSource = items;
-        StatusText.Text = $"共 {items.Count} 个账户";
+        StatusText.Text = Localization.F("accounts.count", items.Count);
     }
 
     private void OnCloseClick(object? sender, RoutedEventArgs e) => Close();
 
     private void OnCancelClick(object? sender, RoutedEventArgs e) => _cancel.Cancel();
 
-    private void OnUseClick(object? sender, RoutedEventArgs e)
+    private async void OnUseClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: string key } || string.IsNullOrEmpty(key))
         {
-            StatusText.Text = "这个身份没有可绑定的账户（离线默认）";
+            StatusText.Text = Localization.T("accounts.noBindable");
             return;
         }
 
         if (_current is null)
         {
-            StatusText.Text = "请从实例页进入以绑定账户";
+            StatusText.Text = Localization.T("accounts.fromInstance");
             return;
         }
 
-        var session = _store.LoadAsync(key, CancellationToken.None).GetAwaiter().GetResult();
+        var session = await _store.LoadAsync(key, CancellationToken.None);
         var username = session?.Profile.Name ?? key;
         new InstanceStore(_layout).Save(_current with { AccountKey = key, Username = username });
-        StatusText.Text = $"已把 {username} 绑定到实例 {_current.Name}";
+        StatusText.Text = Localization.F("accounts.bound", username, _current.Name);
         _ = LoadAccountsAsync();
     }
 
@@ -110,7 +110,7 @@ public partial class AccountsWindow : Window
         }
 
         await _store.DeleteAsync(key, CancellationToken.None);
-        StatusText.Text = $"已删除账户 {key}";
+        StatusText.Text = Localization.F("accounts.deleted", key);
         _ = LoadAccountsAsync();
     }
 
@@ -122,7 +122,7 @@ public partial class AccountsWindow : Window
         }
 
         AppServices.SaveSettings(AppServices.Settings with { DefaultAccountKey = key });
-        StatusText.Text = $"已设为默认账户：{key}（实例未绑定账户时启动使用）";
+        StatusText.Text = Localization.F("accounts.setDefaultDone", key);
         _ = LoadAccountsAsync();
     }
 
@@ -130,7 +130,7 @@ public partial class AccountsWindow : Window
     {
         IconCache.ClearAll();
         await LoadAccountsAsync();
-        StatusText.Text = "头像缓存已清空并重新加载";
+        StatusText.Text = Localization.T("accounts.avatarsRefreshed");
     }
 
     private async void OnAddOfflineClick(object? sender, RoutedEventArgs e)
@@ -138,7 +138,7 @@ public partial class AccountsWindow : Window
         var username = UsernameBox.Text?.Trim();
         if (string.IsNullOrWhiteSpace(username))
         {
-            StatusText.Text = "先输入离线用户名";
+            StatusText.Text = Localization.T("accounts.usernameRequired");
             return;
         }
 
@@ -147,12 +147,12 @@ public partial class AccountsWindow : Window
             var session = await new OfflineAuthProvider(username).LoginAsync(CancellationToken.None);
             await _store.SaveAsync(session.Profile.Name.ToLowerInvariant(), session, CancellationToken.None);
             UsernameBox.Text = string.Empty;
-            StatusText.Text = $"已保存离线账户：{session.Profile.Name}";
+            StatusText.Text = Localization.F("accounts.savedOffline", session.Profile.Name);
             _ = LoadAccountsAsync();
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"保存失败：{exception.Message}";
+            StatusText.Text = Localization.F("accounts.saveFailed", exception.Message);
         }
     }
 

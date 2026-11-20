@@ -38,10 +38,10 @@
                 <TextBox x:Name="InstanceNameBox" Width="200" PlaceholderText="{app:T downloads.instanceName}" />
               </StackPanel>
               <StackPanel Orientation="Horizontal" Spacing="10">
-                <Button Content="{app:T downloads.refresh}" Classes="ghost" Click="OnRefreshClick" />
-                <Button Content="{app:T downloads.selected}" Classes="ghost" Click="OnDownloadClick" />
-                <Button Content="{app:T downloads.create}" Classes="primary" Click="OnDownloadAndCreateClick" />
-                <Button x:Name="CancelButton" Content="{app:T downloads.cancel}" Classes="ghost" Click="OnCancelClick" IsEnabled="False" />
+                <Button Content="{app:T downloads.refresh}" AutomationProperties.Name="{app:T downloads.refresh}" Classes="ghost" Click="OnRefreshClick" />
+                <Button Content="{app:T downloads.selected}" AutomationProperties.Name="{app:T downloads.selected}" Classes="ghost" Click="OnDownloadClick" />
+                <Button Content="{app:T downloads.create}" AutomationProperties.Name="{app:T downloads.create}" Classes="primary" Click="OnDownloadAndCreateClick" />
+                <Button x:Name="CancelButton" Content="{app:T downloads.cancel}" AutomationProperties.Name="{app:T downloads.cancel}" Classes="ghost" Click="OnCancelClick" IsEnabled="False" />
               </StackPanel>
               <TextBlock x:Name="StatusText" Foreground="#9A9AA3" TextWrapping="Wrap" />
             </StackPanel>

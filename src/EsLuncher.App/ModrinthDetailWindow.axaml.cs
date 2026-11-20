@@ -53,7 +53,7 @@ public partial class ModrinthDetailWindow : Window
         {
             InstanceNameBox.IsVisible = true;
             InstallButton.Content = "安装为实例";
-            StatusText.Text = "填实例名后可直接安装（会读取 .mrpack 依赖并创建实例）";
+            StatusText.Text = Localization.T("detail.modpackHint");
         }
 
         Loaded += async (_, _) =>
@@ -94,11 +94,11 @@ public partial class ModrinthDetailWindow : Window
                     version))
                 .ToArray();
             VersionsList.SelectedIndex = versions.Count > 0 ? 0 : -1;
-            StatusText.Text = $"可用版本：{versions.Count} 个 · 目标 MC {_minecraftVersion}";
+            StatusText.Text = Localization.F("detail.versionsInfo", versions.Count, _minecraftVersion);
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"加载详情失败：{exception.Message}";
+            StatusText.Text = Localization.F("detail.loadFailed", exception.Message);
         }
     }
 
@@ -106,7 +106,7 @@ public partial class ModrinthDetailWindow : Window
     {
         if (VersionsList.SelectedItem is not VersionInfoItem selected)
         {
-            StatusText.Text = "先选中一个版本";
+            StatusText.Text = Localization.T("detail.pickVersion");
             return;
         }
 
@@ -118,13 +118,13 @@ public partial class ModrinthDetailWindow : Window
 
         if (string.IsNullOrWhiteSpace(_instanceName))
         {
-            StatusText.Text = "没有目标实例：请从下载页进入";
+            StatusText.Text = Localization.T("detail.noTarget");
             return;
         }
 
         try
         {
-            StatusText.Text = $"安装 {selected.Version.VersionNumber} …";
+            StatusText.Text = Localization.F("detail.installing", selected.Version.VersionNumber);
             var content = new InstanceContentService(AppServices.Layout, new InstanceStore(AppServices.Layout));
             var file = await _client.InstallVersionAsync(
                 content,
@@ -134,12 +134,13 @@ public partial class ModrinthDetailWindow : Window
                 _world,
                 CancellationToken.None);
             var required = selected.Version.Dependencies.Count(dependency => dependency.DependencyType == "required");
-            StatusText.Text = $"已安装 → {file}" +
-                              (required > 0 ? $"（该版本有 {required} 个必需前置，安装后可在诊断里检查）" : string.Empty);
+            StatusText.Text = required > 0
+                ? Localization.F("detail.installedDeps", file, required)
+                : Localization.F("detail.installed", file);
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"安装失败：{exception.Message}";
+            StatusText.Text = Localization.F("detail.installFailed", exception.Message);
         }
     }
 
@@ -155,7 +156,7 @@ public partial class ModrinthDetailWindow : Window
         var store = new InstanceStore(layout);
         if (store.TryLoad(name!) is not null)
         {
-            StatusText.Text = $"实例已存在：{name}";
+            StatusText.Text = Localization.F("panel.exists", name);
             return;
         }
 
@@ -169,13 +170,13 @@ public partial class ModrinthDetailWindow : Window
             var downloader = new FileDownloader(client);
             var zipPath = Path.Combine(layout.Root, "cache", "packs", file.Filename);
             Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
-            StatusText.Text = $"下载 {file.Filename}（{file.Size / 1048576.0:F1} MiB）…";
+            StatusText.Text = Localization.F("panel.downloading", file.Filename, file.Size / 1048576.0);
             var downloaded = await downloader.DownloadAsync(
                 new DownloadJob { Primary = new Uri(file.Url), TargetPath = zipPath },
                 CancellationToken.None);
             if (downloaded.Status == FileDownloadStatus.Failed)
             {
-                StatusText.Text = $"下载失败：{downloaded.Error}";
+                StatusText.Text = Localization.F("panel.downloadFailed", downloaded.Error);
                 return;
             }
 
@@ -187,12 +188,12 @@ public partial class ModrinthDetailWindow : Window
                 new VersionFetcher(layout, downloader),
                 client);
             var instance = await installer.InstallAsync(zipPath, name!, 2048, CancellationToken.None);
-            StatusText.Text = $"已创建实例 {instance.Name} ← {instance.VersionId}";
+            StatusText.Text = Localization.F("panel.created", instance.Name, instance.VersionId);
             InstanceCreated?.Invoke();
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"安装失败：{exception.Message}";
+            StatusText.Text = Localization.F("detail.installFailed", exception.Message);
         }
     }
 

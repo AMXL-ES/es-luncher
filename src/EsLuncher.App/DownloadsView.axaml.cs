@@ -156,16 +156,16 @@ public partial class DownloadsView : UserControl
     {
         try
         {
-            StatusText.Text = refresh ? "刷新版本清单 …" : "读取版本清单（已缓存则不出网）…";
+            StatusText.Text = refresh ? Localization.T("downloads.refreshing") : Localization.T("downloads.reading");
             using var client = new HttpRemoteFileClient();
             var catalog = new VersionCatalog(AppServices.Layout, new FileDownloader(client));
             _manifest = await catalog.GetManifestAsync(refresh, CancellationToken.None);
             ApplyFilter();
-            StatusText.Text = $"清单：{_manifest.Versions.Count} 个版本（latest {_manifest.Latest.Release}）";
+            StatusText.Text = Localization.F("downloads.manifest", _manifest.Versions.Count, _manifest.Latest.Release);
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"读取清单失败：{exception.Message}";
+            StatusText.Text = Localization.F("downloads.manifestFailed", exception.Message);
         }
     }
 
@@ -200,7 +200,7 @@ public partial class DownloadsView : UserControl
     {
         if (VersionList.SelectedItem is not VersionItem item)
         {
-            StatusText.Text = "先选一个版本";
+            StatusText.Text = Localization.T("downloads.pickVersion");
             return;
         }
 
@@ -217,11 +217,11 @@ public partial class DownloadsView : UserControl
         }
         catch (OperationCanceledException)
         {
-            StatusText.Text = "已取消下载";
+            StatusText.Text = Localization.T("downloads.cancelled");
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"下载失败：{exception.Message}";
+            StatusText.Text = Localization.F("downloads.failed", exception.Message);
         }
         finally
         {
@@ -233,7 +233,7 @@ public partial class DownloadsView : UserControl
     {
         if (VersionList.SelectedItem is not VersionItem item)
         {
-            StatusText.Text = "先选一个版本";
+            StatusText.Text = Localization.T("downloads.pickVersion");
             return;
         }
 
@@ -245,7 +245,7 @@ public partial class DownloadsView : UserControl
             var report = await FetchVersionAsync(item.Id, _cancellation.Token);
             if (report is null || !report.Success)
             {
-                StatusText.Text = $"版本下载未完成：失败 {report?.Failed ?? 1} 个文件";
+                StatusText.Text = Localization.F("downloads.incomplete", report?.Failed ?? 1);
                 return;
             }
 
@@ -253,7 +253,7 @@ public partial class DownloadsView : UserControl
             var loader = LoaderKindOf(LoaderBox.SelectedIndex);
             if (loader is { } kind)
             {
-                StatusText.Text = $"安装 {kind} 加载器 …";
+                StatusText.Text = Localization.F("downloads.installLoader", kind);
                 using var client = new HttpRemoteFileClient();
                 var downloader = new FileDownloader(client);
                 var provisioner = new LoaderProvisioner(layout, downloader, client);
@@ -263,7 +263,7 @@ public partial class DownloadsView : UserControl
                 versionId = await provisioner
                     .InstallAsync(kind, item.Id, null, java, _cancellation.Token);
 
-                StatusText.Text = $"下载 {kind} 依赖库 …";
+                StatusText.Text = Localization.F("downloads.fetchLibs", kind);
                 var fetcher = new VersionFetcher(layout, downloader);
                 var loaderReport = await fetcher.FetchAsync(
                     versionId,
@@ -272,7 +272,7 @@ public partial class DownloadsView : UserControl
                     _cancellation.Token);
                 if (!loaderReport.Success)
                 {
-                    StatusText.Text = $"加载器依赖下载失败：{loaderReport.Failed} 个文件";
+                    StatusText.Text = Localization.F("downloads.loaderFailed", loaderReport.Failed);
                     return;
                 }
             }
@@ -285,16 +285,16 @@ public partial class DownloadsView : UserControl
                 versionId,
                 AppServices.Settings.DefaultMemoryMb,
                 username: AppServices.Settings.DefaultUsername);
-            StatusText.Text = $"已创建实例 {instance.Name} ← {instance.VersionId}（可在「实例」页启动）";
+            StatusText.Text = Localization.F("downloads.created", instance.Name, instance.VersionId);
             LoadInstances();
         }
         catch (OperationCanceledException)
         {
-            StatusText.Text = "已取消";
+            StatusText.Text = Localization.T("downloads.cancelledGeneric");
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"创建实例失败：{exception.Message}";
+            StatusText.Text = Localization.F("downloads.createFailed", exception.Message);
         }
         finally
         {
@@ -319,7 +319,7 @@ public partial class DownloadsView : UserControl
     {
         var percent = value.FilesTotal == 0 ? 0 : value.FilesDone * 100.0 / value.FilesTotal;
         ProgressBar.Value = percent;
-        StatusText.Text = $"{value.FilesDone}/{value.FilesTotal} 文件 · {value.BytesDownloaded / 1048576.0:F1} MiB · {value.CurrentPath}";
+        StatusText.Text = Localization.F("downloads.progress", value.FilesDone, value.FilesTotal, value.BytesDownloaded / 1048576.0, value.CurrentPath);
     });
 
     private void EndDownloadUi()

@@ -64,8 +64,8 @@ public partial class ModrinthDownloadPanel : UserControl
         _loader = loader;
         _world = world;
         StatusText.Text = string.IsNullOrWhiteSpace(instanceName)
-            ? "先在顶部选一个实例"
-            : $"目标实例：{instanceName} · MC {minecraftVersion}{(loader is null ? string.Empty : " / " + loader)}";
+            ? Localization.T("panel.pickInstance")
+            : Localization.F("panel.target", instanceName, minecraftVersion + (loader is null ? string.Empty : " / " + loader));
     }
 
     private void FillFilters()
@@ -108,7 +108,7 @@ public partial class ModrinthDownloadPanel : UserControl
                 : "downloads";
             var categoriesFacet = string.IsNullOrWhiteSpace(category) ? null : new[] { category };
 
-            StatusText.Text = "加载列表 …";
+            StatusText.Text = Localization.T("panel.loading");
             var hits = await _client.SearchAsync(
                 query,
                 _minecraftVersion,
@@ -126,8 +126,8 @@ public partial class ModrinthDownloadPanel : UserControl
                     await IconCache.GetAsync(hit.IconUrl))));
             HitsList.ItemsSource = items;
             StatusText.Text = query.Length == 0
-                ? $"浏览：{hits.Count} 条（{Sorts[Math.Max(SortBox.SelectedIndex, 0)].Label}）"
-                : $"找到 {hits.Count} 条";
+                ? Localization.F("panel.browse", hits.Count, Sorts[Math.Max(SortBox.SelectedIndex, 0)].Label)
+                : Localization.F("panel.found", hits.Count);
 
             if (Environment.GetEnvironmentVariable("ESLUNCHER_UI_OPEN_DETAIL") == "1" && items.Length > 0)
             {
@@ -137,7 +137,7 @@ public partial class ModrinthDownloadPanel : UserControl
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"加载失败：{exception.Message}";
+            StatusText.Text = Localization.F("panel.loadFailed", exception.Message);
         }
     }
 
@@ -145,7 +145,7 @@ public partial class ModrinthDownloadPanel : UserControl
     {
         if (HitsList.SelectedItem is not ModrinthItem item)
         {
-            StatusText.Text = "先选中一个结果";
+            StatusText.Text = Localization.T("panel.pickResult");
             return;
         }
 
@@ -165,7 +165,7 @@ public partial class ModrinthDownloadPanel : UserControl
     {
         if (HitsList.SelectedItem is not ModrinthItem item)
         {
-            StatusText.Text = "先选中一个结果";
+            StatusText.Text = Localization.T("panel.pickResult");
             return;
         }
 
@@ -180,7 +180,7 @@ public partial class ModrinthDownloadPanel : UserControl
             {
                 if (string.IsNullOrWhiteSpace(_instanceName))
                 {
-                    StatusText.Text = "先在顶部选一个实例";
+                    StatusText.Text = Localization.T("panel.pickInstance");
                     return;
                 }
 
@@ -194,12 +194,12 @@ public partial class ModrinthDownloadPanel : UserControl
                     CancellationToken.None,
                     Kind,
                     _world);
-                StatusText.Text = $"已安装 {item.Hit.Title} → {file}";
+                StatusText.Text = Localization.F("panel.installed", item.Hit.Title, file);
             }
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"安装失败：{exception.Message}";
+            StatusText.Text = Localization.F("panel.installFailed", exception.Message);
         }
         finally
         {
@@ -219,11 +219,11 @@ public partial class ModrinthDownloadPanel : UserControl
         var store = new InstanceStore(layout);
         if (store.TryLoad(name!) is not null)
         {
-            StatusText.Text = $"实例已存在：{name}";
+            StatusText.Text = Localization.F("panel.exists", name);
             return;
         }
 
-        StatusText.Text = $"读取整合包 {hit.Title} …";
+        StatusText.Text = Localization.F("panel.readingPack", hit.Title);
         var versions = await _client.GetVersionsAsync(hit.Slug, _minecraftVersion, null, CancellationToken.None);
         var version = versions.FirstOrDefault()
             ?? throw new InvalidOperationException("没有可用版本");
@@ -235,13 +235,13 @@ public partial class ModrinthDownloadPanel : UserControl
         var downloader = new FileDownloader(client);
         var zipPath = Path.Combine(layout.Root, "cache", "packs", file.Filename);
         Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
-        StatusText.Text = $"下载 {file.Filename}（{file.Size / 1048576.0:F1} MiB）…";
+        StatusText.Text = Localization.F("panel.downloading", file.Filename, file.Size / 1048576.0);
         var downloaded = await downloader.DownloadAsync(
             new DownloadJob { Primary = new Uri(file.Url), TargetPath = zipPath },
             CancellationToken.None);
         if (downloaded.Status == FileDownloadStatus.Failed)
         {
-            StatusText.Text = $"下载失败：{downloaded.Error}";
+            StatusText.Text = Localization.F("panel.downloadFailed", downloaded.Error);
             return;
         }
 
@@ -253,7 +253,7 @@ public partial class ModrinthDownloadPanel : UserControl
             new VersionFetcher(layout, downloader),
             client);
         var instance = await installer.InstallAsync(zipPath, name!, 2048, CancellationToken.None);
-        StatusText.Text = $"已创建实例 {instance.Name} ← {instance.VersionId}";
+        StatusText.Text = Localization.F("panel.created", instance.Name, instance.VersionId);
         InstanceCreated?.Invoke();
     }
 }

@@ -46,6 +46,7 @@ public partial class MainWindow : Window
             Height = height;
         }
 
+        StatusBarRightText.Text = $"GPL-3.0 · {_layout.Root}";
         RefreshInstances();
         ApplyNav("home");
         KeyDown += OnWindowKeyDown;

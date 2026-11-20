@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using EsLuncher.App;
@@ -25,6 +26,14 @@ public sealed class MainWindowSmokeTests
         Assert.NotNull(window.FindControl<Avalonia.Controls.Control>("DownloadsPage"));
         Assert.NotNull(window.FindControl<Avalonia.Controls.Control>("SettingsPage"));
         Assert.NotNull(window.FindControl<Avalonia.Controls.Control>("AboutPage"));
+        var launch = window.FindControl<Button>("LaunchButton");
+        Assert.NotNull(launch);
+        Assert.False(string.IsNullOrWhiteSpace(AutomationProperties.GetName(launch!)));
+
+        var homeLaunch = window.FindControl<Button>("HomeLaunchButton");
+        Assert.NotNull(homeLaunch);
+        Assert.False(string.IsNullOrWhiteSpace(AutomationProperties.GetName(homeLaunch!)));
+
         window.Close();
     }
 }

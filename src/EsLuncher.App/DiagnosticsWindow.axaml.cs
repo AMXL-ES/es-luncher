@@ -36,11 +36,11 @@ public partial class DiagnosticsWindow : Window
         {
             var report = _diagnostics.Analyze(_instance);
             TitleText.Text = $"诊断 · {_instance}";
-            LogText.Text = report.LogPath ?? "(没有 latest.log)";
+            LogText.Text = report.LogPath ?? Localization.T("diag.noLog");
             _allErrors = report.Errors;
             ApplyErrorFilter();
             CrashesList.ItemsSource = report.Crashes.Select(crash => crash.Summary).ToArray();
-            HintsList.ItemsSource = report.Hints.Count == 0 ? new[] { "(没有额外提示)" } : report.Hints;
+            HintsList.ItemsSource = report.Hints.Count == 0 ? new[] { Localization.T("diag.noHints") } : report.Hints;
         }
         catch (Exception exception)
         {
@@ -65,11 +65,11 @@ public partial class DiagnosticsWindow : Window
         try
         {
             var path = _diagnostics.Export(_instance, file.Path.LocalPath);
-            StatusText.Text = $"已导出：{path}";
+            StatusText.Text = Localization.F("diag.exported", path);
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"导出失败：{exception.Message}";
+            StatusText.Text = Localization.F("diag.exportFailed", exception.Message);
         }
     }
 
@@ -84,7 +84,7 @@ public partial class DiagnosticsWindow : Window
         var filtered = string.IsNullOrWhiteSpace(query)
             ? _allErrors
             : _allErrors.Where(line => line.Contains(query!, StringComparison.OrdinalIgnoreCase)).ToArray();
-        ErrorsList.ItemsSource = filtered.Count == 0 ? new[] { "(没有匹配的错误行)" } : filtered;
+        ErrorsList.ItemsSource = filtered.Count == 0 ? new[] { Localization.T("diag.noMatch") } : filtered;
     }
 
     private void OnErrorSearchChanged(object? sender, TextChangedEventArgs e) => ApplyErrorFilter();
@@ -103,7 +103,7 @@ public partial class DiagnosticsWindow : Window
             var missing = checker.Check(instance.Name).Missing;
             if (missing.Count == 0)
             {
-                StatusText.Text = "没有检测到缺失前置";
+                StatusText.Text = Localization.T("diag.noMissing");
                 return;
             }
 
@@ -114,18 +114,18 @@ public partial class DiagnosticsWindow : Window
 
             foreach (var dependency in missing)
             {
-                StatusText.Text = $"补装 {dependency} …";
+                StatusText.Text = Localization.F("diag.installingDep", dependency);
                 var hits = await modrinth.SearchAsync(dependency, minecraftVersion, modrinthLoader, 5, CancellationToken.None);
                 var hit = hits.FirstOrDefault(candidate =>
                     string.Equals(candidate.Slug, dependency, StringComparison.OrdinalIgnoreCase));
                 if (hit is null)
                 {
-                    StatusText.Text = $"跳过 {dependency}：Modrinth 没有同名项目";
+                    StatusText.Text = Localization.F("diag.skip", dependency);
                     continue;
                 }
 
                 await modrinth.InstallAsync(content, instance.Name, hit.Slug, minecraftVersion, modrinthLoader, CancellationToken.None);
-                StatusText.Text = $"已补装 {dependency}";
+                StatusText.Text = Localization.F("diag.installedDep", dependency);
             }
 
             var after = checker.Check(instance.Name);
@@ -135,7 +135,7 @@ public partial class DiagnosticsWindow : Window
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"补装失败：{exception.Message}";
+            StatusText.Text = Localization.F("diag.fixFailed", exception.Message);
         }
     }
 }

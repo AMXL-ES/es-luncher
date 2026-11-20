@@ -12,10 +12,10 @@
           <TextBlock Text="{app:T settings.memory}" Foreground="#9A9AA3" FontSize="12" />
           <NumericUpDown x:Name="MemoryBox" Minimum="512" Maximum="32768" Increment="512" FormatString="0" Width="240" HorizontalAlignment="Left" />
           <TextBlock Text="{app:T settings.username}" Foreground="#9A9AA3" FontSize="12" />
-          <TextBox x:Name="UsernameBox" Width="240" HorizontalAlignment="Left" PlaceholderText="Player" />
+          <TextBox x:Name="UsernameBox" Width="240" HorizontalAlignment="Left" PlaceholderText="Player" AutomationProperties.Name="{app:T settings.username}" />
           <TextBlock Text="{app:T settings.concurrency}" Foreground="#9A9AA3" FontSize="12" />
           <NumericUpDown x:Name="ConcurrencyBox" Minimum="1" Maximum="16" Increment="1" FormatString="0" Width="240" HorizontalAlignment="Left" />
-          <CheckBox x:Name="AutoJavaBox" Content="{app:T settings.autoJava}" Foreground="#D0D0D6" />
+          <CheckBox x:Name="AutoJavaBox" Content="{app:T settings.autoJava}" AutomationProperties.Name="{app:T settings.autoJava}" Foreground="#D0D0D6" />
           <TextBlock Text="{app:T settings.source}" Foreground="#9A9AA3" FontSize="12" />
           <ComboBox x:Name="SourceBox" SelectedIndex="0" Width="240" HorizontalAlignment="Left">
             <ComboBoxItem Content="{app:T settings.source.official}" />
@@ -44,7 +44,7 @@
         <StackPanel Spacing="10">
           <TextBlock Text="{app:T settings.java}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
           <TextBlock Text="{app:T settings.javaPath}" Foreground="#9A9AA3" FontSize="12" />
-          <TextBox x:Name="JavaBox" PlaceholderText="例如 D:\mc-data\java\jre-legacy\...\bin\java.exe" />
+          <TextBox x:Name="JavaBox" PlaceholderText="例如 ...\java\jre-legacy\bin\java.exe" AutomationProperties.Name="{app:T settings.javaPath}" />
           <TextBlock Text="{app:T settings.managedRuntimes}" Foreground="#9A9AA3" FontSize="12" />
           <TextBlock x:Name="JavaListText" Foreground="#D0D0D6" FontSize="11" TextWrapping="Wrap" />
           <Button Content="{app:T settings.openJava}" Classes="ghost" HorizontalAlignment="Left" Click="OnOpenJavaDirClick" />
@@ -64,7 +64,7 @@
       </Border>
 
       <StackPanel Orientation="Horizontal" Spacing="10">
-        <Button Content="{app:T settings.save}" Classes="primary" Click="OnSaveClick" />
+        <Button Content="{app:T settings.save}" AutomationProperties.Name="{app:T settings.save}" Classes="primary" Click="OnSaveClick" />
         <TextBlock x:Name="StatusText" Foreground="#9A9AA3" VerticalAlignment="Center" FontSize="12" />
       </StackPanel>
     </StackPanel>
