@@ -52,7 +52,7 @@ public partial class MainWindow : Window
 
         // 开发/验收用的页面起始入口：ESLUNCHER_UI_PAGE=home|instances|downloads|settings|about
         var page = Environment.GetEnvironmentVariable("ESLUNCHER_UI_PAGE")?.ToLowerInvariant();
-        if (page is "home" or "instances" or "downloads" or "settings" or "about")
+        if (page is "home" or "instances" or "downloads" or "others" or "settings" or "about")
         {
             ApplyNav(page);
         }
@@ -113,12 +113,30 @@ public partial class MainWindow : Window
         HomePage.IsVisible = tag == "home";
         InstancesPage.IsVisible = tag == "instances";
         DownloadsPage.IsVisible = tag == "downloads";
+        OthersPage.IsVisible = tag == "others";
         SettingsPage.IsVisible = tag == "settings";
         AboutPage.IsVisible = tag == "about";
         if (tag is "home" or "instances")
         {
             RefreshHome();
         }
+
+        if (tag == "others")
+        {
+            RefreshOthers();
+        }
+    }
+
+    private void RefreshOthers()
+    {
+        if (OthersInstanceText is null)
+        {
+            return;
+        }
+
+        OthersInstanceText.Text = InstanceList?.SelectedItem is InstanceItem item
+            ? $"{item.Name} · {item.Version}" + (string.IsNullOrWhiteSpace(item.Group) ? string.Empty : $" · {item.Group}")
+            : "未选择实例（先到实例页选一个）";
     }
 
     private void OnNavClick(object? sender, RoutedEventArgs e)
@@ -130,6 +148,98 @@ public partial class MainWindow : Window
     }
 
     private void OnGoInstancesClick(object? sender, RoutedEventArgs e) => ApplyNav("instances");
+
+    private void OnOthersAccountsClick(object? sender, RoutedEventArgs e)
+    {
+        new AccountsWindow(_layout, InstanceList.SelectedItem is InstanceItem item ? item.Config : null)
+            .ShowDialog(this);
+    }
+
+    private void OnOthersDiagnosticsClick(object? sender, RoutedEventArgs e)
+    {
+        if (InstanceList.SelectedItem is InstanceItem item)
+        {
+            new DiagnosticsWindow(item.Config.Name, _layout).ShowDialog(this);
+        }
+    }
+
+    private void OnOthersLogClick(object? sender, RoutedEventArgs e)
+    {
+        if (InstanceList.SelectedItem is InstanceItem item)
+        {
+            new LogWindow(item.Config.Name, _layout).Show(this);
+        }
+    }
+
+    private void OnOthersOpenInstanceClick(object? sender, RoutedEventArgs e)
+    {
+        if (InstanceList.SelectedItem is InstanceItem item)
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", _layout.InstanceDir(item.Config.Name)) { UseShellExecute = true });
+        }
+    }
+
+    private void OnOthersOpenDataClick(object? sender, RoutedEventArgs e) => OpenDirectory(_layout.Root);
+
+    private void OnOthersOpenLogsClick(object? sender, RoutedEventArgs e) => OpenDirectory(Path.Combine(_layout.Root, "logs"));
+
+    private void OnOthersOpenCacheClick(object? sender, RoutedEventArgs e) => OpenDirectory(Path.Combine(_layout.Root, "cache"));
+
+    private void OnOthersOpenTrashClick(object? sender, RoutedEventArgs e) => OpenDirectory(Path.Combine(_layout.Root, "trash"));
+
+    private void OnOthersClearTrashClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var trash = Path.Combine(_layout.Root, "trash");
+            if (Directory.Exists(trash))
+            {
+                foreach (var entry in Directory.EnumerateFileSystemEntries(trash))
+                {
+                    if (Directory.Exists(entry))
+                    {
+                        Directory.Delete(entry, recursive: true);
+                    }
+                    else
+                    {
+                        File.Delete(entry);
+                    }
+                }
+            }
+
+            OthersStatus.Text = "回收站已清空";
+        }
+        catch (Exception exception)
+        {
+            OthersStatus.Text = $"清空失败：{exception.Message}";
+        }
+    }
+
+    private void OnOthersOpenGuideClick(object? sender, RoutedEventArgs e)
+    {
+        var guide = Path.Combine(AppContext.BaseDirectory, "docs", "DEVELOPER-GUIDE.md");
+        if (!File.Exists(guide))
+        {
+            guide = Path.Combine(_layout.Root, "docs", "DEVELOPER-GUIDE.md");
+        }
+
+        if (File.Exists(guide))
+        {
+            Process.Start(new ProcessStartInfo(guide) { UseShellExecute = true });
+        }
+        else
+        {
+            OthersStatus.Text = "仓库里的 docs/DEVELOPER-GUIDE.md 在发布目录不存在";
+        }
+    }
+
+    private void OnOthersAboutClick(object? sender, RoutedEventArgs e) => ApplyNav("about");
+
+    private static void OpenDirectory(string path)
+    {
+        Directory.CreateDirectory(path);
+        Process.Start(new ProcessStartInfo("explorer.exe", path) { UseShellExecute = true });
+    }
 
     private static readonly (string Start, string End)[] HomeGradients =
     [
@@ -280,6 +390,7 @@ public partial class MainWindow : Window
         NavHomeButton.Content = Localization.T("nav.home");
         NavInstancesButton.Content = Localization.T("nav.instances");
         NavDownloadsButton.Content = Localization.T("nav.downloads");
+        NavOthersButton.Content = Localization.T("nav.others");
         NavSettingsButton.Content = Localization.T("nav.settings");
         NavAboutButton.Content = Localization.T("nav.about");
     }

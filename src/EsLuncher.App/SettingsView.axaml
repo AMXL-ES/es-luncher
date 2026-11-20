@@ -2,17 +2,19 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="EsLuncher.App.SettingsView">
   <ScrollViewer>
-    <StackPanel Spacing="14" MaxWidth="720" HorizontalAlignment="Left">
+    <StackPanel Spacing="14" MaxWidth="760" HorizontalAlignment="Left">
       <TextBlock Text="设置" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" />
 
       <Border Background="#141419" CornerRadius="12" Padding="16">
         <StackPanel Spacing="10">
-          <TextBlock Text="常规" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
-          <TextBlock Text="数据根（重启生效）" Foreground="#9A9AA3" FontSize="12" />
-          <TextBlock x:Name="DataRootText" Foreground="#D0D0D6" FontSize="12" />
-          <Button Content="打开数据目录" Classes="ghost" HorizontalAlignment="Left" Click="OnOpenDataRootClick" />
+          <TextBlock Text="游戏" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
           <TextBlock Text="默认内存（MB）" Foreground="#9A9AA3" FontSize="12" />
           <NumericUpDown x:Name="MemoryBox" Minimum="512" Maximum="32768" Increment="512" FormatString="0" Width="240" HorizontalAlignment="Left" />
+          <TextBlock Text="默认用户名（新建实例用，空 = Player）" Foreground="#9A9AA3" FontSize="12" />
+          <TextBox x:Name="UsernameBox" Width="240" HorizontalAlignment="Left" PlaceholderText="Player" />
+          <TextBlock Text="下载并发数（1-16）" Foreground="#9A9AA3" FontSize="12" />
+          <NumericUpDown x:Name="ConcurrencyBox" Minimum="1" Maximum="16" Increment="1" FormatString="0" Width="240" HorizontalAlignment="Left" />
+          <CheckBox x:Name="AutoJavaBox" Content="缺少 Java 时自动下载官方运行时" Foreground="#D0D0D6" />
         </StackPanel>
       </Border>
 
@@ -37,6 +39,21 @@
           <TextBlock Text="Java" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
           <TextBlock Text="Java 路径（留空 = 按版本自动选，托管运行时优先）" Foreground="#9A9AA3" FontSize="12" />
           <TextBox x:Name="JavaBox" PlaceholderText="例如 D:\mc-data\java\jre-legacy\...\bin\java.exe" />
+          <TextBlock Text="托管运行时" Foreground="#9A9AA3" FontSize="12" />
+          <TextBlock x:Name="JavaListText" Foreground="#D0D0D6" FontSize="11" TextWrapping="Wrap" />
+          <Button Content="打开 Java 目录" Classes="ghost" HorizontalAlignment="Left" Click="OnOpenJavaDirClick" />
+        </StackPanel>
+      </Border>
+
+      <Border Background="#141419" CornerRadius="12" Padding="16">
+        <StackPanel Spacing="10">
+          <TextBlock Text="数据" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+          <TextBlock Text="数据根（重启生效）" Foreground="#9A9AA3" FontSize="12" />
+          <TextBlock x:Name="DataRootText" Foreground="#D0D0D6" FontSize="12" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Content="打开数据目录" Classes="ghost" Click="OnOpenDataRootClick" />
+            <Button Content="打开回收站" Classes="ghost" Click="OnOpenTrashClick" />
+          </StackPanel>
         </StackPanel>
       </Border>
 

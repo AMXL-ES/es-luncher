@@ -15,6 +15,15 @@ public sealed record LauncherSettings
     public string? JavaPath { get; init; }
 
     public string Language { get; init; } = "zh";
+
+    /// <summary>默认用户名（新建实例时使用，空 = Player）。</summary>
+    public string? DefaultUsername { get; init; }
+
+    /// <summary>下载并发数（1-16）。</summary>
+    public int Concurrency { get; init; } = 8;
+
+    /// <summary>缺少 Java 时是否自动下载官方运行时。</summary>
+    public bool AutoInstallJava { get; init; }
 }
 
 public sealed class SettingsStore(Downloads.DataLayout layout)

@@ -64,6 +64,7 @@
           <Button x:Name="NavHomeButton" Classes="nav" Content="主页" Tag="home" Click="OnNavClick" />
           <Button x:Name="NavInstancesButton" Classes="nav" Content="实例" Tag="instances" Click="OnNavClick" />
           <Button x:Name="NavDownloadsButton" Classes="nav" Content="下载" Tag="downloads" Click="OnNavClick" />
+          <Button x:Name="NavOthersButton" Classes="nav" Content="其他" Tag="others" Click="OnNavClick" />
           <Button x:Name="NavSettingsButton" Classes="nav" Content="设置" Tag="settings" Click="OnNavClick" />
           <Button x:Name="NavAboutButton" Classes="nav" Content="关于" Tag="about" Click="OnNavClick" />
         </StackPanel>
@@ -222,6 +223,44 @@
 
       <app:DownloadsView x:Name="DownloadsPage" IsVisible="False" Margin="24,18" />
       <app:SettingsView x:Name="SettingsPage" IsVisible="False" Margin="24,18" />
+
+      <!-- 其他 -->
+      <Grid x:Name="OthersPage" IsVisible="False" Margin="24,18">
+        <StackPanel Spacing="14" MaxWidth="820" HorizontalAlignment="Left">
+          <TextBlock Text="其他" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" />
+
+          <Border Background="#141419" CornerRadius="12" Padding="16">
+            <StackPanel Spacing="10">
+              <TextBlock Text="当前实例" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+              <TextBlock x:Name="OthersInstanceText" Foreground="#9A9AA3" FontSize="12" />
+              <WrapPanel>
+                <Button Content="账户管理" Classes="ghost" Margin="0,0,8,8" Click="OnOthersAccountsClick" />
+                <Button Content="诊断当前实例" Classes="ghost" Margin="0,0,8,8" Click="OnOthersDiagnosticsClick" />
+                <Button Content="查看日志" Classes="ghost" Margin="0,0,8,8" Click="OnOthersLogClick" />
+                <Button Content="打开实例目录" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenInstanceClick" />
+              </WrapPanel>
+            </StackPanel>
+          </Border>
+
+          <Border Background="#141419" CornerRadius="12" Padding="16">
+            <StackPanel Spacing="10">
+              <TextBlock Text="工具" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+              <WrapPanel>
+                <Button Content="打开数据目录" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenDataClick" />
+                <Button Content="打开日志目录" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenLogsClick" />
+                <Button Content="打开缓存目录" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenCacheClick" />
+                <Button Content="打开回收站" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenTrashClick" />
+                <Button Content="清空回收站" Classes="ghost" Margin="0,0,8,8" Click="OnOthersClearTrashClick" />
+              </WrapPanel>
+              <WrapPanel>
+                <Button Content="开发者指南" Classes="ghost" Margin="0,0,8,8" Click="OnOthersOpenGuideClick" />
+                <Button Content="开源许可 / 关于" Classes="ghost" Margin="0,0,8,8" Click="OnOthersAboutClick" />
+              </WrapPanel>
+              <TextBlock x:Name="OthersStatus" Foreground="#6E6E76" FontSize="11" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
 
       <!-- 关于 -->
       <Grid x:Name="AboutPage" IsVisible="False">

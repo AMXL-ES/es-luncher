@@ -275,7 +275,7 @@ public partial class DownloadsView : UserControl
                 name,
                 versionId,
                 AppServices.Settings.DefaultMemoryMb,
-                username: null);
+                username: AppServices.Settings.DefaultUsername);
             StatusText.Text = $"已创建实例 {instance.Name} ← {instance.VersionId}（可在「实例」页启动）";
             LoadInstances();
         }
@@ -301,7 +301,7 @@ public partial class DownloadsView : UserControl
         var fetcher = new VersionFetcher(AppServices.Layout, new FileDownloader(client));
         return await fetcher.FetchAsync(
             versionId,
-            new FetchOptions { Concurrency = 8 },
+            new FetchOptions { Concurrency = AppServices.Settings.Concurrency },
             MakeProgress(),
             cancellationToken);
     }

@@ -44,6 +44,9 @@ public sealed class LauncherSettingsTests : IDisposable
             DefaultMemoryMb = 6144,
             JavaPath = @"D:\java\bin\java.exe",
             Language = "zh",
+            DefaultUsername = "Dev",
+            Concurrency = 4,
+            AutoInstallJava = true,
         });
 
         var loaded = _store.Load();
@@ -51,6 +54,9 @@ public sealed class LauncherSettingsTests : IDisposable
         Assert.Equal(LauncherSettings.ThemeLight, loaded.Theme);
         Assert.Equal(6144, loaded.DefaultMemoryMb);
         Assert.Equal(@"D:\java\bin\java.exe", loaded.JavaPath);
+        Assert.Equal("Dev", loaded.DefaultUsername);
+        Assert.Equal(4, loaded.Concurrency);
+        Assert.True(loaded.AutoInstallJava);
     }
 
     [Fact]

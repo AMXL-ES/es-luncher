@@ -14,6 +14,7 @@ public static class Localization
         ["nav.home"] = ("主页", "Home"),
         ["nav.instances"] = ("实例", "Instances"),
         ["nav.downloads"] = ("下载", "Downloads"),
+        ["nav.others"] = ("其他", "Others"),
         ["nav.settings"] = ("设置", "Settings"),
         ["nav.about"] = ("关于", "About"),
         ["toolbar.refresh"] = ("刷新", "Refresh"),
