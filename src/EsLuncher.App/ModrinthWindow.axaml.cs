@@ -75,9 +75,12 @@ public partial class ModrinthWindow : Window
         {
             StatusText.Text = "搜索中 …";
             var hits = await _client.SearchAsync(query, _minecraftVersion, _loader, 20, CancellationToken.None, _kind);
-            HitsList.ItemsSource = hits
-                .Select(hit => new ModrinthItem(hit, $"{hit.Downloads:N0} 下载 · {hit.Description}"))
-                .ToArray();
+            var items = await Task.WhenAll(hits.Select(async hit =>
+                new ModrinthItem(
+                    hit,
+                    $"{hit.Downloads:N0} 下载 · {hit.Description}",
+                    await IconCache.GetAsync(hit.IconUrl))));
+            HitsList.ItemsSource = items;
             StatusText.Text = $"找到 {hits.Count} 条";
         }
         catch (Exception exception)
@@ -108,11 +111,21 @@ public partial class ModrinthWindow : Window
     }
 }
 
-public sealed class ModrinthItem(ModrinthHit hit, string detail)
+public sealed class ModrinthItem(ModrinthHit hit, string detail, Avalonia.Media.Imaging.Bitmap? icon = null)
 {
     public ModrinthHit Hit { get; } = hit;
 
     public string Title => Hit.Title;
 
     public string Detail { get; } = detail;
+
+    public Avalonia.Media.Imaging.Bitmap? Icon { get; } = icon;
+
+    public bool HasIcon => Icon is not null;
+
+    public bool HasNoIcon => Icon is null;
+
+    public string Initial => string.IsNullOrEmpty(Title) ? "?" : Title[..1].ToUpperInvariant();
+
+    public string DownloadsText => $"{Hit.Downloads:N0}";
 }

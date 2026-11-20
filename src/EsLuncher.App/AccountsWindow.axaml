@@ -18,15 +18,22 @@
           <DataTemplate x:DataType="app:AccountItem">
             <Border Background="#1A1A22" CornerRadius="10" Padding="12" Margin="0,0,0,6">
               <Grid ColumnDefinitions="Auto,*,Auto">
-                <Border Width="40" Height="40" CornerRadius="10" Background="#4C8DF6">
+                <Border Width="40" Height="40" CornerRadius="10" Background="#4C8DF6" IsVisible="{Binding HasNoAvatar}">
                   <TextBlock Text="{Binding Initial}" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF"
                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
+                <Image Width="40" Height="40" IsVisible="{Binding HasAvatar}" Source="{Binding Avatar}" />
                 <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="2" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                    <Border Background="#23232B" CornerRadius="6" Padding="6,2" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding KindLabel}" FontSize="10" Foreground="#9A9AA3" />
+                    </Border>
+                  </StackPanel>
                   <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#8A8A93" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding State}" FontSize="11" Foreground="#6E6E76" VerticalAlignment="Center" />
                   <Button Content="使用" Tag="{Binding Key}" Click="OnUseClick" />
                   <Button Content="删除" Tag="{Binding Key}" Click="OnDeleteClick" />
                 </StackPanel>

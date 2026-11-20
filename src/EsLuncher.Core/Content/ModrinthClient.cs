@@ -6,7 +6,7 @@ using EsLuncher.Core.Instances;
 
 namespace EsLuncher.Core.Content;
 
-public sealed record ModrinthHit(string ProjectId, string Slug, string Title, string Description, long Downloads);
+public sealed record ModrinthHit(string ProjectId, string Slug, string Title, string Description, long Downloads, string? IconUrl = null);
 
 public sealed record ModrinthFile(string Url, string Filename, string Sha1, bool Primary, long Size);
 
@@ -89,7 +89,10 @@ public sealed class ModrinthClient(IRemoteFileClient client)
                 hit.TryGetProperty("description", out var description) ? description.GetString() ?? string.Empty : string.Empty,
                 hit.TryGetProperty("downloads", out var downloads) && downloads.ValueKind == JsonValueKind.Number
                     ? downloads.GetInt64()
-                    : 0));
+                    : 0,
+                hit.TryGetProperty("icon_url", out var icon) && icon.ValueKind == JsonValueKind.String
+                    ? icon.GetString()
+                    : null));
         }
 
         return results;

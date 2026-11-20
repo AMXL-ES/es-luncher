@@ -62,9 +62,12 @@ public partial class ModrinthDownloadPanel : UserControl
                 CancellationToken.None,
                 Kind,
                 ModpackMode ? "modpack" : null);
-            HitsList.ItemsSource = hits
-                .Select(hit => new ModrinthItem(hit, $"{hit.Downloads:N0} 下载 · {hit.Description}"))
-                .ToArray();
+            var items = await Task.WhenAll(hits.Select(async hit =>
+                new ModrinthItem(
+                    hit,
+                    $"{hit.Downloads:N0} 下载 · {hit.Description}",
+                    await IconCache.GetAsync(hit.IconUrl))));
+            HitsList.ItemsSource = items;
             StatusText.Text = $"找到 {hits.Count} 条";
         }
         catch (Exception exception)

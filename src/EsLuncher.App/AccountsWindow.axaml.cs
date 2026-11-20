@@ -27,10 +27,10 @@ public partial class AccountsWindow : Window
         _store = new DpapiTokenStore(layout);
         _current = current;
         HintText.Text = current is null ? "从「账户」进入时未指定实例" : $"「使用」会把账户绑定到实例：{current.Name}";
-        LoadAccounts();
+        Loaded += async (_, _) => await LoadAccountsAsync();
     }
 
-    private void LoadAccounts()
+    private async Task LoadAccountsAsync()
     {
         var keys = _store.ListAccounts();
         var items = new List<AccountItem>();
@@ -38,29 +38,36 @@ public partial class AccountsWindow : Window
         {
             string name = key;
             string kind = "offline";
+            string? uuid = null;
             try
             {
-                var session = _store.LoadAsync(key, CancellationToken.None).GetAwaiter().GetResult();
+                var session = await _store.LoadAsync(key, CancellationToken.None);
                 if (session is not null)
                 {
                     name = session.Profile.Name;
                     kind = session.Kind;
+                    uuid = session.Profile.Id;
                 }
             }
             catch (Exception)
             {
             }
 
+            var avatar = uuid is null
+                ? null
+                : await IconCache.GetAsync($"https://crafatar.com/avatars/{uuid}?size=64&overlay");
             items.Add(new AccountItem(
                 name,
                 $"{kind} · {key}",
                 _current?.AccountKey == key ? "当前实例" : string.Empty,
-                key));
+                key,
+                kind,
+                avatar));
         }
 
         if (items.Count == 0)
         {
-            items.Add(new AccountItem("Player", "离线身份（未保存账户）", "默认", string.Empty));
+            items.Add(new AccountItem("Player", "离线身份（未保存账户）", "默认", string.Empty, "offline", null));
         }
 
         AccountsList.ItemsSource = items;
@@ -89,7 +96,7 @@ public partial class AccountsWindow : Window
         var username = session?.Profile.Name ?? key;
         new InstanceStore(_layout).Save(_current with { AccountKey = key, Username = username });
         StatusText.Text = $"已把 {username} 绑定到实例 {_current.Name}";
-        LoadAccounts();
+        _ = LoadAccountsAsync();
     }
 
     private async void OnDeleteClick(object? sender, RoutedEventArgs e)
@@ -101,7 +108,7 @@ public partial class AccountsWindow : Window
 
         await _store.DeleteAsync(key, CancellationToken.None);
         StatusText.Text = $"已删除账户 {key}";
-        LoadAccounts();
+        _ = LoadAccountsAsync();
     }
 
     private async void OnAddOfflineClick(object? sender, RoutedEventArgs e)
@@ -119,7 +126,7 @@ public partial class AccountsWindow : Window
             await _store.SaveAsync(session.Profile.Name.ToLowerInvariant(), session, CancellationToken.None);
             UsernameBox.Text = string.Empty;
             StatusText.Text = $"已保存离线账户：{session.Profile.Name}";
-            LoadAccounts();
+            _ = LoadAccountsAsync();
         }
         catch (Exception exception)
         {
@@ -148,7 +155,7 @@ public partial class AccountsWindow : Window
                 _cancel.Token);
             await _store.SaveAsync(session.Profile.Name.ToLowerInvariant(), session, CancellationToken.None);
             StatusText.Text = $"已保存微软账户：{session.Profile.Name}";
-            LoadAccounts();
+            _ = LoadAccountsAsync();
         }
         catch (OperationCanceledException)
         {
@@ -173,7 +180,18 @@ public partial class AccountsWindow : Window
     }
 }
 
-public sealed record AccountItem(string Name, string Detail, string State, string Key)
+public sealed record AccountItem(string Name, string Detail, string State, string Key, string Kind, Avalonia.Media.Imaging.Bitmap? Avatar)
 {
     public string Initial => string.IsNullOrEmpty(Name) ? "?" : Name[..1].ToUpperInvariant();
+
+    public bool HasAvatar => Avatar is not null;
+
+    public bool HasNoAvatar => Avatar is null;
+
+    public string KindLabel => Kind switch
+    {
+        "microsoft" => "微软",
+        "offline" => "离线",
+        _ => Kind,
+    };
 }

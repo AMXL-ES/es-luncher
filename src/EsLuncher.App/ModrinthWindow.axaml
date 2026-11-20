@@ -19,10 +19,18 @@
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="app:ModrinthItem">
           <Border Background="#1A1A1F" CornerRadius="8" Padding="12" Margin="0,0,0,6">
-            <StackPanel>
-              <TextBlock Text="{Binding Title}" Foreground="#FFFFFF" FontSize="14" TextTrimming="CharacterEllipsis" />
-              <TextBlock Text="{Binding Detail}" Foreground="#8A8A93" FontSize="11" TextTrimming="CharacterEllipsis" />
-            </StackPanel>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <Border Width="40" Height="40" CornerRadius="8" Background="#262631" IsVisible="{Binding HasNoIcon}">
+                <TextBlock Text="{Binding Initial}" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <Image Width="40" Height="40" IsVisible="{Binding HasIcon}" Source="{Binding Icon}" />
+              <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Title}" Foreground="#FFFFFF" FontSize="14" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Detail}" Foreground="#8A8A93" FontSize="11" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+              <TextBlock Grid.Column="2" Text="{Binding DownloadsText}" Foreground="#6E6E76" FontSize="10" VerticalAlignment="Center" />
+            </Grid>
           </Border>
         </DataTemplate>
       </ListBox.ItemTemplate>
