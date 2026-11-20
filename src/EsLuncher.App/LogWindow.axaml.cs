@@ -9,6 +9,8 @@ public partial class LogWindow : Window
 {
     private readonly string _logPath;
     private readonly DispatcherTimer _timer;
+    private readonly List<string> _lines = [];
+    private long _position;
 
     /// <summary>设计器/XAML 加载用。</summary>
     public LogWindow()
@@ -45,19 +47,61 @@ public partial class LogWindow : Window
             return;
         }
 
-        var query = SearchBox.Text?.Trim();
-        var lines = File.ReadLines(_logPath).TakeLast(1200);
-        if (!string.IsNullOrWhiteSpace(query))
+        try
         {
-            lines = lines.Where(line => line.Contains(query!, StringComparison.OrdinalIgnoreCase));
-        }
+            var length = new FileInfo(_logPath).Length;
+            if (length < _position)
+            {
+                // 日志被轮转/清空：重头再来
+                _position = 0;
+                _lines.Clear();
+            }
 
-        var text = string.Join('\n', lines);
-        LogBox.Text = text;
-        StatusText.Text = $"{text.Length} 字符";
-        if (AutoScrollBox.IsChecked == true)
+            if (length > _position)
+            {
+                using var stream = new FileStream(_logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                stream.Seek(_position, SeekOrigin.Begin);
+                using var reader = new StreamReader(stream);
+                string? line;
+                while ((line = reader.ReadLine()) is not null)
+                {
+                    _lines.Add(line);
+                }
+
+                _position = stream.Position;
+                if (_lines.Count > 3000)
+                {
+                    _lines.RemoveRange(0, _lines.Count - 3000);
+                }
+
+                UpdateText();
+            }
+        }
+        catch (IOException exception)
         {
-            LogBox.CaretIndex = text.Length;
+            StatusText.Text = $"读取日志失败：{exception.Message}";
         }
     }
+
+    private void UpdateText()
+    {
+        var query = SearchBox.Text?.Trim();
+        var visible = string.IsNullOrWhiteSpace(query)
+            ? _lines
+            : _lines.Where(line => line.Contains(query!, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        var text = string.Join('\n', visible.TakeLast(1500));
+        if (!string.Equals(LogBox.Text, text, StringComparison.Ordinal))
+        {
+            LogBox.Text = text;
+            if (AutoScrollBox.IsChecked == true)
+            {
+                LogBox.CaretIndex = text.Length;
+            }
+        }
+
+        StatusText.Text = $"{visible.Count} 行 · {text.Length} 字符 · 已读 {_position / 1024.0:F1} KiB";
+    }
+
+    private void OnSearchChanged(object? sender, TextChangedEventArgs e) => UpdateText();
 }
