@@ -3,7 +3,7 @@
         xmlns:app="using:EsLuncher.App"
         x:Class="EsLuncher.App.AccountsWindow"
         Title="账户"
-        Width="640"
+        Width="680"
         Height="560"
         WindowStartupLocation="CenterOwner"
         Background="#0E0E12">
@@ -48,13 +48,13 @@
     <Border Grid.Row="3" Background="#141419" CornerRadius="12" Padding="14">
       <StackPanel Spacing="8">
         <TextBlock Text="{app:T accounts.add}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="13" />
-        <StackPanel Orientation="Horizontal" Spacing="10">
-          <TextBox x:Name="UsernameBox" Width="220" PlaceholderText="{app:T accounts.username}" />
-          <Button Content="{app:T accounts.addOffline}" Click="OnAddOfflineClick" />
-          <Button Content="{app:T accounts.microsoft}" Click="OnMicrosoftLoginClick" />
-          <Button Content="{app:T accounts.cancelWait}" Click="OnCancelClick" />
-          <Button Content="{app:T accounts.refreshAvatars}" Click="OnRefreshAvatarsClick" />
-        </StackPanel>
+        <WrapPanel Orientation="Horizontal">
+          <TextBox x:Name="UsernameBox" Width="220" Margin="0,0,10,6" PlaceholderText="{app:T accounts.username}" />
+          <Button Content="{app:T accounts.addOffline}" Margin="0,0,10,6" Click="OnAddOfflineClick" />
+          <Button Content="{app:T accounts.microsoft}" Margin="0,0,10,6" Click="OnMicrosoftLoginClick" />
+          <Button Content="{app:T accounts.cancelWait}" Margin="0,0,10,6" Click="OnCancelClick" />
+          <Button Content="{app:T accounts.refreshAvatars}" Margin="0,0,10,6" Click="OnRefreshAvatarsClick" />
+        </WrapPanel>
         <TextBlock x:Name="StatusText" Foreground="#9A9AA3" FontSize="11" TextWrapping="Wrap" />
       </StackPanel>
     </Border>
