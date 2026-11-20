@@ -14,7 +14,7 @@
 | **M4** | Java 运行时管理 | 探测本机 JDK（**须跳过 PATH 上崩掉的 java**）；按 `javaVersion.majorVersion` 选；按需下载 Mojang 官方运行时；多版本共存；选错给人话原因 | ✅ 完成（jre-legacy 143 MiB / java-runtime-beta 86.9 MiB 实测；1.7.10 与 1.18.2 均在托管运行时上真启动） |
 | **M5** | 实例系统 | 版本隔离；每实例独立配置；多实例并存可跑；克隆/导入/导出 | ✅ 完成（4 个实例；**两个 1.18.2 实例同时运行并各自 exit 0**；导入含 zip-slip 校验） |
 | **M6** | 模组加载器 | Fabric/Quilt/NeoForge/Forge 安装；`inheritsFrom` 继承链正确解析 | 🟡 Fabric/Quilt/Forge 已真启动（1.18.2）；NeoForge 阻塞：maven 主机不可达 + 1.20.1 资源 624 MB 需授权 |
-| **M7** | UI/UX | 实例列表、下载页、设置页、进度与错误呈现、键盘可达、深浅主题、i18n、高 DPI（专业玩家密度） | 待办 |
+| **M7** | UI/UX | 实例列表、下载页、设置页、进度与错误呈现、键盘可达、深浅主题、i18n、高 DPI（专业玩家密度） | 🟡 进行中：图标 + UI 壳 + 实例页（真实数据/启动接线）+ 关于页（Endless Studio）；下载/设置占位 |
 | **M8** | 模组与整合包 | Modrinth/CurseForge 检索安装、依赖解析、冲突提示、`.mrpack` 与 CF zip 导入导出（**CurseForge 需 API key**） | 待办 |
 | **M9** | 诊断能力 | 崩溃报告解析、日志高亮搜索、缺失依赖/Java 不匹配检测、一键导出诊断包 | 待办 |
 | **M10** | 分发 | NSIS/MSI 安装包、自动更新（Velopack 候选）、增量更新、便携模式、代码签名方案 | 待办 |
