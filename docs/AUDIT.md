@@ -66,12 +66,12 @@
 ### P2 打磨（1–2 天）
 - [x] 11a. 主窗口/下载/设置静态文案词条化（`{app:T key}` + 中英词表，截图验证）✅ 2026-11-20
 - [x] 11b. 日志/账户/详情/诊断/Modrinth 窗静态文案词条化 ✅
-- [x] 11c. 主窗口动态状态（实例数/内容数/启停/移除/更新/回收站）词条化 ✅；下载页与对话框动态文案仍中文（剩余）
+- [x] 11c. 主窗口 + 下载页 + Modrinth 面板/详情 + 诊断 + 账户动态文案全部词条化 ✅（隐藏的微软登录路径除外）
 12. 日志窗增量读取
 - [x] 13a. 最小尺寸布局检查：1040×660 ✅
 - [x] 13b. **125% 缩放实测通过**（主页/实例/下载/设置/账户窗截图；账户窗添加按钮溢出已修为换行）✅；150% 未测
 - [x] 14a. 快捷键：F5 刷新、Ctrl+L 日志；对话框 Esc 关闭 ✅
-- [x] 14b. 主导航/启动按钮 AutomationProperties.Name + 窗口 Tab 循环（KeyboardNavigation.TabNavigation=Cycle）✅；完整焦点审计仍待做
+- [x] 14b. 主导航/下载/设置/内容面板按钮 AutomationProperties.Name；主窗与对话框 Tab 循环、Esc 关闭；Headless 测试断言名称 ✅
 - [x] 15a. UI 冒烟脚本 `scripts/smoke-ui.ps1`（启动存活 8s）✅
 - [x] 15b. Avalonia Headless 测试：MainWindow 启动 + 五个页面存在（`tests/EsLuncher.Ui.Tests`）✅ 2026-11-20
 
