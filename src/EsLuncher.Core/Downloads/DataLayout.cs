@@ -38,6 +38,8 @@ public sealed class DataLayout
 
     public string InstanceDir(string instanceId) => Path.Combine(InstancesDir, instanceId);
 
+    public string InstanceConfigFile(string instanceId) => Path.Combine(InstanceDir(instanceId), "config.json");
+
     /// <summary>游戏工作目录（<c>--gameDir</c>），与 natives 目录分开。</summary>
     public string GameDir(string instanceId) => Path.Combine(InstanceDir(instanceId), "game");
 

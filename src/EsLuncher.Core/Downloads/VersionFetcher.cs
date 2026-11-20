@@ -46,6 +46,31 @@ public sealed class VersionFetcher
         _planBuilder = new DownloadPlanBuilder(layout);
     }
 
+    /// <summary>
+    /// 确保实例的 natives 目录就绪：库 jar 已在共享目录里，这里只做解压。
+    /// 返回本次解压的文件数（已存在会覆盖，代价很小）。
+    /// </summary>
+    public static int EnsureNatives(
+        VersionMetadata version,
+        LaunchEnvironment environment,
+        DataLayout layout,
+        string instanceId)
+    {
+        var plan = new DownloadPlanBuilder(layout).Build(version, environment, instanceId);
+        var extracted = 0;
+        foreach (var extraction in plan.Natives)
+        {
+            if (!File.Exists(extraction.JarPath))
+            {
+                continue;
+            }
+
+            extracted += NativesExtractor.Extract(extraction.JarPath, extraction.TargetDirectory, extraction.ExcludePrefixes);
+        }
+
+        return extracted;
+    }
+
     /// <summary>只算计划、不下载（清单与 version.json 仍会按需获取/复用缓存）。</summary>
     public async Task<(VersionMetadata Version, DownloadPlan Plan)> BuildPlanAsync(
         string versionId,

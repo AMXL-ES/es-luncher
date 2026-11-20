@@ -1,6 +1,7 @@
 using System.Globalization;
 using EsLuncher.Core.Auth;
 using EsLuncher.Core.Downloads;
+using EsLuncher.Core.Instances;
 using EsLuncher.Core.Java;
 using EsLuncher.Core.Launching;
 using EsLuncher.Core.Metadata;
@@ -22,6 +23,11 @@ internal static class Program
         try
         {
             var command = args[0].ToLowerInvariant();
+            if (command == "instance")
+            {
+                return InstanceCommand(args);
+            }
+
             if (command == "java")
             {
                 if (args.Length > 1 && args[1].Equals("install", StringComparison.OrdinalIgnoreCase))
@@ -251,10 +257,159 @@ internal static class Program
         return removed ? 0 : 1;
     }
 
+    private static InstanceConfig? LoadInstance(DataLayout layout, CommandOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(options.InstanceId))
+        {
+            return null;
+        }
+
+        return new InstanceStore(layout).TryLoad(options.InstanceId!)
+            ?? throw new InvalidOperationException(
+                $"实例不存在：{options.InstanceId}。先 `esluncher instance create <名字> --version <id>`");
+    }
+
+    private static IReadOnlyList<string> WindowArguments(InstanceConfig instance)
+    {
+        if (instance.WindowWidth is not int width || instance.WindowHeight is not int height)
+        {
+            return [];
+        }
+
+        return
+        [
+            "--width", width.ToString(CultureInfo.InvariantCulture),
+            "--height", height.ToString(CultureInfo.InvariantCulture),
+        ];
+    }
+
+    private static int InstanceCommand(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            return Fail("用法：esluncher instance <create|list|delete|clone|export|import> ...");
+        }
+
+        var action = args[1].ToLowerInvariant();
+        var rest = args[2..];
+        var positionals = new List<string>();
+        var optionTokens = new List<string>();
+        HashSet<string> booleanFlags = new(StringComparer.Ordinal) { "--force", "--dry-run", "--refresh", "--install-java" };
+
+        for (var i = 0; i < rest.Length; i++)
+        {
+            var token = rest[i];
+            if (!token.StartsWith("--", StringComparison.Ordinal))
+            {
+                positionals.Add(token);
+                continue;
+            }
+
+            optionTokens.Add(token);
+            if (!booleanFlags.Contains(token) && i + 1 < rest.Length && !rest[i + 1].StartsWith("--", StringComparison.Ordinal))
+            {
+                optionTokens.Add(rest[++i]);
+            }
+        }
+
+        var options = CommandOptions.Parse(optionTokens.ToArray());
+        var layout = new DataLayout(options.DataRoot);
+        var store = new InstanceStore(layout);
+
+        switch (action)
+        {
+            case "create":
+            {
+                if (positionals.Count < 1)
+                {
+                    return Fail("instance create 需要实例名：esluncher instance create <名字> --version <id>");
+                }
+
+                var config = store.Create(positionals[0], options.RequireVersion(), options.MemoryMb, options.Username);
+                Console.WriteLine($"已创建实例 {config.Name} ← {config.VersionId}，内存 {config.MemoryMb} MB");
+                Console.WriteLine($"目录：{layout.InstanceDir(config.Name)}");
+                return 0;
+            }
+
+            case "list":
+            {
+                var instances = store.List();
+                if (instances.Count == 0)
+                {
+                    Console.WriteLine("还没有实例。用 `esluncher instance create <名字> --version <id>` 创建。");
+                    return 0;
+                }
+
+                Console.WriteLine($"共 {instances.Count} 个实例：");
+                foreach (var config in instances)
+                {
+                    Console.WriteLine($"  {config.Name,-20} {config.VersionId,-14} {config.MemoryMb,5} MB  {config.CreatedAt:yyyy-MM-dd}");
+                }
+
+                return 0;
+            }
+
+            case "delete":
+            {
+                if (positionals.Count < 1)
+                {
+                    return Fail("instance delete 需要实例名");
+                }
+
+                var removed = store.Delete(positionals[0], options.Force);
+                Console.WriteLine(removed ? $"已删除实例 {positionals[0]}" : $"实例不存在：{positionals[0]}");
+                return removed ? 0 : 1;
+            }
+
+            case "clone":
+            {
+                if (positionals.Count < 2)
+                {
+                    return Fail("instance clone 需要 <来源> <目标>");
+                }
+
+                var cloned = store.Clone(positionals[0], positionals[1]);
+                Console.WriteLine($"已克隆 {positionals[0]} → {cloned.Name}（{cloned.VersionId}）");
+                return 0;
+            }
+
+            case "export":
+            {
+                if (positionals.Count < 1)
+                {
+                    return Fail("instance export 需要实例名");
+                }
+
+                var outPath = string.IsNullOrWhiteSpace(options.Out)
+                    ? Path.Combine(Environment.CurrentDirectory, positionals[0] + ".zip")
+                    : options.Out!;
+                store.Export(positionals[0], outPath);
+                Console.WriteLine($"已导出 {positionals[0]} → {outPath}");
+                return 0;
+            }
+
+            case "import":
+            {
+                if (positionals.Count < 2)
+                {
+                    return Fail("instance import 需要 <zip 路径> <实例名>");
+                }
+
+                var imported = store.Import(positionals[0], positionals[1]);
+                Console.WriteLine($"已导入实例 {imported.Name} ← {imported.VersionId}");
+                return 0;
+            }
+
+            default:
+                return Fail($"未知 instance 动作：{action}（create|list|delete|clone|export|import）");
+        }
+    }
+
     private static async Task<int> LaunchAsync(CommandOptions options)
     {
-        var versionId = options.RequireVersion();
         var layout = new DataLayout(options.DataRoot);
+        var instance = LoadInstance(layout, options);
+        var versionId = instance?.VersionId ?? options.RequireVersion();
         using var client = new HttpRemoteFileClient();
         var downloader = new FileDownloader(client);
         var catalog = new VersionCatalog(layout, downloader);
@@ -272,12 +427,13 @@ internal static class Program
         }
 
         JavaRuntime? overridden = null;
-        if (!string.IsNullOrWhiteSpace(options.JavaPath))
+        var javaPathOverride = options.JavaPath ?? instance?.JavaPath;
+        if (!string.IsNullOrWhiteSpace(javaPathOverride))
         {
-            overridden = JavaRuntime.TryProbe(options.JavaPath);
+            overridden = JavaRuntime.TryProbe(javaPathOverride);
             if (overridden is null)
             {
-                return Fail($"--java 指向的不是可用的 java：{options.JavaPath}");
+                return Fail($"--java 指向的不是可用的 java：{javaPathOverride}");
             }
         }
 
@@ -302,13 +458,14 @@ internal static class Program
         }
 
         AuthSession? session = null;
-        if (!string.IsNullOrWhiteSpace(options.Account))
+        var accountKey = options.Account ?? instance?.AccountKey;
+        if (!string.IsNullOrWhiteSpace(accountKey))
         {
             var store = new DpapiTokenStore(layout);
-            session = await store.LoadAsync(options.Account, CancellationToken.None).ConfigureAwait(false);
+            session = await store.LoadAsync(accountKey, CancellationToken.None).ConfigureAwait(false);
             if (session is null)
             {
-                return Fail($"没有找到账号 {options.Account}，先 `esluncher login`");
+                return Fail($"没有找到账号 {accountKey}，先 `esluncher login`");
             }
 
             if (session.IsExpired(DateTimeOffset.UtcNow))
@@ -321,14 +478,29 @@ internal static class Program
 
         var request = new LaunchRequest
         {
-            Username = session?.Profile.Name ?? options.Username ?? "Player",
+            Username = session?.Profile.Name ?? instance?.Username ?? options.Username ?? "Player",
             Uuid = session?.Profile.Id,
             AccessToken = session?.AccessToken,
             UserType = session?.UserType ?? "legacy",
-            InstanceId = options.InstanceId,
-            MemoryMb = options.MemoryMb,
+            InstanceId = instance?.Name ?? options.InstanceId,
+            MemoryMb = instance?.MemoryMb ?? options.MemoryMb,
+            ExtraJvmArguments = instance?.ExtraJvmArguments ?? [],
+            ExtraGameArguments = instance is null
+                ? []
+                : [.. instance.ExtraGameArguments, .. WindowArguments(instance)],
         };
         var command = LaunchCommandBuilder.Build(version, environment, layout, selection.Runtime!, request);
+
+        // 实例级 natives 目录可能与共享库不同步（例如实例是新建/克隆/导入的），启动前补齐。
+        var nativesExtracted = VersionFetcher.EnsureNatives(
+            version,
+            environment,
+            layout,
+            request.InstanceId ?? version.Id);
+        if (nativesExtracted > 0)
+        {
+            Console.WriteLine($"natives 已就绪：{nativesExtracted} 个文件");
+        }
 
         var classpathEntries = command.Classpath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
         var missing = classpathEntries.Where(path => !File.Exists(path)).ToArray();
@@ -377,9 +549,10 @@ internal static class Program
         }
 
         Directory.CreateDirectory(command.WorkingDirectory);
-        var logPath = Path.Combine(
-            layout.LogsDir,
-            $"launch-{version.Id}-{DateTime.Now:yyyyMMdd-HHmmss}.log");
+        // 同一版本多实例并行时日志文件名必须唯一：带上实例名 + 时间戳 + 短随机后缀。
+        var logStem = $"{request.InstanceId ?? version.Id}-{version.Id}-{DateTime.Now:yyyyMMdd-HHmmss}-{Guid.NewGuid().ToString("N")[..4]}";
+        var safeStem = string.Concat(logStem.Select(ch => Path.GetInvalidFileNameChars().Contains(ch) ? '_' : ch));
+        var logPath = Path.Combine(layout.LogsDir, $"launch-{safeStem}.log");
         Console.WriteLine($"log       : {logPath}");
         Console.WriteLine(options.AutoStopSeconds > 0
             ? $"启动游戏（{options.AutoStopSeconds}s 后自动停止，用于验收）…"
@@ -495,6 +668,13 @@ internal static class Program
         用法:
           esluncher fetch    --version <id> [选项]
           esluncher launch   --version <id> [选项]
+          esluncher launch   --instance <实例名> [选项]
+          esluncher instance create <名字> --version <id> [--memory-mb <n>] [--username <name>]
+          esluncher instance list
+          esluncher instance delete <名字> --force
+          esluncher instance clone <来源> <目标>
+          esluncher instance export <名字> [--out <zip>]
+          esluncher instance import <zip 路径> <名字>
           esluncher java
           esluncher java install --component <组件> | --version <id>
           esluncher versions [--type <t>] [--limit <n>]
@@ -510,9 +690,9 @@ internal static class Program
           --refresh          强制刷新版本清单与 version.json
           --dry-run          fetch: 只算计划；launch: 只打印命令行
           --username <name>  launch 的离线用户名 / login offline 的名字（默认 Player）
-          --instance <id>    launch 的实例名（默认同版本号）
+          --instance <名字>  launch 已创建的实例（版本/内存/参数取实例配置）
           --java <path>      launch 指定 java.exe（默认按 version.json 要求自动选）
-          --memory-mb <n>    launch 的 -Xmx（默认 2048）
+          --memory-mb <n>    launch 的 -Xmx（默认 2048）；instance create 也用它
           --autostop <s>     launch 启动后 s 秒自动停止（验收用；0 = 等待退出）
           --account <name>   launch 用已保存账号；logout 指定账号
           --provider <p>     login: offline | microsoft
@@ -522,11 +702,15 @@ internal static class Program
           --limit <n>        versions: 取几条（默认 10）
           --component <c>    java install: 运行时组件，如 jre-legacy / java-runtime-gamma
           --install-java     launch: 缺 Java 时自动安装 Mojang 运行时
+          --force            instance delete: 确认删除（否则拒绝）
+          --out <zip>        instance export: 输出路径
 
         示例:
           esluncher fetch  --version 1.7.10 --dry-run
+          esluncher instance create "整合包 1.18" --version 1.18.2 --memory-mb 4096
+          esluncher instance list
+          esluncher launch --instance "整合包 1.18" --autostop 30
           esluncher login  --provider offline --username Dev
-          esluncher launch --version 1.18.2 --account dev --autostop 30
           esluncher login  --provider microsoft --client-id <azure-client-id>
         """);
     }
@@ -593,6 +777,10 @@ internal sealed class CommandOptions
     public string? Component { get; private set; }
 
     public bool InstallJava { get; private set; }
+
+    public bool Force { get; private set; }
+
+    public string? Out { get; private set; }
 
     /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
     public string RequireVersion()
@@ -668,6 +856,12 @@ internal sealed class CommandOptions
                     break;
                 case "--install-java":
                     options.InstallJava = true;
+                    break;
+                case "--force":
+                    options.Force = true;
+                    break;
+                case "--out":
+                    options.Out = Next(args, ref i);
                     break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");
