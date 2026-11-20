@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
@@ -72,6 +73,12 @@ public partial class MainWindow : Window
             RefreshContent();
         }
 
+        // 开发/验收用：ESLUNCHER_UI_HOME_POPUP=1 直接展开主页实例选择弹层。
+        if (Environment.GetEnvironmentVariable("ESLUNCHER_UI_HOME_POPUP") == "1")
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => InstancePopup.IsOpen = true);
+        }
+
         // 开发/验收用：ESLUNCHER_UI_DIALOG=diagnostics|modrinth 自动打开弹窗（截图用）。
         var dialog = Environment.GetEnvironmentVariable("ESLUNCHER_UI_DIALOG")?.ToLowerInvariant();
         if (dialog is "diagnostics" or "modrinth" or "accounts" && InstanceList.SelectedItem is InstanceItem selected)
@@ -124,6 +131,18 @@ public partial class MainWindow : Window
 
     private void OnGoInstancesClick(object? sender, RoutedEventArgs e) => ApplyNav("instances");
 
+    private static readonly (string Start, string End)[] HomeGradients =
+    [
+        ("#1F3B57", "#0B1521"),
+        ("#3A2440", "#120B16"),
+        ("#1E3B2F", "#0A1410"),
+        ("#3E2A1E", "#150F0B"),
+        ("#24304F", "#0C1019"),
+        ("#40202B", "#150A0F"),
+        ("#203A40", "#0A1214"),
+        ("#332E1F", "#120F0A"),
+    ];
+
     private void RefreshHome()
     {
         if (HomeName is null)
@@ -131,23 +150,59 @@ public partial class MainWindow : Window
             return;
         }
 
+        HomeInstanceList.ItemsSource = _allInstances;
+
         if (InstanceList?.SelectedItem is not InstanceItem item)
         {
-            HomeInitial.Text = "?";
-            HomeName.Text = "还没有实例";
-            HomeVersion.Text = "用「下载」页创建第一个实例";
-            HomeMeta.Text = string.Empty;
-            HomeSummary.Text = string.Empty;
+            HomeName.Text = "没有实例";
+            HomeWatermark.Text = string.Empty;
+            HomeVersionLabel.Text = "先去「下载」页创建一个实例";
+            HomeLaunchButton.IsEnabled = false;
+            HomeBackground.Background = new SolidColorBrush(Color.Parse("#141419"));
             return;
         }
 
-        HomeInitial.Text = item.Initial;
         HomeName.Text = item.Name;
-        HomeVersion.Text = item.Version;
-        HomeMeta.Text = item.Detail;
-        HomeSummary.Text = $"共 {_allInstances.Length} 个实例 · 当前数据根 {_layout.Root}";
-        HomeRecent.ItemsSource = _allInstances.Take(8).ToArray();
+        HomeWatermark.Text = item.Initial;
+        HomeVersionLabel.Text = $"{item.Version} · {item.Config.MemoryMb} MB"
+                                + (string.IsNullOrWhiteSpace(item.Group) ? string.Empty : $" · {item.Group}");
+        HomeLaunchButton.IsEnabled = true;
+        HomeInstanceList.SelectedItem = item;
+
+        var gradient = HomeGradients[Math.Abs(StringComparer.Ordinal.GetHashCode(item.Name)) % HomeGradients.Length];
+        HomeBackground.Background = new LinearGradientBrush
+        {
+            StartPoint = new Avalonia.RelativePoint(0, 0, Avalonia.RelativeUnit.Relative),
+            EndPoint = new Avalonia.RelativePoint(1, 1, Avalonia.RelativeUnit.Relative),
+            GradientStops =
+            {
+                new GradientStop(Color.Parse(gradient.Start), 0),
+                new GradientStop(Color.Parse(gradient.End), 1),
+            },
+        };
+
         RefreshAccount(item);
+    }
+
+    private void OnInstancePickerClick(object? sender, RoutedEventArgs e)
+    {
+        InstancePopup.IsOpen = !InstancePopup.IsOpen;
+    }
+
+    private void OnHomeInstanceSelected(object? sender, SelectionChangedEventArgs e)
+    {
+        if (HomeInstanceList.SelectedItem is not InstanceItem item)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(item, InstanceList.SelectedItem))
+        {
+            return;
+        }
+
+        InstanceList.SelectedItem = item;
+        InstancePopup.IsOpen = false;
     }
 
     private void RefreshAccount(InstanceItem? item)
@@ -186,20 +241,6 @@ public partial class MainWindow : Window
         if (InstanceList.SelectedItem is InstanceItem current)
         {
             RefreshAccount(current);
-        }
-    }
-
-    private void OnRecentInstanceClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is not Button { Tag: string name })
-        {
-            return;
-        }
-
-        var match = _allInstances.FirstOrDefault(candidate => candidate.Name == name);
-        if (match is not null)
-        {
-            InstanceList.SelectedItem = match;
         }
     }
 

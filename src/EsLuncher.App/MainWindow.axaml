@@ -86,65 +86,52 @@
     <!-- 页面 -->
     <Grid Grid.Row="1">
       <!-- 主页 -->
-      <Grid x:Name="HomePage">
-        <ScrollViewer>
-          <StackPanel Spacing="16" Margin="28,24">
-            <Border Background="#1A1A22" CornerRadius="14" Padding="24">
-              <Grid ColumnDefinitions="Auto,*,Auto">
-                <Border Width="76" Height="76" CornerRadius="18" Background="#262631">
-                  <TextBlock x:Name="HomeInitial" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF"
-                             HorizontalAlignment="Center" VerticalAlignment="Center" />
-                </Border>
-                <StackPanel Grid.Column="1" Spacing="4" Margin="18,0,0,0" VerticalAlignment="Center" MaxWidth="640">
-                  <TextBlock x:Name="HomeName" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
-                  <TextBlock x:Name="HomeVersion" FontSize="13" Foreground="#9A9AA3" TextTrimming="CharacterEllipsis" />
-                  <TextBlock x:Name="HomeMeta" FontSize="12" Foreground="#6E6E76" TextTrimming="CharacterEllipsis" />
-                </StackPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                  <Button x:Name="HomeLaunchButton" Classes="primary" Content="启动游戏" Click="OnLaunchClick" />
-                </StackPanel>
-              </Grid>
+      <Grid x:Name="HomePage" ClipToBounds="True">
+        <Border x:Name="HomeBackground">
+          <Grid>
+            <TextBlock x:Name="HomeWatermark" FontSize="360" FontWeight="Bold" Foreground="#1CFFFFFF"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Border VerticalAlignment="Bottom" Height="260">
+              <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                  <GradientStop Color="#00000000" Offset="0" />
+                  <GradientStop Color="#CC000000" Offset="1" />
+                </LinearGradientBrush>
+              </Border.Background>
             </Border>
+          </Grid>
+        </Border>
 
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <Button Classes="ghost" Content="打开目录" Click="OnOpenFolderClick" />
-              <Button Classes="ghost" Content="内容管理" Click="OnGoInstancesClick" />
-              <Button Classes="ghost" Content="诊断" Click="OnDiagnosticsClick" />
-              <Button Classes="ghost" Content="Modrinth" Click="OnModrinthClick" />
-              <Button Classes="ghost" Content="日志" Click="OnLogClick" />
-            </StackPanel>
-
-            <TextBlock x:Name="HomeSummary" Foreground="#9A9AA3" FontSize="12" />
-
-            <TextBlock Text="最近实例" FontSize="14" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,8,0,0" />
-            <ItemsControl x:Name="HomeRecent">
-              <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                  <WrapPanel Orientation="Horizontal" />
-                </ItemsPanelTemplate>
-              </ItemsControl.ItemsPanel>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="app:InstanceItem">
-                  <Button Tag="{Binding Name}" Click="OnRecentInstanceClick" Margin="0,0,12,12" Padding="0"
-                          Background="Transparent" BorderThickness="0">
-                    <Border Width="240" Height="72" Background="#1A1A22" CornerRadius="12" Padding="12">
-                      <Grid ColumnDefinitions="Auto,*">
-                        <Border Width="40" Height="40" CornerRadius="10" Background="#262631">
-                          <TextBlock Text="{Binding Initial}" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="2" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
-                          <TextBlock Text="{Binding Version}" FontSize="10" Foreground="#8A8A93" TextTrimming="CharacterEllipsis" />
-                        </StackPanel>
-                      </Grid>
-                    </Border>
-                  </Button>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
+        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,40,34" Spacing="12">
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <TextBlock x:Name="HomeName" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+            <Button x:Name="InstancePickerButton" Content="▲" Classes="ghost" Width="34" Height="34" Padding="0,2"
+                    FontSize="12" Click="OnInstancePickerClick" />
           </StackPanel>
-        </ScrollViewer>
+
+          <Button x:Name="HomeLaunchButton" Classes="primary" Content="启动游戏" FontSize="18" Padding="40,12"
+                  HorizontalAlignment="Right" Click="OnLaunchClick" />
+
+          <TextBlock x:Name="HomeVersionLabel" FontSize="12" Foreground="#B0B0BA"
+                     HorizontalAlignment="Right" TextAlignment="Right" />
+        </StackPanel>
+
+        <Popup x:Name="InstancePopup" Placement="Top" PlacementTarget="{Binding #InstancePickerButton}" IsOpen="False">
+          <Border Background="#1A1A22" CornerRadius="10" Padding="8" Width="280">
+            <ListBox x:Name="HomeInstanceList" Background="Transparent" SelectionChanged="OnHomeInstanceSelected">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="app:InstanceItem">
+                  <Border Padding="8" CornerRadius="6">
+                    <StackPanel Spacing="2">
+                      <TextBlock Text="{Binding Name}" Foreground="#FFFFFF" FontSize="13" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Version}" Foreground="#8A8A93" FontSize="11" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Border>
+        </Popup>
       </Grid>
 
       <!-- 实例页 -->
