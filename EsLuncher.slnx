@@ -9,5 +9,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/EsLuncher.Core.Tests/EsLuncher.Core.Tests.csproj" />
+    <Project Path="tests/EsLuncher.Ui.Tests/EsLuncher.Ui.Tests.csproj" />
   </Folder>
 </Solution>

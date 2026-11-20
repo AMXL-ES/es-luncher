@@ -69,7 +69,8 @@
 12. 日志窗增量读取
 - [x] 13. 最小尺寸布局检查：1040×660（100% 缩放）实例页/下载页无截断 ✅；**125%/150% 未实测**
 - [x] 14a. 快捷键：F5 刷新、Ctrl+L 日志；对话框 Esc 关闭 ✅；Tab 顺序/无障碍标签仍待做
-- [x] 15a. UI 冒烟脚本 `scripts/smoke-ui.ps1`（启动存活 8s）✅；Headless 自动化测试仍待做
+- [x] 15a. UI 冒烟脚本 `scripts/smoke-ui.ps1`（启动存活 8s）✅
+- [x] 15b. Avalonia Headless 测试：MainWindow 启动 + 五个页面存在（`tests/EsLuncher.Ui.Tests`）✅ 2026-11-20
 
 ### P3 推迟（按用户要求）
 16. M10 安装包/便携版/自更新/签名
