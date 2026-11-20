@@ -20,6 +20,7 @@
 | `M7-ui.md` | 界面：图标规范、UI 壳、实例页/关于页、M7 待办 | M7 期间持续更新 |
 | `M8-content.md` | 内容管理：types/复制/回收站式移除/CLI/Modrinth/mrpack/扩展点 | M8 期间持续更新 |
 | `M9-diagnostics.md` | 诊断：日志错误/崩溃报告/人话提示/诊断包 | M9 期间持续更新 |
+| `DEVELOPER-GUIDE.md` | 用 Core 写自己的启动器：最小示例、接口表、扩展点、约定 | 长期维护 |
 
 ## 待建（按里程碑顺序）
 

@@ -221,6 +221,14 @@
 
 **扩展点（别做死）**：新增内容类型只加枚举+目录映射；`ContentFile` 可扩字段；将来依赖解析/Modrinth 接入读同一批文件，不改现有语义。
 
+## 开发者支持（2026-11-20）
+
+| 产物 | 说明 |
+|---|---|
+| `samples/MinimalLauncher` | 30 行内跑通「下载→选 Java→组装命令」，实测 1.18.2（跳过 3099、失败 0、classpath 37） |
+| `docs/DEVELOPER-GUIDE.md` | 架构、接口速查、扩展点、7 条必须遵守的约定、GPL 说明 |
+| `pack install --instance <新> <zip>` | 本地/下载的 .mrpack 一键建实例（依赖→原版→加载器→导入），实测 383 B 包 → 实例含 demo-mod.jar |
+
 ## M8 内容管理器扩展（2026-11-20，完成）
 
 `dotnet test` → **174 passed / 0 failed**。

@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/MinimalLauncher/MinimalLauncher.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/EsLuncher.App/EsLuncher.App.csproj" />
     <Project Path="src/EsLuncher.Cli/EsLuncher.Cli.csproj" />

@@ -463,6 +463,29 @@ internal static class Program
                 return 0;
             }
 
+            case "install":
+            {
+                if (positionals.Count < 1)
+                {
+                    return Fail("pack install 需要 <zip 路径>（会创建新实例）");
+                }
+
+                using var client = new HttpRemoteFileClient();
+                var downloader = new FileDownloader(client);
+                var installer = new ModpackInstaller(
+                    layout,
+                    store,
+                    service,
+                    new LoaderProvisioner(layout, downloader, client),
+                    new VersionFetcher(layout, downloader),
+                    client);
+                var instance = await installer
+                    .InstallAsync(positionals[0], options.InstanceId!, 2048, CancellationToken.None)
+                    .ConfigureAwait(false);
+                Console.WriteLine($"已创建实例 {instance.Name} ← {instance.VersionId}（可在「实例」页启动）");
+                return 0;
+            }
+
             default:
                 return Fail($"未知 pack 动作：{action}（export|import）");
         }
@@ -1172,6 +1195,7 @@ internal static class Program
           esluncher modrinth install --instance <名字> <项目 slug/ID>
           esluncher pack export --instance <名字> [--out <zip>]
           esluncher pack import --instance <名字> <zip>
+          esluncher pack install --instance <新实例名> <zip>
           esluncher diagnose --instance <名字> [--export <zip>]
           esluncher deps --instance <名字>
           esluncher java
@@ -1208,6 +1232,7 @@ internal static class Program
           --kind <k>         content: mods|resourcepacks|shaderpacks（默认 mods）
           --query <q>        modrinth search: 关键词
           --export <zip>     diagnose: 导出诊断包路径
+          --world <名字>     data pack: 目标世界（content/datapacks 必填）
 
         示例:
           esluncher fetch  --version 1.7.10 --dry-run
