@@ -21,14 +21,14 @@
 
     <TextBlock x:Name="CategoriesText" Grid.Row="1" FontSize="11" Foreground="#6E6E76" TextWrapping="Wrap" />
 
-    <TextBlock Grid.Row="2" Text="简介" Foreground="#9A9AA3" FontSize="12" />
+    <TextBlock Grid.Row="2" Text="{app:T detail.summary}" Foreground="#9A9AA3" FontSize="12" />
     <Border Grid.Row="3" Background="#141419" CornerRadius="10" Padding="12">
       <ScrollViewer>
         <TextBox x:Name="DescriptionBox" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" Background="Transparent" BorderThickness="0" Foreground="#D0D0D6" FontSize="12" />
       </ScrollViewer>
     </Border>
 
-    <TextBlock Grid.Row="4" Text="可用版本" Foreground="#9A9AA3" FontSize="12" />
+    <TextBlock Grid.Row="4" Text="{app:T detail.versions}" Foreground="#9A9AA3" FontSize="12" />
     <Grid Grid.Row="5" ColumnDefinitions="*,Auto">
       <Border Background="#141419" CornerRadius="10" Padding="8">
         <ListBox x:Name="VersionsList" Height="110" Background="Transparent">
@@ -40,9 +40,9 @@
         </ListBox>
       </Border>
       <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="8" VerticalAlignment="Center">
-        <TextBox x:Name="InstanceNameBox" Width="180" PlaceholderText="新实例名" IsVisible="False" />
-        <Button x:Name="InstallButton" Content="安装选中版本" Classes="primary" Click="OnInstallClick" />
-        <Button Content="关闭" IsCancel="True" Click="OnCloseClick" />
+        <TextBox x:Name="InstanceNameBox" Width="180" PlaceholderText="{app:T detail.newInstance}" IsVisible="False" />
+        <Button x:Name="InstallButton" Content="{app:T detail.install}" Classes="primary" Click="OnInstallClick" />
+        <Button Content="{app:T detail.close}" IsCancel="True" Click="OnCloseClick" />
       </StackPanel>
     </Grid>
 
