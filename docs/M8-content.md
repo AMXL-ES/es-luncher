@@ -43,7 +43,20 @@ esluncher content remove --instance "Fabric 测试" --kind mods jei.jar
 - Forge/NeoForge：轻量解析 `META-INF/mods.toml`（`[[mods]]` 块 + `[[dependencies.*]]` 的 modId），不引第三方 TOML 库。
 - 解析失败/非模组 jar → `unknown`，UI 显示 `—`，绝不因坏 jar 崩溃。
 
-## 5. 待办（M8 剩余）
+## 6. Modrinth + .mrpack（2026-11-20 本轮）
+
+| 能力 | 落点 | 证据 |
+|---|---|---|
+| Modrinth 检索 | `Content/ModrinthClient.cs` | `modrinth search --query jei --version 1.18.2 --loader fabric` → JEI 86,313,860 下载等 5 条 |
+| Modrinth 安装 | 同上 | `modrinth install --instance "Fabric 测试" jei` → `jei-1.18.2-fabric-10.2.1.1002.jar`（1.1 MB） |
+| 依赖实况 | —— | 先只装 JEI → 启动失败（`HARD_DEP fabric`）；装 `fabric-api` 后启动成功：**`Loading 51 mods`**、JEI atlas 创建 |
+| `.mrpack` 导出/导入 | `Content/InstancePackService.cs` | 导出 971,964 B；导入到同版本实例：下载 0 / 覆盖 1 / 跳过 0 |
+
+- 导出用 `overrides/mods/*`（不编造下载 URL）；导入支持 `files[].downloads` + `overrides/*`。
+- 加载器名映射：实例 id 的 `fabric-loader` → Modrinth 的 `fabric`；`quilt-loader` → `quilt`。
+- 路径穿越防护：包内 `../` 直接拒绝（单测 + 真实）。
+
+## 7. 待办（M8 剩余）
 
 1. jar 内依赖版本范围与冲突提示（当前只列 id）。
 2. Modrinth 检索/下载、`.mrpack` 导入导出、CurseForge（需 API key）。

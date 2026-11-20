@@ -1,6 +1,7 @@
 using System.Globalization;
 using EsLuncher.Core.Auth;
 using EsLuncher.Core.Content;
+using EsLuncher.Core.Diagnostics;
 using EsLuncher.Core.Downloads;
 using EsLuncher.Core.Instances;
 using EsLuncher.Core.Java;
@@ -38,6 +39,21 @@ internal static class Program
             if (command == "content")
             {
                 return ContentCommand(args);
+            }
+
+            if (command == "modrinth")
+            {
+                return await ModrinthCommandAsync(args).ConfigureAwait(false);
+            }
+
+            if (command == "pack")
+            {
+                return await PackCommandAsync(args).ConfigureAwait(false);
+            }
+
+            if (command == "diagnose")
+            {
+                return await DiagnoseCommandAsync(args).ConfigureAwait(false);
             }
 
             if (command == "java")
@@ -245,6 +261,186 @@ internal static class Program
         foreach (var entry in entries)
         {
             Console.WriteLine($"  {entry.Id,-20} {entry.Type,-10} {(entry.ReleaseTime?.ToString("yyyy-MM-dd") ?? "-")}");
+        }
+
+        return 0;
+    }
+
+    private static async Task<int> ModrinthCommandAsync(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            return Fail("用法：esluncher modrinth <search|install> ...");
+        }
+
+        var action = args[1].ToLowerInvariant();
+        var (positionals, optionTokens) = SplitOptions(args[2..]);
+        var options = CommandOptions.Parse(optionTokens);
+        var layout = new DataLayout(options.DataRoot);
+        using var client = new HttpRemoteFileClient();
+        var modrinth = new ModrinthClient(client);
+
+        switch (action)
+        {
+            case "search":
+            {
+                var query = options.Query ?? string.Join(' ', positionals);
+                if (string.IsNullOrWhiteSpace(query))
+                {
+                    return Fail("modrinth search 需要 --query <关键词>");
+                }
+
+                var hits = await modrinth.SearchAsync(query, options.Version, options.Loader, options.Limit, CancellationToken.None)
+                    .ConfigureAwait(false);
+                if (hits.Count == 0)
+                {
+                    Console.WriteLine("没有结果");
+                    return 0;
+                }
+
+                Console.WriteLine($"Modrinth 检索「{query}」：{hits.Count} 条");
+                foreach (var hit in hits)
+                {
+                    Console.WriteLine($"  {hit.Slug,-32} {hit.Downloads,12:N0} 下载  {hit.Title}");
+                }
+
+                return 0;
+            }
+
+            case "install":
+            {
+                if (string.IsNullOrWhiteSpace(options.InstanceId) || positionals.Count < 1)
+                {
+                    return Fail("用法：esluncher modrinth install --instance <名字> <项目 slug/ID>");
+                }
+
+                var store = new InstanceStore(layout);
+                var instance = store.TryLoad(options.InstanceId!)
+                    ?? throw new InvalidOperationException($"实例不存在：{options.InstanceId}");
+                var (mcVersion, loader) = InstanceVersionInfo.Derive(instance.VersionId);
+                loader = options.Loader ?? ModrinthLoaderName(loader);
+
+                var content = new InstanceContentService(layout, store);
+                var file = await modrinth
+                    .InstallAsync(content, instance.Name, positionals[0], options.Version ?? mcVersion, loader, CancellationToken.None)
+                    .ConfigureAwait(false);
+                Console.WriteLine($"已安装 {positionals[0]} → {file}（MC {options.Version ?? mcVersion}, 加载器 {loader ?? "vanilla"}）");
+                return 0;
+            }
+
+            default:
+                return Fail($"未知 modrinth 动作：{action}（search|install）");
+        }
+    }
+
+    private static string? ModrinthLoaderName(string? loader) => loader switch
+    {
+        "fabric-loader" => "fabric",
+        "quilt-loader" => "quilt",
+        "forge" => "forge",
+        "neoforge" => "neoforge",
+        _ => loader,
+    };
+
+    private static async Task<int> PackCommandAsync(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            return Fail("用法：esluncher pack <export|import> ...");
+        }
+
+        var action = args[1].ToLowerInvariant();
+        var (positionals, optionTokens) = SplitOptions(args[2..]);
+        var options = CommandOptions.Parse(optionTokens);
+        if (string.IsNullOrWhiteSpace(options.InstanceId))
+        {
+            return Fail("pack 命令需要 --instance <名字>");
+        }
+
+        var layout = new DataLayout(options.DataRoot);
+        var store = new InstanceStore(layout);
+        var service = new InstancePackService(layout, store, new InstanceContentService(layout, store));
+
+        switch (action)
+        {
+            case "export":
+            {
+                var outPath = string.IsNullOrWhiteSpace(options.Out)
+                    ? Path.Combine(Environment.CurrentDirectory, options.InstanceId + "-pack.mrpack")
+                    : options.Out!;
+                await service.ExportAsync(options.InstanceId!, outPath, CancellationToken.None).ConfigureAwait(false);
+                Console.WriteLine($"已导出 {options.InstanceId} → {outPath}");
+                return 0;
+            }
+
+            case "import":
+            {
+                if (positionals.Count < 1)
+                {
+                    return Fail("pack import 需要 <zip 路径>");
+                }
+
+                using var client = new HttpRemoteFileClient();
+                var (downloaded, overridden, skipped) = await service
+                    .ImportAsync(positionals[0], options.InstanceId!, client, CancellationToken.None)
+                    .ConfigureAwait(false);
+                Console.WriteLine($"已导入到 {options.InstanceId}：下载 {downloaded}，覆盖 {overridden}，跳过 {skipped}");
+                return 0;
+            }
+
+            default:
+                return Fail($"未知 pack 动作：{action}（export|import）");
+        }
+    }
+
+    private static async Task<int> DiagnoseCommandAsync(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            return Fail("用法：esluncher diagnose --instance <名字> [--export <zip>]");
+        }
+
+        var (_, optionTokens) = SplitOptions(args[1..]);
+        var options = CommandOptions.Parse(optionTokens);
+        if (string.IsNullOrWhiteSpace(options.InstanceId))
+        {
+            return Fail("diagnose 需要 --instance <名字>");
+        }
+
+        var layout = new DataLayout(options.DataRoot);
+        var diagnostics = new InstanceDiagnostics(layout, new InstanceStore(layout));
+        var report = diagnostics.Analyze(options.InstanceId!);
+
+        Console.WriteLine($"实例：{report.Instance}");
+        Console.WriteLine($"日志：{report.LogPath ?? "(没有 latest.log)"}");
+        Console.WriteLine($"错误行：{report.Errors.Count}");
+        foreach (var error in report.Errors.Take(15))
+        {
+            Console.WriteLine($"  {error}");
+        }
+
+        if (report.Crashes.Count > 0)
+        {
+            Console.WriteLine($"崩溃报告：{report.Crashes.Count}");
+            foreach (var crash in report.Crashes)
+            {
+                Console.WriteLine($"  {crash.Path} :: {crash.Summary}");
+            }
+        }
+
+        if (report.Hints.Count > 0)
+        {
+            Console.WriteLine("提示：");
+            foreach (var hint in report.Hints)
+            {
+                Console.WriteLine($"  - {hint}");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Out))
+        {
+            var zip = diagnostics.Export(options.InstanceId!, options.Out!);
+            Console.WriteLine($"诊断包：{zip}");
         }
 
         return 0;
@@ -897,6 +1093,11 @@ internal static class Program
           esluncher content list   --instance <名字> [--kind mods|resourcepacks|shaderpacks]
           esluncher content add    --instance <名字> [--kind <k>] <文件>
           esluncher content remove --instance <名字> [--kind <k>] <文件名>
+          esluncher modrinth search --query <关键词> [--version <mc>] [--loader <l>] [--limit <n>]
+          esluncher modrinth install --instance <名字> <项目 slug/ID>
+          esluncher pack export --instance <名字> [--out <zip>]
+          esluncher pack import --instance <名字> <zip>
+          esluncher diagnose --instance <名字> [--export <zip>]
           esluncher java
           esluncher java install --component <组件> | --version <id>
           esluncher versions [--type <t>] [--limit <n>]
@@ -929,6 +1130,8 @@ internal static class Program
           --loader <kind>    fabric|quilt|forge|neoforge（loader/instance create）
           --loader-version <v> 指定加载器版本（默认最新稳定）
           --kind <k>         content: mods|resourcepacks|shaderpacks（默认 mods）
+          --query <q>        modrinth search: 关键词
+          --export <zip>     diagnose: 导出诊断包路径
 
         示例:
           esluncher fetch  --version 1.7.10 --dry-run
@@ -1013,6 +1216,8 @@ internal sealed class CommandOptions
 
     public string? Kind { get; private set; }
 
+    public string? Query { get; private set; }
+
     /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
     public string RequireVersion()
     {
@@ -1094,6 +1299,9 @@ internal sealed class CommandOptions
                 case "--out":
                     options.Out = Next(args, ref i);
                     break;
+                case "--export":
+                    options.Out = Next(args, ref i);
+                    break;
                 case "--loader":
                     options.Loader = Next(args, ref i);
                     break;
@@ -1102,6 +1310,9 @@ internal sealed class CommandOptions
                     break;
                 case "--kind":
                     options.Kind = Next(args, ref i);
+                    break;
+                case "--query":
+                    options.Query = Next(args, ref i);
                     break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");
