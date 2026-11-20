@@ -239,6 +239,12 @@
 | 错误行 + 崩溃报告 + 人话提示 | 缺依赖场景抓 3 条错误并提示「疑似缺少模组依赖」 |
 | 诊断包 | `forge-diag.zip` 2,618 B，含 logs / crash-reports / config / system-info |
 | CLI | `esluncher diagnose --instance <名字> [--export <zip>]` |
+| **UI 诊断窗口** | 实例页「诊断」→ 错误行/崩溃/提示 + 导出；截图 `docs/img/m9-diagnostics.png` |
+| 依赖体检 | `esluncher deps --instance`：读 modId/depends，内置与 fabric-api 子模块不误报；168 tests |
+
+## M8 UI 增补：Modrinth 窗口（2026-11-20）
+
+实例页「Modrinth」→ 按实例 MC/加载器检索并安装；截图 `docs/img/m8-modrinth.png`。
 
 ## 下一步（M9 收尾 → M10）
 
