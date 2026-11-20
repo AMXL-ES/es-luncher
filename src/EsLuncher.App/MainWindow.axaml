@@ -8,7 +8,8 @@
         MinWidth="1040"
         MinHeight="660"
         WindowStartupLocation="CenterScreen"
-        Background="#0E0E12">
+        Background="#0E0E12"
+        KeyboardNavigation.TabNavigation="Cycle">
   <Window.Styles>
     <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
       <Setter Property="Background" Value="#23232B" />

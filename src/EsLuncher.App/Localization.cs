@@ -55,6 +55,23 @@ public static class Localization
         ["others.clearTrash"] = ("清空回收站", "Empty trash"),
         ["others.guide"] = ("开发者指南", "Developer guide"),
         ["others.about"] = ("开源许可 / 关于", "Licenses / About"),
+        ["status.instances"] = ("共 {0} 个实例", "{0} instances"),
+        ["status.instancesFiltered"] = ("共 {0} 个实例（筛选自 {1}）", "{0} instances (of {1})"),
+        ["status.noMatch"] = ("没有匹配的实例", "No matching instances"),
+        ["status.pickInstance"] = ("先选一个实例", "Select an instance first"),
+        ["status.launchFailed"] = ("启动失败：{0}", "Launch failed: {0}"),
+        ["content.empty"] = ("空（{0}）", "Empty ({0})"),
+        ["content.count"] = ("{0} 个 · 目录 {1}", "{0} items · {1}"),
+        ["content.added"] = ("已添加 {0}", "Added {0}"),
+        ["content.enabled"] = ("已启用 {0}", "Enabled {0}"),
+        ["content.disabled"] = ("已禁用 {0}", "Disabled {0}"),
+        ["content.removed"] = ("已移除 {0}（在 trash/content 可找回）", "Removed {0} (recoverable in trash/content)"),
+        ["content.removeMissing"] = ("文件不存在", "File not found"),
+        ["content.upToDate"] = ("模组都是最新（静态检查）", "All mods up to date (static check)"),
+        ["content.updates"] = ("{0} 个模组可更新（CLI：esluncher content update --instance \"{1}\"）", "{0} updates available (CLI: esluncher content update --instance \"{1}\")"),
+        ["others.cleared"] = ("回收站已清空", "Trash emptied"),
+        ["others.confirmClear"] = ("再点一次「清空回收站」确认（5 秒内有效）", "Click 清空回收站 again to confirm (5s)"),
+        ["others.clearFailed"] = ("清空失败：{0}", "Empty failed: {0}"),
         ["diagnostics.title"] = ("诊断", "Diagnostics"),
         ["diagnostics.errors"] = ("错误行", "Errors"),
         ["diagnostics.search"] = ("在错误行里搜索…", "Search errors"),
@@ -145,6 +162,9 @@ public static class Localization
         ["downloads.newInstance"] = ("新实例名", "New instance name"),
         ["downloads.installModpack"] = ("安装整合包", "Install modpack"),
     };
+
+    public static string F(string key, params object?[] args)
+        => string.Format(System.Globalization.CultureInfo.InvariantCulture, T(key), args);
 
     public static string T(string key)
         => Strings.TryGetValue(key, out var pair) ? (Language == "en" ? pair.En : pair.Zh) : key;

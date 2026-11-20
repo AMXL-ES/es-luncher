@@ -205,7 +205,7 @@ public partial class MainWindow : Window
         if ((DateTime.Now - _trashClearRequestedAt).TotalSeconds > 5)
         {
             _trashClearRequestedAt = DateTime.Now;
-            OthersStatus.Text = "再点一次「清空回收站」确认（5 秒内有效）";
+            OthersStatus.Text = Localization.T("others.confirmClear");
             return;
         }
 
@@ -228,11 +228,11 @@ public partial class MainWindow : Window
                 }
             }
 
-            OthersStatus.Text = "回收站已清空";
+            OthersStatus.Text = Localization.T("others.cleared");
         }
         catch (Exception exception)
         {
-            OthersStatus.Text = $"清空失败：{exception.Message}";
+            OthersStatus.Text = Localization.F("others.clearFailed", exception.Message);
         }
     }
 
@@ -460,8 +460,10 @@ public partial class MainWindow : Window
         }
 
         StatusText.Text = items.Length == 0
-            ? "没有匹配的实例"
-            : $"共 {items.Length} 个实例" + (string.IsNullOrWhiteSpace(query) ? string.Empty : $"（筛选自 {_allInstances.Length}）");
+            ? Localization.T("status.noMatch")
+            : string.IsNullOrWhiteSpace(query)
+                ? Localization.F("status.instances", items.Length)
+                : Localization.F("status.instancesFiltered", items.Length, _allInstances.Length);
     }
 
     private void OnSearchChanged(object? sender, TextChangedEventArgs e) => ApplyInstanceFilter();
@@ -533,7 +535,7 @@ public partial class MainWindow : Window
 
         if (InstanceList.SelectedItem is not InstanceItem item)
         {
-            ContentStatus.Text = "选一个实例";
+            ContentStatus.Text = Localization.T("status.pickInstance");
             ContentList.ItemsSource = null;
             return;
         }
@@ -583,8 +585,8 @@ public partial class MainWindow : Window
         ContentList.ItemsSource = items;
         ContentTitle.Text = $"内容 · {item.Config.Name}";
         ContentStatus.Text = files.Count == 0
-            ? $"空（{InstanceContentService.FolderName(kind)}）"
-            : $"{files.Count} 个 · 目录 {directory}";
+            ? Localization.F("content.empty", InstanceContentService.FolderName(kind))
+            : Localization.F("content.count", files.Count, directory);
     }
 
     private int _contentVersion;
@@ -643,7 +645,7 @@ public partial class MainWindow : Window
 
             var added = new InstanceContentService(_layout, _store)
                 .Add(item.Config.Name, kind, sourcePath, SelectedWorld);
-            ContentStatus.Text = $"已添加 {added.Name}";
+            ContentStatus.Text = Localization.F("content.added", added.Name);
             RefreshWorlds();
             RefreshContent();
         }
@@ -666,8 +668,8 @@ public partial class MainWindow : Window
             var service = new InstanceContentService(_layout, _store);
             var changed = service.SetEnabled(item.Config.Name, CurrentContentKind, content.File.Name, !content.File.Enabled, SelectedWorld);
             ContentStatus.Text = changed
-                ? $"{(content.File.Enabled ? "已禁用" : "已启用")} {content.File.Name}"
-                : "操作失败：内容不存在";
+                ? Localization.F(content.File.Enabled ? "content.disabled" : "content.enabled", content.File.Name)
+                : Localization.T("content.removeMissing");
             RefreshContent();
         }
         catch (NotSupportedException exception)
@@ -680,7 +682,7 @@ public partial class MainWindow : Window
     {
         if (InstanceList.SelectedItem is not InstanceItem item)
         {
-            StatusText.Text = "先选一个实例";
+            StatusText.Text = Localization.T("status.pickInstance");
             return;
         }
 
@@ -730,8 +732,8 @@ public partial class MainWindow : Window
             var statuses = await updater.CheckAsync(item.Config.Name, minecraftVersion, modrinthLoader, CancellationToken.None);
             var updatable = statuses.Count(status => status.UpdateAvailable);
             ContentStatus.Text = updatable == 0
-                ? "模组都是最新（静态检查）"
-                : $"{updatable} 个模组可更新（CLI：esluncher content update --instance \"{item.Config.Name}\"）";
+                ? Localization.T("content.upToDate")
+                : Localization.F("content.updates", updatable, item.Config.Name);
         }
         catch (Exception exception)
         {
@@ -812,7 +814,9 @@ public partial class MainWindow : Window
 
         var removed = new InstanceContentService(_layout, _store)
             .Remove(item.Config.Name, CurrentContentKind, content.File.Name, SelectedWorld);
-        ContentStatus.Text = removed ? $"已移除 {content.File.Name}（在 trash/content 可找回）" : "文件不存在";
+        ContentStatus.Text = removed
+            ? Localization.F("content.removed", content.File.Name)
+            : Localization.T("content.removeMissing");
         RefreshContent();
     }
 
@@ -832,7 +836,7 @@ public partial class MainWindow : Window
     {
         if (InstanceList.SelectedItem is not InstanceItem item)
         {
-            StatusText.Text = "先选一个实例";
+            StatusText.Text = Localization.T("status.pickInstance");
             return;
         }
 
@@ -859,7 +863,7 @@ public partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            StatusText.Text = $"启动失败：{exception.Message}";
+            StatusText.Text = Localization.F("status.launchFailed", exception.Message);
         }
     }
 
@@ -867,7 +871,7 @@ public partial class MainWindow : Window
     {
         if (InstanceList.SelectedItem is not InstanceItem item)
         {
-            StatusText.Text = "先选一个实例";
+            StatusText.Text = Localization.T("status.pickInstance");
             return;
         }
 
