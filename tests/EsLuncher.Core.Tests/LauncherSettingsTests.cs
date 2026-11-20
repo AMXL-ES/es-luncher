@@ -46,7 +46,6 @@ public sealed class LauncherSettingsTests : IDisposable
             Language = "zh",
             DefaultUsername = "Dev",
             Concurrency = 4,
-            AutoInstallJava = true,
         });
 
         var loaded = _store.Load();
@@ -56,7 +55,6 @@ public sealed class LauncherSettingsTests : IDisposable
         Assert.Equal(@"D:\java\bin\java.exe", loaded.JavaPath);
         Assert.Equal("Dev", loaded.DefaultUsername);
         Assert.Equal(4, loaded.Concurrency);
-        Assert.True(loaded.AutoInstallJava);
     }
 
     [Fact]

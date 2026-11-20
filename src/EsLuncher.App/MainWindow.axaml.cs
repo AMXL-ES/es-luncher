@@ -187,8 +187,18 @@ public partial class MainWindow : Window
 
     private void OnOthersOpenTrashClick(object? sender, RoutedEventArgs e) => OpenDirectory(Path.Combine(_layout.Root, "trash"));
 
+    private DateTime _trashClearRequestedAt = DateTime.MinValue;
+
     private void OnOthersClearTrashClick(object? sender, RoutedEventArgs e)
     {
+        if ((DateTime.Now - _trashClearRequestedAt).TotalSeconds > 5)
+        {
+            _trashClearRequestedAt = DateTime.Now;
+            OthersStatus.Text = "再点一次「清空回收站」确认（5 秒内有效）";
+            return;
+        }
+
+        _trashClearRequestedAt = DateTime.MinValue;
         try
         {
             var trash = Path.Combine(_layout.Root, "trash");
@@ -383,7 +393,6 @@ public partial class MainWindow : Window
         LaunchButton.Content = Localization.T("toolbar.launch");
         OpenFolderButton.Content = Localization.T("toolbar.open");
         DiagnosticsButton.Content = Localization.T("toolbar.diagnostics");
-        ModrinthButton.Content = Localization.T("toolbar.modrinth");
         LogButton.Content = Localization.T("toolbar.log");
         SearchBox.PlaceholderText = Localization.T("search.placeholder");
 
@@ -489,7 +498,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RefreshContent()
+    private async void RefreshContent()
     {
         // XAML 加载期间 SelectedIndex 会先触发，此时命名控件可能还没赋值。
         if (ContentStatus is null || ContentList is null || InstanceList is null || ContentTitle is null)
@@ -532,16 +541,28 @@ public partial class MainWindow : Window
                 .ToArray();
         }
 
-        ContentList.ItemsSource = files
+        var directory = service.DirectoryFor(item.Config.Name, kind, SelectedWorld);
+        var version = ++_contentVersion;
+        var items = await Task.Run(() => files
             .Select(file => new ContentItem(
                 file,
-                kind == ContentKind.Mods ? DescribeMod(Path.Combine(service.DirectoryFor(item.Config.Name, kind), file.Name)) : null))
-            .ToArray();
+                kind == ContentKind.Mods ? DescribeMod(Path.Combine(directory, file.Name)) : null))
+            .ToArray());
+
+        // 期间用户切了实例/类型就丢弃这次结果
+        if (version != _contentVersion || InstanceList.SelectedItem is not InstanceItem current || current.Config.Name != item.Config.Name)
+        {
+            return;
+        }
+
+        ContentList.ItemsSource = items;
         ContentTitle.Text = $"内容 · {item.Config.Name}";
         ContentStatus.Text = files.Count == 0
             ? $"空（{InstanceContentService.FolderName(kind)}）"
-            : $"{files.Count} 个 · 目录 {service.DirectoryFor(item.Config.Name, kind, SelectedWorld)}";
+            : $"{files.Count} 个 · 目录 {directory}";
     }
+
+    private int _contentVersion;
 
     private static string? DescribeMod(string filePath)
     {
@@ -813,25 +834,6 @@ public partial class MainWindow : Window
         }
 
         await new DiagnosticsWindow(item.Config.Name, _layout).ShowDialog(this);
-    }
-
-    private async void OnModrinthClick(object? sender, RoutedEventArgs e)
-    {
-        if (InstanceList.SelectedItem is not InstanceItem item)
-        {
-            StatusText.Text = "先选一个实例";
-            return;
-        }
-
-        var (minecraftVersion, loader) = InstanceVersionInfo.Derive(item.Config.VersionId);
-        var modrinthLoader = loader switch
-        {
-            "fabric-loader" => "fabric",
-            "quilt-loader" => "quilt",
-            var other => other,
-        };
-        await new ModrinthWindow(item.Config.Name, _layout, minecraftVersion, modrinthLoader, CurrentContentKind, SelectedWorld)
-            .ShowDialog(this);
     }
 
     private void OnOpenFolderClick(object? sender, RoutedEventArgs e)

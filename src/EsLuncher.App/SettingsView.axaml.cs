@@ -19,7 +19,6 @@ public partial class SettingsView : UserControl
         MemoryBox.Value = settings.DefaultMemoryMb;
         UsernameBox.Text = settings.DefaultUsername ?? string.Empty;
         ConcurrencyBox.Value = settings.Concurrency;
-        AutoJavaBox.IsChecked = settings.AutoInstallJava;
         JavaBox.Text = settings.JavaPath ?? string.Empty;
         ThemeBox.SelectedIndex = settings.Theme == LauncherSettings.ThemeLight ? 1 : 0;
         LanguageBox.SelectedIndex = settings.Language == "en" ? 1 : 0;
@@ -69,7 +68,6 @@ public partial class SettingsView : UserControl
             DefaultMemoryMb = (int)(MemoryBox.Value ?? 2048),
             DefaultUsername = string.IsNullOrWhiteSpace(UsernameBox.Text) ? null : UsernameBox.Text!.Trim(),
             Concurrency = Math.Clamp((int)(ConcurrencyBox.Value ?? 8), 1, 16),
-            AutoInstallJava = AutoJavaBox.IsChecked == true,
             JavaPath = string.IsNullOrWhiteSpace(JavaBox.Text) ? null : JavaBox.Text!.Trim(),
             Language = LanguageBox.SelectedIndex == 1 ? "en" : "zh",
         };

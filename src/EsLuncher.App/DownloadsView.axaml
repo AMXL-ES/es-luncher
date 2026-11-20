@@ -3,17 +3,9 @@
              xmlns:app="using:EsLuncher.App"
              x:Class="EsLuncher.App.DownloadsView">
   <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
-    <Grid ColumnDefinitions="*,Auto">
-      <TextBlock Text="下载" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
-      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
-        <Button Content="刷新清单" Classes="ghost" Click="OnRefreshClick" />
-        <Button Content="下载选中" Classes="ghost" Click="OnDownloadClick" />
-        <Button Content="下载并建实例" Classes="primary" Click="OnDownloadAndCreateClick" />
-        <Button x:Name="CancelButton" Content="取消" Classes="ghost" Click="OnCancelClick" IsEnabled="False" />
-      </StackPanel>
-    </Grid>
+    <TextBlock Text="下载" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
 
-    <Border Grid.Row="1" Background="#141419" CornerRadius="12" Padding="12">
+    <Border x:Name="ContextBorder" Grid.Row="1" Background="#141419" CornerRadius="12" Padding="12">
       <StackPanel Spacing="6">
         <StackPanel Orientation="Horizontal" Spacing="10">
           <TextBlock Text="目标实例" Foreground="#9A9AA3" FontSize="12" VerticalAlignment="Center" />
@@ -43,7 +35,13 @@
                   <ComboBoxItem Content="Quilt" />
                   <ComboBoxItem Content="Forge" />
                 </ComboBox>
-                <TextBox x:Name="InstanceNameBox" Width="220" PlaceholderText="实例名（留空=版本 id）" />
+                <TextBox x:Name="InstanceNameBox" Width="200" PlaceholderText="实例名（留空=版本 id）" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Content="刷新清单" Classes="ghost" Click="OnRefreshClick" />
+                <Button Content="下载选中" Classes="ghost" Click="OnDownloadClick" />
+                <Button Content="下载并建实例" Classes="primary" Click="OnDownloadAndCreateClick" />
+                <Button x:Name="CancelButton" Content="取消" Classes="ghost" Click="OnCancelClick" IsEnabled="False" />
               </StackPanel>
               <TextBlock x:Name="StatusText" Foreground="#9A9AA3" TextWrapping="Wrap" />
             </StackPanel>

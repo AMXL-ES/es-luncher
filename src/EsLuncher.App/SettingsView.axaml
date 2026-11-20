@@ -14,7 +14,6 @@
           <TextBox x:Name="UsernameBox" Width="240" HorizontalAlignment="Left" PlaceholderText="Player" />
           <TextBlock Text="下载并发数（1-16）" Foreground="#9A9AA3" FontSize="12" />
           <NumericUpDown x:Name="ConcurrencyBox" Minimum="1" Maximum="16" Increment="1" FormatString="0" Width="240" HorizontalAlignment="Left" />
-          <CheckBox x:Name="AutoJavaBox" Content="缺少 Java 时自动下载官方运行时" Foreground="#D0D0D6" />
         </StackPanel>
       </Border>
 

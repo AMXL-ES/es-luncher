@@ -144,8 +144,7 @@
             <Button x:Name="LaunchButton" Classes="primary" Content="启动" Click="OnLaunchClick" />
             <Button x:Name="OpenFolderButton" Classes="ghost" Content="打开目录" Click="OnOpenFolderClick" />
             <Button x:Name="DiagnosticsButton" Classes="ghost" Content="诊断" Click="OnDiagnosticsClick" />
-            <Button x:Name="ModrinthButton" Classes="ghost" Content="Modrinth" Click="OnModrinthClick" />
-            <Button x:Name="LogButton" Classes="ghost" Content="日志" Click="OnLogClick" />
+              <Button x:Name="LogButton" Classes="ghost" Content="日志" Click="OnLogClick" />
           </StackPanel>
         </Grid>
 

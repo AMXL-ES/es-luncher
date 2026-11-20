@@ -92,7 +92,16 @@ public partial class DownloadsView : UserControl
 
     private void OnWorldChanged(object? sender, SelectionChangedEventArgs e) => UpdateContext();
 
-    private void OnTabChanged(object? sender, SelectionChangedEventArgs e) => UpdateContext();
+    private void OnTabChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        // 目标实例/世界只对 Modrinth 内容 Tab 有意义；游戏版本 Tab 用不到。
+        if (ContextBorder is not null && Tabs is not null)
+        {
+            ContextBorder.IsVisible = Tabs.SelectedIndex > 0;
+        }
+
+        UpdateContext();
+    }
 
     private void LoadWorlds()
     {
