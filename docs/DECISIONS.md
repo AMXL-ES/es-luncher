@@ -28,3 +28,5 @@
 | 2026-11-20 | 加载器合并：父库在前、子库在后，主类子覆盖，参数父→子拼接 | 与官方启动器/Prism 一致；Fabric/Quilt/Forge 三者都用同一套 | 若某加载器要求自己的库在前，再为该加载器加特例 |
 | 2026-11-20 | BootstrapLauncher（Forge/NeoForge 1.17+）从 classpath 排除原版 jar | 原版 jar 会与 srg 模块重复导出包，实测启动直接崩 | 老版本 Forge（≤1.16.5）不适用，按 mainClass 判断自动切换 |
 | 2026-11-20 | Forge installer 前自动写最小 `launcher_profiles.json` | installer 强制要求存在该文件，否则退出 1 | 无——纯 stub，不影响官方启动器文件 |
+| 2026-11-20 | 启动器图标：纯黑/纯白底，ES 偏上 + luncher 下方；生成脚本入库 | 用户指定；图标可复现，不依赖设计工具 | 换风格改 `scripts/gen-icon.ps1` 重跑 |
+| 2026-11-20 | Endless Studio 的名称/图标**只在关于页与鸣谢**出现，README/发行说明不出现 | 用户明确要求 | 需要改时只动 About 页资源 |

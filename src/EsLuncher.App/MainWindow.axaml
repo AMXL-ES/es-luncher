@@ -1,20 +1,103 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="using:EsLuncher.App"
         x:Class="EsLuncher.App.MainWindow"
-        Title="EsLuncher"
-        Width="960"
-        Height="600"
-        WindowStartupLocation="CenterScreen">
-  <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
-    <TextBlock Text="EsLuncher"
-               FontSize="34"
-               FontWeight="SemiBold"
-               HorizontalAlignment="Center" />
-    <TextBlock Text="M0 · 空窗口冒烟"
-               Opacity="0.75"
-               HorizontalAlignment="Center" />
-    <TextBlock Text="引擎层 EsLuncher.Core 已就位，业务代码尚未开始"
-               Opacity="0.45"
-               HorizontalAlignment="Center" />
-  </StackPanel>
+        Title="ES Luncher"
+        Width="1120"
+        Height="720"
+        MinWidth="900"
+        MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        Background="#0E0E10">
+  <Grid ColumnDefinitions="230,*">
+    <Border Grid.Column="0" Background="#151519" Padding="20,24">
+      <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <StackPanel Spacing="2">
+          <TextBlock Text="ES Luncher" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" />
+          <TextBlock Text="Endless Studio" FontSize="11" Foreground="#8A8A93" />
+        </StackPanel>
+
+        <ListBox x:Name="NavList"
+                 Grid.Row="1"
+                 Margin="0,28,0,0"
+                 Background="Transparent"
+                 SelectionChanged="OnNavChanged">
+          <ListBoxItem Content="实例" Tag="instances" Height="38" IsSelected="True" />
+          <ListBoxItem Content="下载" Tag="downloads" Height="38" />
+          <ListBoxItem Content="设置" Tag="settings" Height="38" />
+          <ListBoxItem Content="关于" Tag="about" Height="38" />
+        </ListBox>
+
+        <TextBlock Grid.Row="3"
+                   Text="GPL-3.0 · 0.1.0-dev"
+                   FontSize="11"
+                   Foreground="#6E6E76" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Column="1" Margin="28">
+      <!-- 实例页 -->
+      <Grid x:Name="InstancesPage" RowDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <TextBlock Text="实例" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+          <Button Content="刷新" Click="OnRefreshClick" />
+          <Button Content="启动" Click="OnLaunchClick" />
+          <Button Content="打开目录" Click="OnOpenFolderClick" />
+        </StackPanel>
+
+        <ListBox x:Name="InstanceList" Grid.Row="1" Margin="0,18,0,0" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="app:InstanceItem">
+              <Border Background="#1A1A1F" CornerRadius="8" Padding="14" Margin="0,0,0,8">
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel>
+                    <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                    <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="#9A9AA3" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding Version}" Foreground="#6E6E76" VerticalAlignment="Center" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+        <TextBlock x:Name="StatusText" Grid.Row="2" Margin="0,12,0,0" Foreground="#9A9AA3" TextWrapping="Wrap" />
+      </Grid>
+
+      <!-- 下载页（占位） -->
+      <Grid x:Name="DownloadsPage" IsVisible="False">
+        <StackPanel Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Center">
+          <TextBlock Text="下载" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" />
+          <TextBlock Text="下载页在 M7 后续接线（fetch 已具备完整能力，先走 CLI）。" Foreground="#9A9AA3" />
+        </StackPanel>
+      </Grid>
+
+      <!-- 设置页（占位） -->
+      <Grid x:Name="SettingsPage" IsVisible="False">
+        <StackPanel Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Center">
+          <TextBlock Text="设置" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" />
+          <TextBlock x:Name="DataRootText" Foreground="#9A9AA3" />
+        </StackPanel>
+      </Grid>
+
+      <!-- 关于页 -->
+      <Grid x:Name="AboutPage" IsVisible="False">
+        <StackPanel Spacing="14" VerticalAlignment="Center" HorizontalAlignment="Center">
+          <Border CornerRadius="20" ClipToBounds="True" Width="132" Height="132" HorizontalAlignment="Center">
+            <Image x:Name="StudioLogo" Width="132" Height="132" Stretch="UniformToFill" />
+          </Border>
+          <TextBlock Text="Endless Studio" FontSize="22" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
+          <TextBlock Text="ES Luncher · GPL-3.0 · 0.1.0-dev"
+                     FontSize="12"
+                     Foreground="#9A9AA3"
+                     HorizontalAlignment="Center" />
+          <TextBlock Text="引擎 M0–M6 已完成：下载 / 启动 / Java 运行时 / 账号 / 实例 / 加载器"
+                     FontSize="12"
+                     Foreground="#6E6E76"
+                     HorizontalAlignment="Center"
+                     TextAlignment="Center" />
+        </StackPanel>
+      </Grid>
+    </Grid>
+  </Grid>
 </Window>

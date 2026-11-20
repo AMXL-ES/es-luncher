@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>EsLuncher.App</RootNamespace>
     <AssemblyName>EsLuncher</AssemblyName>
+    <ApplicationIcon>Assets\es-luncher.ico</ApplicationIcon>
     <!-- 只做「壳」：任何能被单测的业务逻辑都不许写在这里，写进 EsLuncher.Core。 -->
   </PropertyGroup>
 
@@ -11,6 +12,10 @@
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
   <ItemGroup>
