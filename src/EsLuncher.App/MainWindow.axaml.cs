@@ -26,12 +26,14 @@ public partial class MainWindow : Window
         _launcher = new LaunchService(_layout);
 
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/es-luncher-256.png")));
+        HeaderLogo.Source = new Bitmap(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/es-luncher-256.png")));
         StudioLogo.Source = new Bitmap(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/endless-studio-logo.jpg")));
         LoadCredits();
         Localization.Language = AppServices.Settings.Language;
         ApplyLanguage();
 
         RefreshInstances();
+        ApplyNav("home");
 
         // 开发/验收用：ESLUNCHER_UI_INSTANCE=<实例名> 直接选中该实例。
         var instanceName = Environment.GetEnvironmentVariable("ESLUNCHER_UI_INSTANCE");
@@ -44,19 +46,10 @@ public partial class MainWindow : Window
             }
         }
 
-        // 开发/验收用的页面起始入口：ESLUNCHER_UI_PAGE=downloads|settings|about
+        // 开发/验收用的页面起始入口：ESLUNCHER_UI_PAGE=home|instances|downloads|settings|about
         var page = Environment.GetEnvironmentVariable("ESLUNCHER_UI_PAGE")?.ToLowerInvariant();
-        NavList.SelectedIndex = 0;
-        ApplyNav("instances");
-        if (page is "downloads" or "settings" or "about")
+        if (page is "home" or "instances" or "downloads" or "settings" or "about")
         {
-            var index = page switch
-            {
-                "downloads" => 1,
-                "settings" => 2,
-                _ => 3,
-            };
-            NavList.SelectedIndex = index;
             ApplyNav(page);
         }
 
@@ -103,10 +96,49 @@ public partial class MainWindow : Window
             return;
         }
 
+        HomePage.IsVisible = tag == "home";
         InstancesPage.IsVisible = tag == "instances";
         DownloadsPage.IsVisible = tag == "downloads";
         SettingsPage.IsVisible = tag == "settings";
         AboutPage.IsVisible = tag == "about";
+        if (tag is "home" or "instances")
+        {
+            RefreshHome();
+        }
+    }
+
+    private void OnNavClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string tag })
+        {
+            ApplyNav(tag);
+        }
+    }
+
+    private void OnGoInstancesClick(object? sender, RoutedEventArgs e) => ApplyNav("instances");
+
+    private void RefreshHome()
+    {
+        if (HomeName is null)
+        {
+            return;
+        }
+
+        if (InstanceList?.SelectedItem is not InstanceItem item)
+        {
+            HomeInitial.Text = "?";
+            HomeName.Text = "还没有实例";
+            HomeVersion.Text = "用「下载」页创建第一个实例";
+            HomeMeta.Text = string.Empty;
+            HomeSummary.Text = string.Empty;
+            return;
+        }
+
+        HomeInitial.Text = item.Initial;
+        HomeName.Text = item.Name;
+        HomeVersion.Text = item.Version;
+        HomeMeta.Text = item.Detail;
+        HomeSummary.Text = $"共 {_allInstances.Length} 个实例 · 当前数据根 {_layout.Root}";
     }
 
     private InstanceItem[] _allInstances = [];
@@ -142,13 +174,11 @@ public partial class MainWindow : Window
         LogButton.Content = Localization.T("toolbar.log");
         SearchBox.PlaceholderText = Localization.T("search.placeholder");
 
-        if (NavList.Items.Count >= 4)
-        {
-            ((ListBoxItem)NavList.Items[0]!).Content = Localization.T("nav.instances");
-            ((ListBoxItem)NavList.Items[1]!).Content = Localization.T("nav.downloads");
-            ((ListBoxItem)NavList.Items[2]!).Content = Localization.T("nav.settings");
-            ((ListBoxItem)NavList.Items[3]!).Content = Localization.T("nav.about");
-        }
+        NavHomeButton.Content = Localization.T("nav.home");
+        NavInstancesButton.Content = Localization.T("nav.instances");
+        NavDownloadsButton.Content = Localization.T("nav.downloads");
+        NavSettingsButton.Content = Localization.T("nav.settings");
+        NavAboutButton.Content = Localization.T("nav.about");
     }
 
     private void RefreshInstances()
@@ -222,6 +252,7 @@ public partial class MainWindow : Window
     {
         RefreshWorlds();
         RefreshContent();
+        RefreshHome();
     }
 
     private void OnContentKindChanged(object? sender, SelectionChangedEventArgs e) => RefreshContent();
@@ -602,18 +633,8 @@ public partial class MainWindow : Window
         });
     }
 
-    private void OnNavChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        // XAML 加载期间 IsSelected 会先触发一次，此时命名控件还没赋值。
-        if (NavList is null)
-        {
-            return;
-        }
-
-        var tag = (NavList.SelectedItem as ListBoxItem)?.Tag as string ?? "instances";
-        ApplyNav(tag);
-    }
 }
+
 
 /// <summary>实例列表的展示项：只暴露界面需要的字段。</summary>
 public sealed class InstanceItem(InstanceConfig config)
@@ -625,6 +646,8 @@ public sealed class InstanceItem(InstanceConfig config)
     public string Version => Config.VersionId;
 
     public string? Group => Config.Group;
+
+    public string Initial => string.IsNullOrEmpty(Config.Name) ? "?" : Config.Name[..1].ToUpperInvariant();
 
     public string Detail
         => $"{Config.MemoryMb} MB · {Config.Username ?? "Player"} · {Config.CreatedAt:yyyy-MM-dd}"

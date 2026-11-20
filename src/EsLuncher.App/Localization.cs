@@ -11,6 +11,7 @@ public static class Localization
     private static readonly Dictionary<string, (string Zh, string En)> Strings = new()
     {
         ["title"] = ("ES Luncher", "ES Luncher"),
+        ["nav.home"] = ("主页", "Home"),
         ["nav.instances"] = ("实例", "Instances"),
         ["nav.downloads"] = ("下载", "Downloads"),
         ["nav.settings"] = ("设置", "Settings"),

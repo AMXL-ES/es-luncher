@@ -4,84 +4,161 @@
         x:Class="EsLuncher.App.MainWindow"
         Title="ES Luncher"
         Width="1280"
-        Height="800"
-        MinWidth="1000"
-        MinHeight="640"
+        Height="820"
+        MinWidth="1040"
+        MinHeight="660"
         WindowStartupLocation="CenterScreen"
-        Background="#0E0E10">
+        Background="#0E0E12">
   <Window.Styles>
     <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
-      <Setter Property="Background" Value="#26262C" />
+      <Setter Property="Background" Value="#23232B" />
     </Style>
     <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#2C2C33" />
+      <Setter Property="Background" Value="#2A2A34" />
+    </Style>
+    <Style Selector="Button.nav">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#B8B8C2" />
+      <Setter Property="Padding" Value="16,8" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Button.nav:pointerover">
+      <Setter Property="Background" Value="#23232B" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#4C8DF6" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="Padding" Value="20,10" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.primary:pointerover">
+      <Setter Property="Background" Value="#5F9AF8" />
+    </Style>
+    <Style Selector="Button.ghost">
+      <Setter Property="Background" Value="#23232B" />
+      <Setter Property="Foreground" Value="#D0D0D6" />
+      <Setter Property="Padding" Value="14,8" />
+      <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="Button.ghost:pointerover">
+      <Setter Property="Background" Value="#2C2C36" />
     </Style>
   </Window.Styles>
-  <Grid ColumnDefinitions="230,*">
-    <Border Grid.Column="0" Background="#151519" Padding="20,24">
-      <Grid RowDefinitions="Auto,Auto,*,Auto">
-        <StackPanel Spacing="2">
-          <TextBlock Text="ES Luncher" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" />
-          <TextBlock Text="Endless Studio" FontSize="11" Foreground="#8A8A93" />
+
+  <Grid RowDefinitions="56,*,30">
+    <!-- 顶栏 -->
+    <Border Grid.Row="0" Background="#131318" Padding="16,0">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Border Width="30" Height="30" CornerRadius="8" ClipToBounds="True">
+            <Image x:Name="HeaderLogo" Width="30" Height="30" Stretch="UniformToFill" />
+          </Border>
+          <TextBlock Text="ES Luncher" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+          <TextBlock Text="Endless Studio" FontSize="11" Foreground="#6E6E76" VerticalAlignment="Center" />
         </StackPanel>
 
-        <ListBox x:Name="NavList"
-                 Grid.Row="1"
-                 Margin="0,28,0,0"
-                 Background="Transparent"
-                 SelectionChanged="OnNavChanged">
-          <ListBoxItem Content="实例" Tag="instances" Height="38" />
-          <ListBoxItem Content="下载" Tag="downloads" Height="38" />
-          <ListBoxItem Content="设置" Tag="settings" Height="38" />
-          <ListBoxItem Content="关于" Tag="about" Height="38" />
-        </ListBox>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+          <Button x:Name="NavHomeButton" Classes="nav" Content="主页" Tag="home" Click="OnNavClick" />
+          <Button x:Name="NavInstancesButton" Classes="nav" Content="实例" Tag="instances" Click="OnNavClick" />
+          <Button x:Name="NavDownloadsButton" Classes="nav" Content="下载" Tag="downloads" Click="OnNavClick" />
+          <Button x:Name="NavSettingsButton" Classes="nav" Content="设置" Tag="settings" Click="OnNavClick" />
+          <Button x:Name="NavAboutButton" Classes="nav" Content="关于" Tag="about" Click="OnNavClick" />
+        </StackPanel>
 
-        <TextBlock Grid.Row="3"
-                   Text="GPL-3.0 · 0.1.0-dev"
-                   FontSize="11"
-                   Foreground="#6E6E76" />
+        <TextBlock Grid.Column="2" Text="0.1.0-dev" FontSize="11" Foreground="#5C5C64" VerticalAlignment="Center" />
       </Grid>
     </Border>
 
-    <Grid Grid.Column="1" Margin="28" ClipToBounds="True">
-      <!-- 实例页 -->
-      <Grid x:Name="InstancesPage" RowDefinitions="Auto,Auto,*,Auto,Auto" ClipToBounds="True">
-        <StackPanel Orientation="Horizontal" Spacing="10">
-          <TextBlock Text="实例" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
-          <Button x:Name="RefreshButton" Content="刷新" Click="OnRefreshClick" />
-          <Button x:Name="LaunchButton" Content="启动" Click="OnLaunchClick" />
-          <Button x:Name="OpenFolderButton" Content="打开目录" Click="OnOpenFolderClick" />
-          <Button x:Name="DiagnosticsButton" Content="诊断" Click="OnDiagnosticsClick" />
-          <Button x:Name="ModrinthButton" Content="Modrinth" Click="OnModrinthClick" />
-          <Button x:Name="LogButton" Content="日志" Click="OnLogClick" />
-        </StackPanel>
+    <!-- 页面 -->
+    <Grid Grid.Row="1">
+      <!-- 主页 -->
+      <Grid x:Name="HomePage">
+        <ScrollViewer>
+          <StackPanel Spacing="16" Margin="28,24">
+            <Border Background="#1A1A22" CornerRadius="14" Padding="24">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <Border Width="76" Height="76" CornerRadius="18" Background="#262631">
+                  <TextBlock x:Name="HomeInitial" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="4" Margin="18,0,0,0" VerticalAlignment="Center" MaxWidth="640">
+                  <TextBlock x:Name="HomeName" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
+                  <TextBlock x:Name="HomeVersion" FontSize="13" Foreground="#9A9AA3" TextTrimming="CharacterEllipsis" />
+                  <TextBlock x:Name="HomeMeta" FontSize="12" Foreground="#6E6E76" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                  <Button x:Name="HomeLaunchButton" Classes="primary" Content="启动游戏" Click="OnLaunchClick" />
+                </StackPanel>
+              </Grid>
+            </Border>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
-          <TextBox x:Name="SearchBox" Width="320" PlaceholderText="搜索实例（名字/版本）" TextChanged="OnSearchChanged" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Classes="ghost" Content="打开目录" Click="OnOpenFolderClick" />
+              <Button Classes="ghost" Content="内容管理" Click="OnGoInstancesClick" />
+              <Button Classes="ghost" Content="诊断" Click="OnDiagnosticsClick" />
+              <Button Classes="ghost" Content="Modrinth" Click="OnModrinthClick" />
+              <Button Classes="ghost" Content="日志" Click="OnLogClick" />
+            </StackPanel>
+
+            <TextBlock x:Name="HomeSummary" Foreground="#9A9AA3" FontSize="12" />
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+
+      <!-- 实例页 -->
+      <Grid x:Name="InstancesPage" IsVisible="False" Margin="24,18" ColumnDefinitions="*,430" RowDefinitions="Auto,*">
+        <Grid Grid.ColumnSpan="2" ColumnDefinitions="*,Auto">
+          <TextBlock Text="实例" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+            <Button x:Name="RefreshButton" Classes="ghost" Content="刷新" Click="OnRefreshClick" />
+            <Button x:Name="LaunchButton" Classes="primary" Content="启动" Click="OnLaunchClick" />
+            <Button x:Name="OpenFolderButton" Classes="ghost" Content="打开目录" Click="OnOpenFolderClick" />
+            <Button x:Name="DiagnosticsButton" Classes="ghost" Content="诊断" Click="OnDiagnosticsClick" />
+            <Button x:Name="ModrinthButton" Classes="ghost" Content="Modrinth" Click="OnModrinthClick" />
+            <Button x:Name="LogButton" Classes="ghost" Content="日志" Click="OnLogClick" />
+          </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,14,0,0">
+          <TextBox x:Name="SearchBox" Width="300" PlaceholderText="搜索实例（名字/版本）" TextChanged="OnSearchChanged" />
           <ComboBox x:Name="GroupBox" Width="150" SelectionChanged="OnGroupChanged" />
         </StackPanel>
 
-        <ListBox x:Name="InstanceList" Grid.Row="2" Margin="0,12,0,0" Background="Transparent"
+        <ListBox x:Name="InstanceList" Grid.Row="1" Margin="0,54,12,0" Background="Transparent"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  SelectionChanged="OnInstanceSelectionChanged">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="app:InstanceItem">
-              <Border Background="#1A1A1F" CornerRadius="8" Padding="14" Margin="0,0,0,8">
-                <Grid ColumnDefinitions="*,Auto">
-                  <StackPanel>
-                    <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="#9A9AA3" TextTrimming="CharacterEllipsis" />
+              <Border Width="300" Height="96" Margin="0,0,12,12" Background="#1A1A22" CornerRadius="12" Padding="14">
+                <Grid ColumnDefinitions="Auto,*">
+                  <Border Width="48" Height="48" CornerRadius="12" Background="#262631">
+                    <TextBlock Text="{Binding Initial}" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="3" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Version}" FontSize="11" Foreground="#9A9AA3" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Group}" FontSize="10" Foreground="#6E6E76" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding Version}" MaxWidth="180" TextTrimming="CharacterEllipsis" Foreground="#6E6E76" VerticalAlignment="Center" />
                 </Grid>
               </Border>
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
 
-        <Border Grid.Row="3" Margin="0,12,0,0" Background="#141418" CornerRadius="10" Padding="14">
-          <Grid RowDefinitions="Auto,Auto,Auto,Auto">
+        <!-- 内容面板 -->
+        <Border Grid.Column="1" Grid.Row="1" Margin="0,54,0,0" Background="#141419" CornerRadius="12" Padding="16">
+          <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
             <TextBlock x:Name="ContentTitle" Text="内容" FontWeight="SemiBold" Foreground="#FFFFFF" />
-            <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+            <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
               <ComboBox x:Name="ContentKindBox" SelectedIndex="0" Width="104" Margin="0,0,8,6" SelectionChanged="OnContentKindChanged">
                 <ComboBoxItem Content="mods" />
                 <ComboBoxItem Content="资源包" />
@@ -91,17 +168,18 @@
                 <ComboBoxItem Content="截图" />
               </ComboBox>
               <ComboBox x:Name="WorldBox" Width="140" Margin="0,0,8,6" IsVisible="False" SelectionChanged="OnWorldChanged" />
-              <Button Content="添加" Margin="0,0,8,6" Click="OnAddContentClick" />
-              <Button Content="启用/禁用" Margin="0,0,8,6" Click="OnToggleContentClick" />
-              <Button Content="移除" Margin="0,0,8,6" Click="OnRemoveContentClick" />
-              <Button Content="目录" Margin="0,0,8,6" Click="OnOpenContentFolderClick" />
-              <Button Content="下载" Margin="0,0,8,6" Click="OnDownloadContentClick" />
-              <Button x:Name="MoveUpButton" Content="上移" Margin="0,0,8,6" Click="OnMoveUpClick" IsVisible="False" />
-              <Button x:Name="MoveDownButton" Content="下移" Margin="0,0,8,6" Click="OnMoveDownClick" IsVisible="False" />
-              <Button x:Name="CheckUpdatesButton" Content="检查更新" Margin="0,0,8,6" Click="OnCheckUpdatesClick" />
-              <Button x:Name="BackupWorldButton" Content="备份世界" Margin="0,0,8,6" Click="OnBackupWorldClick" IsVisible="False" />
+              <Button Content="添加" Classes="ghost" Margin="0,0,8,6" Click="OnAddContentClick" />
+              <Button Content="启用/禁用" Classes="ghost" Margin="0,0,8,6" Click="OnToggleContentClick" />
+              <Button Content="移除" Classes="ghost" Margin="0,0,8,6" Click="OnRemoveContentClick" />
+              <Button Content="目录" Classes="ghost" Margin="0,0,8,6" Click="OnOpenContentFolderClick" />
+              <Button Content="下载" Classes="ghost" Margin="0,0,8,6" Click="OnDownloadContentClick" />
+              <Button x:Name="MoveUpButton" Content="上移" Classes="ghost" Margin="0,0,8,6" Click="OnMoveUpClick" IsVisible="False" />
+              <Button x:Name="MoveDownButton" Content="下移" Classes="ghost" Margin="0,0,8,6" Click="OnMoveDownClick" IsVisible="False" />
+              <Button x:Name="CheckUpdatesButton" Content="检查更新" Classes="ghost" Margin="0,0,8,6" Click="OnCheckUpdatesClick" />
+              <Button x:Name="BackupWorldButton" Content="备份世界" Classes="ghost" Margin="0,0,8,6" Click="OnBackupWorldClick" IsVisible="False" />
             </WrapPanel>
-            <ListBox x:Name="ContentList" Grid.Row="2" Height="132" Margin="0,6,0,0" Background="Transparent">
+
+            <ListBox x:Name="ContentList" Grid.Row="2" Margin="0,8,0,0" Background="Transparent">
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="app:ContentItem">
                   <StackPanel Margin="0,0,0,6">
@@ -111,67 +189,58 @@
                 </DataTemplate>
               </ListBox.ItemTemplate>
             </ListBox>
-            <TextBlock x:Name="ContentStatus" Grid.Row="3" Margin="0,6,0,0" Foreground="#6E6E76" FontSize="11" TextTrimming="CharacterEllipsis" />
+            <TextBlock x:Name="ContentStatus" Grid.Row="4" Margin="0,6,0,0" Foreground="#6E6E76" FontSize="11" TextTrimming="CharacterEllipsis" />
           </Grid>
         </Border>
-
-        <TextBlock x:Name="StatusText" Grid.Row="4" Margin="0,12,0,0" Foreground="#9A9AA3" TextWrapping="Wrap" />
       </Grid>
 
-      <!-- 下载页 -->
-      <app:DownloadsView x:Name="DownloadsPage" IsVisible="False" />
+      <app:DownloadsView x:Name="DownloadsPage" IsVisible="False" Margin="24,18" />
+      <app:SettingsView x:Name="SettingsPage" IsVisible="False" Margin="24,18" />
 
-      <!-- 设置页 -->
-      <app:SettingsView x:Name="SettingsPage" IsVisible="False" />
-
-      <!-- 关于页 -->
+      <!-- 关于 -->
       <Grid x:Name="AboutPage" IsVisible="False">
-        <StackPanel Spacing="12" VerticalAlignment="Center" HorizontalAlignment="Center" Width="460">
-          <Border CornerRadius="20" ClipToBounds="True" Width="132" Height="132" HorizontalAlignment="Center">
-            <Image x:Name="StudioLogo" Width="132" Height="132" Stretch="UniformToFill" />
-          </Border>
-          <TextBlock Text="Endless Studio" FontSize="22" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
-          <TextBlock Text="ES Luncher · GPL-3.0 · 0.1.0-dev"
-                     FontSize="12"
-                     Foreground="#9A9AA3"
-                     HorizontalAlignment="Center" />
-          <TextBlock Text="引擎 M0–M6 已完成：下载 / 启动 / Java 运行时 / 账号 / 实例 / 加载器"
-                     FontSize="12"
-                     Foreground="#6E6E76"
-                     HorizontalAlignment="Center"
-                     TextAlignment="Center" />
-          <TextBlock Text="第三方组件：Avalonia (MIT) · .NET 10 (MIT) · Mojang 运行时由官方分发"
-                     FontSize="11"
-                     Foreground="#5C5C64"
-                     HorizontalAlignment="Center"
-                     TextAlignment="Center" />
-          <TextBlock Text="构建：Release · net10.0 · 0.1.0-dev"
-                     FontSize="11"
-                     Foreground="#5C5C64"
-                     HorizontalAlignment="Center" />
-
-          <Border Background="#141418" CornerRadius="10" Padding="14" Width="420" Margin="0,4,0,0">
-            <StackPanel Spacing="6">
-              <TextBlock Text="开发者 / 鸣谢" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="13" />
-              <Grid ColumnDefinitions="2*,1*">
-                <TextBlock Text="名字" Foreground="#9A9AA3" FontSize="12" />
-                <TextBlock Grid.Column="1" Text="角色" Foreground="#9A9AA3" FontSize="12" />
-              </Grid>
-              <ItemsControl x:Name="CreditsList">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="app:CreditItem">
-                    <Grid ColumnDefinitions="2*,1*" Margin="0,3,0,0">
-                      <TextBlock Text="{Binding Name}" Foreground="#FFFFFF" FontSize="12" />
-                      <TextBlock Grid.Column="1" Text="{Binding Role}" Foreground="#9A9AA3" FontSize="12" />
-                    </Grid>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-              <TextBlock Text="名单可在 Assets/credits.json 增删" Foreground="#5C5C64" FontSize="10" />
-            </StackPanel>
-          </Border>
-        </StackPanel>
+        <ScrollViewer>
+          <StackPanel Spacing="12" Margin="24,20" HorizontalAlignment="Center" Width="480">
+            <Border Width="112" Height="112" CornerRadius="22" ClipToBounds="True" HorizontalAlignment="Center">
+              <Image x:Name="StudioLogo" Width="112" Height="112" Stretch="UniformToFill" />
+            </Border>
+            <TextBlock Text="Endless Studio" FontSize="22" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
+            <TextBlock Text="ES Luncher · GPL-3.0 · 0.1.0-dev" FontSize="12" Foreground="#9A9AA3" HorizontalAlignment="Center" />
+            <TextBlock Text="引擎 M0–M6 已完成：下载 / 启动 / Java 运行时 / 账号 / 实例 / 加载器"
+                       FontSize="12" Foreground="#6E6E76" HorizontalAlignment="Center" TextAlignment="Center" />
+            <TextBlock Text="第三方组件：Avalonia (MIT) · .NET 10 (MIT) · Mojang 运行时由官方分发"
+                       FontSize="11" Foreground="#5C5C64" HorizontalAlignment="Center" TextAlignment="Center" />
+            <Border Background="#141419" CornerRadius="10" Padding="14" Width="420" Margin="0,4,0,0">
+              <StackPanel Spacing="6">
+                <TextBlock Text="开发者 / 鸣谢" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="13" />
+                <Grid ColumnDefinitions="2*,1*">
+                  <TextBlock Text="名字" Foreground="#9A9AA3" FontSize="12" />
+                  <TextBlock Grid.Column="1" Text="角色" Foreground="#9A9AA3" FontSize="12" />
+                </Grid>
+                <ItemsControl x:Name="CreditsList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="app:CreditItem">
+                      <Grid ColumnDefinitions="2*,1*" Margin="0,3,0,0">
+                        <TextBlock Text="{Binding Name}" Foreground="#FFFFFF" FontSize="12" />
+                        <TextBlock Grid.Column="1" Text="{Binding Role}" Foreground="#9A9AA3" FontSize="12" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="名单可在 Assets/credits.json 增删" Foreground="#5C5C64" FontSize="10" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
       </Grid>
     </Grid>
+
+    <!-- 状态栏 -->
+    <Border Grid.Row="2" Background="#131318" Padding="16,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock x:Name="StatusText" FontSize="11" Foreground="#9A9AA3" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="GPL-3.0 · 数据根 D:\mc-data" FontSize="11" Foreground="#5C5C64" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
   </Grid>
 </Window>
