@@ -55,6 +55,10 @@ powershell -NoProfile -File scripts\smoke-m1m3.ps1
 .\src\EsLuncher.Cli\bin\Release\net10.0\esluncher.exe launch --instance "Fabric 测试" --autostop 30
 ```
 
+## 开发者
+
+想基于 `EsLuncher.Core` 写自己的启动器：见 [`docs/DEVELOPER-GUIDE.md`](docs/DEVELOPER-GUIDE.md)，以及可直接运行的 [`samples/MinimalLauncher`](samples/MinimalLauncher)。
+
 ## 文档
 
 先读 [`PROGRESS.md`](PROGRESS.md)，再读 [`docs/INDEX.md`](docs/INDEX.md)。
