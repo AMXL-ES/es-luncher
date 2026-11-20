@@ -61,12 +61,12 @@
         </StackPanel>
 
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center" VerticalAlignment="Center">
-          <Button x:Name="NavHomeButton" Classes="nav" Content="主页" Tag="home" Click="OnNavClick" />
-          <Button x:Name="NavInstancesButton" Classes="nav" Content="实例" Tag="instances" Click="OnNavClick" />
-          <Button x:Name="NavDownloadsButton" Classes="nav" Content="下载" Tag="downloads" Click="OnNavClick" />
-          <Button x:Name="NavOthersButton" Classes="nav" Content="其他" Tag="others" Click="OnNavClick" />
-          <Button x:Name="NavSettingsButton" Classes="nav" Content="设置" Tag="settings" Click="OnNavClick" />
-          <Button x:Name="NavAboutButton" Classes="nav" Content="关于" Tag="about" Click="OnNavClick" />
+          <Button x:Name="NavHomeButton" Classes="nav" Content="主页" Tag="home" Click="OnNavClick" AutomationProperties.Name="{app:T nav.home}" />
+          <Button x:Name="NavInstancesButton" Classes="nav" Content="实例" Tag="instances" Click="OnNavClick" AutomationProperties.Name="{app:T nav.instances}" />
+          <Button x:Name="NavDownloadsButton" Classes="nav" Content="下载" Tag="downloads" Click="OnNavClick" AutomationProperties.Name="{app:T nav.downloads}" />
+          <Button x:Name="NavOthersButton" Classes="nav" Content="其他" Tag="others" Click="OnNavClick" AutomationProperties.Name="{app:T nav.others}" />
+          <Button x:Name="NavSettingsButton" Classes="nav" Content="设置" Tag="settings" Click="OnNavClick" AutomationProperties.Name="{app:T nav.settings}" />
+          <Button x:Name="NavAboutButton" Classes="nav" Content="关于" Tag="about" Click="OnNavClick" AutomationProperties.Name="{app:T nav.about}" />
         </StackPanel>
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
@@ -110,7 +110,7 @@
                     FontSize="12" Click="OnInstancePickerClick" />
           </StackPanel>
 
-          <Button x:Name="HomeLaunchButton" Classes="primary" Content="{app:T home.launch}" FontSize="18" Padding="40,12"
+          <Button x:Name="HomeLaunchButton" Classes="primary" Content="{app:T home.launch}" AutomationProperties.Name="{app:T home.launch}" FontSize="18" Padding="40,12"
                   HorizontalAlignment="Right" Click="OnLaunchClick" />
 
           <TextBlock x:Name="HomeVersionLabel" FontSize="12" Foreground="#B0B0BA"
@@ -141,7 +141,7 @@
           <TextBlock Text="{app:T instances.title}" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
             <Button x:Name="RefreshButton" Classes="ghost" Content="刷新" Click="OnRefreshClick" />
-            <Button x:Name="LaunchButton" Classes="primary" Content="{app:T toolbar.launch.short}" Click="OnLaunchClick" />
+            <Button x:Name="LaunchButton" Classes="primary" Content="{app:T toolbar.launch.short}" Click="OnLaunchClick" AutomationProperties.Name="{app:T toolbar.launch}" />
             <Button x:Name="OpenFolderButton" Classes="ghost" Content="{app:T toolbar.open}" Click="OnOpenFolderClick" />
             <Button x:Name="DiagnosticsButton" Classes="ghost" Content="{app:T toolbar.diagnostics}" Click="OnDiagnosticsClick" />
               <Button x:Name="LogButton" Classes="ghost" Content="{app:T toolbar.logs}" Click="OnLogClick" />

@@ -11,8 +11,8 @@
     <TextBlock x:Name="TitleText" Text="Modrinth" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" />
     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
       <TextBox x:Name="SearchBox" Width="360" PlaceholderText="搜模组，例如 jei / sodium" />
-      <Button Content="搜索" Click="OnSearchClick" />
-      <Button Content="安装选中" Click="OnInstallClick" />
+      <Button Content="{app:T modrinth.search}" Click="OnSearchClick" />
+      <Button Content="{app:T modrinth.install}" Click="OnInstallClick" />
     </StackPanel>
 
     <ListBox x:Name="HitsList" Grid.Row="2" Margin="0,12,0,0" Background="Transparent">
