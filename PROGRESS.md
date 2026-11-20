@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M3 完成（待你的反馈）**（2026-11-19）：离线认证完成，微软链路代码完整（真实登录待 client ID），皮肤站按裁剪暂缓
+- **当前阶段**：**M4 完成，待用户验收**（2026-11-20）：Java 运行时下载与多版本共存跑通，1.7.10/1.18.2 均在托管运行时上真实启动
 - **项目根**：`D:\dev\mc-launcher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -132,7 +132,28 @@
 - `scripts/smoke-m1m3.ps1`：一条命令跑完 build / test / accounts / launch dry-run / fetch 幂等 / versions，**6/6 通过**。
 - 测试数 91 → **97**。
 
-## 下一步（本轮在此停止，等你的修改意见）
+## M4 Java 运行时（2026-11-20 本轮交付）
 
-按你的要求"M3 之后停止"。验收后可选：M4（Java 运行时下载，解锁 Java 8/16/25 版本）、
-M3b 收尾（真实 client ID 登录 + 自动续期接线）、M7（UI 壳）。
+`dotnet test` → **108 passed / 0 failed**（新增 16 个 M4 测试）。
+
+| 能力 | 落点 | 证据 |
+|---|---|---|
+| Mojang 运行时目录解析（8 个平台键） | `Java/JavaRuntimeCatalog.cs` | all.json 13,391 B；windows-x64 8 个组件 |
+| 组件 manifest 解析 + 路径安全 | `Java/JavaRuntimeManifest.cs` | jre-legacy 208 条（192 file/16 dir）；`..`/绝对路径被拒（单测） |
+| 安装（SHA1 逐文件、幂等、可执行位） | `Java/JavaRuntimeInstaller.cs` | jre-legacy **143.2 MiB/44.2 s**；java-runtime-beta **86.9 MiB/103.3 s** |
+| 发现与选择（托管优先） | `Launching/JavaRuntime.cs` | `glauncher java` 列出 4 个（21/17 托管/17 系统/8 托管） |
+| CLI | `glauncher java` / `java install` / `launch --install-java` | 见下 |
+
+**真实启动证据**：
+
+- `launch --version 1.7.10 --username Dev --autostop 40` → exit 0；`latest.log`：`Setting user: Dev`、
+  **`LWJGL Version: 2.9.1`**、`Sound engine started`、blocks/items atlas 创建成功（托管 **Java 8**）。
+- `launch --version 1.18.2 --autostop 30` → exit 0；选中**托管** `java-runtime-beta 17.0.15`（不是系统 JDK 17），全部 atlas 创建成功。
+- 安装耗时：jre-legacy 143.2 MiB / 44.2 s；java-runtime-beta 86.9 MiB / 103.3 s（含逐文件 SHA1）。
+
+**缺口**：不做运行时自动升级、不清理旧版本；Java 25/26.x 线未验证。
+
+## 下一步（M5 实例系统）
+
+按 roadmap 顺序进入 M5：版本隔离、每实例独立配置（内存/Java/参数/窗口）、多实例并存、克隆/导入/导出。
+开工前会先问 3–5 个裁剪问题（实例目录布局、是否复用 `assets/libraries`、导入已有 `.minecraft` 的边界）。

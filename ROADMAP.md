@@ -11,7 +11,7 @@
 | **M3a** | 离线认证 | 离线 UUID（OfflinePlayer 规则）、profile 落盘、`--username/--uuid` 正确注入 | ✅ 完成（DPAPI 存储 + CLI，M2 已真实使用） |
 | **M3b** | 微软认证（延后） | 设备码全链路 MSA→XBL→XSTS→minecraft login→profile→entitlements；自动续期；401 自动重登。**阻塞项：Azure 客户端 ID（用户提供）** | 🟡 代码完成（12 测试），真实登录待 client ID；续期 API 已实现未接启动流程 |
 | **M3c** | 皮肤站外置登录（延后） | authlib-injector 注入 + 外置登录 API 适配（多站兼容） | ⏸ 按裁剪暂缓（`IAuthProvider` 已留扩展点） |
-| **M4** | Java 运行时管理 | 探测本机 JDK（**须跳过 PATH 上崩掉的 java**）；按 `javaVersion.majorVersion` 选；按需下载 Mojang 官方运行时；多版本共存；选错给人话原因 | 待办 |
+| **M4** | Java 运行时管理 | 探测本机 JDK（**须跳过 PATH 上崩掉的 java**）；按 `javaVersion.majorVersion` 选；按需下载 Mojang 官方运行时；多版本共存；选错给人话原因 | ✅ 完成（jre-legacy 143 MiB / java-runtime-beta 86.9 MiB 实测；1.7.10 与 1.18.2 均在托管运行时上真启动） |
 | **M5** | 实例系统 | 版本隔离；每实例独立配置；多实例并存可跑；克隆/导入/导出 | 待办 |
 | **M6** | 模组加载器 | Fabric/Quilt/NeoForge/Forge 安装；`inheritsFrom` 继承链正确解析 | 待办 |
 | **M7** | UI/UX | 实例列表、下载页、设置页、进度与错误呈现、键盘可达、深浅主题、i18n、高 DPI（专业玩家密度） | 待办 |

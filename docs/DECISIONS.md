@@ -17,3 +17,6 @@
 | 2026-11-19 | 凭据加密用 **DPAPI P/Invoke**（`crypt32.dll`），不引入 NuGet 包 | Windows 优先、零额外依赖；非 Windows 明确抛异常而不是降级明文 | 跨平台时换成 keyring 实现，接口 `ITokenStore` 不变 |
 | 2026-11-19 | **不内置任何微软 client ID**；必须由用户在 Azure 注册后提供（`--client-id` 或 `GLAUNCHER_MSA_CLIENT_ID`） | 用别人的 client ID 属于违规，也违反"不伪造身份"红线 | 无——这是合规硬约束 |
 | 2026-11-19 | 皮肤站认证按用户裁剪暂缓，仅留 `IAuthProvider` 扩展点 | 用户明确"先只做离线，给另外两个留位置" | 要启用时实现 `SkinStationAuthProvider` + authlib-injector 注入 |
+| 2026-11-20 | 托管运行时（`D:\mc-data\java`）**优先于系统 JDK**（同主版本） | 玩家机器上的 JDK 可能被改坏/版本漂移；托管版与版本元数据严格对应 | 想优先系统 JDK 就把 `layout.JavaDir` 从 `Discover` 的显式根里去掉 |
+| 2026-11-20 | 运行时只下载 `downloads.raw`，不使用 Mojang 的 lzma 包 | 少一层解压与校验，代价是下载量略大 | 想省流量时改用 lzma 流解压 + 同样的 SHA1 校验 |
+| 2026-11-20 | 运行时按组件/版本多份并存，不自动清理旧版本 | 回滚最省事；磁盘问题留到 M10/M11 统一处理 | 加 LRU 清理策略，或在 `java install` 后删除同组件旧版本 |

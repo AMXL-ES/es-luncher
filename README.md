@@ -35,6 +35,11 @@ powershell -NoProfile -File scripts\probe-network.ps1 # 网络探活
 .\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe versions --limit 10
 .\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe versions --type snapshot --limit 5
 powershell -NoProfile -File scripts\smoke-m1m3.ps1
+
+# M4 验收面：Mojang 官方 Java 运行时（不装系统 JDK、不改 PATH）
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe java
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe java install --version 1.7.10
+.\src\GLauncher.Cli\bin\Release\net10.0\glauncher.exe launch --version 1.7.10 --username Dev --autostop 30
 ```
 
 ## 文档
