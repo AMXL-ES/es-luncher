@@ -9,6 +9,14 @@
         MinHeight="560"
         WindowStartupLocation="CenterScreen"
         Background="#0E0E10">
+  <Window.Styles>
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="#26262C" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#2C2C33" />
+    </Style>
+  </Window.Styles>
   <Grid ColumnDefinitions="230,*">
     <Border Grid.Column="0" Background="#151519" Padding="20,24">
       <Grid RowDefinitions="Auto,Auto,*,Auto">
@@ -22,7 +30,7 @@
                  Margin="0,28,0,0"
                  Background="Transparent"
                  SelectionChanged="OnNavChanged">
-          <ListBoxItem Content="实例" Tag="instances" Height="38" IsSelected="True" />
+          <ListBoxItem Content="实例" Tag="instances" Height="38" />
           <ListBoxItem Content="下载" Tag="downloads" Height="38" />
           <ListBoxItem Content="设置" Tag="settings" Height="38" />
           <ListBoxItem Content="关于" Tag="about" Height="38" />
@@ -64,21 +72,11 @@
         <TextBlock x:Name="StatusText" Grid.Row="2" Margin="0,12,0,0" Foreground="#9A9AA3" TextWrapping="Wrap" />
       </Grid>
 
-      <!-- 下载页（占位） -->
-      <Grid x:Name="DownloadsPage" IsVisible="False">
-        <StackPanel Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Center">
-          <TextBlock Text="下载" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" />
-          <TextBlock Text="下载页在 M7 后续接线（fetch 已具备完整能力，先走 CLI）。" Foreground="#9A9AA3" />
-        </StackPanel>
-      </Grid>
+      <!-- 下载页 -->
+      <app:DownloadsView x:Name="DownloadsPage" IsVisible="False" />
 
-      <!-- 设置页（占位） -->
-      <Grid x:Name="SettingsPage" IsVisible="False">
-        <StackPanel Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Center">
-          <TextBlock Text="设置" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" />
-          <TextBlock x:Name="DataRootText" Foreground="#9A9AA3" />
-        </StackPanel>
-      </Grid>
+      <!-- 设置页 -->
+      <app:SettingsView x:Name="SettingsPage" IsVisible="False" />
 
       <!-- 关于页 -->
       <Grid x:Name="AboutPage" IsVisible="False">

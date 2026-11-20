@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Styling;
+using EsLuncher.Core.Settings;
 
 namespace EsLuncher.App;
 
@@ -12,6 +14,9 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            RequestedThemeVariant = AppServices.Settings.Theme == LauncherSettings.ThemeLight
+                ? ThemeVariant.Light
+                : ThemeVariant.Dark;
             desktop.MainWindow = new MainWindow();
         }
 

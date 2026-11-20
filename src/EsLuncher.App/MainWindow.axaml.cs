@@ -18,16 +18,43 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        var root = Environment.GetEnvironmentVariable("ESLUNCHER_DATA");
-        _layout = new DataLayout(string.IsNullOrWhiteSpace(root) ? @"D:\mc-data" : root!);
+        _layout = AppServices.Layout;
         _store = new InstanceStore(_layout);
         _launcher = new LaunchService(_layout);
 
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/es-luncher-256.png")));
         StudioLogo.Source = new Bitmap(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/endless-studio-logo.jpg")));
-        DataRootText.Text = $"数据根：{_layout.Root}";
 
         RefreshInstances();
+
+        // 开发/验收用的页面起始入口：ESLUNCHER_UI_PAGE=downloads|settings|about
+        var page = Environment.GetEnvironmentVariable("ESLUNCHER_UI_PAGE")?.ToLowerInvariant();
+        NavList.SelectedIndex = 0;
+        ApplyNav("instances");
+        if (page is "downloads" or "settings" or "about")
+        {
+            var index = page switch
+            {
+                "downloads" => 1,
+                "settings" => 2,
+                _ => 3,
+            };
+            NavList.SelectedIndex = index;
+            ApplyNav(page);
+        }
+    }
+
+    private void ApplyNav(string tag)
+    {
+        if (InstancesPage is null || DownloadsPage is null || SettingsPage is null || AboutPage is null)
+        {
+            return;
+        }
+
+        InstancesPage.IsVisible = tag == "instances";
+        DownloadsPage.IsVisible = tag == "downloads";
+        SettingsPage.IsVisible = tag == "settings";
+        AboutPage.IsVisible = tag == "about";
     }
 
     private void RefreshInstances()
@@ -58,7 +85,7 @@ public partial class MainWindow : Window
         {
             var outcome = await _launcher.LaunchAsync(
                 item.Config,
-            message => Avalonia.Threading.Dispatcher.UIThread.Post(() => StatusText.Text = message),
+                message => Avalonia.Threading.Dispatcher.UIThread.Post(() => StatusText.Text = message),
                 CancellationToken.None);
             StatusText.Text = outcome.Message;
         }
@@ -83,17 +110,14 @@ public partial class MainWindow : Window
 
     private void OnNavChanged(object? sender, SelectionChangedEventArgs e)
     {
-        // XAML 加载时 IsSelected 会先触发一次，此时命名控件可能还没赋值。
-        if (InstancesPage is null || DownloadsPage is null || SettingsPage is null || AboutPage is null)
+        // XAML 加载期间 IsSelected 会先触发一次，此时命名控件还没赋值。
+        if (NavList is null)
         {
             return;
         }
 
         var tag = (NavList.SelectedItem as ListBoxItem)?.Tag as string ?? "instances";
-        InstancesPage.IsVisible = tag == "instances";
-        DownloadsPage.IsVisible = tag == "downloads";
-        SettingsPage.IsVisible = tag == "settings";
-        AboutPage.IsVisible = tag == "about";
+        ApplyNav(tag);
     }
 }
 

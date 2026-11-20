@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="EsLuncher.App.SettingsView">
+  <ScrollViewer>
+    <StackPanel Spacing="12" MaxWidth="620" HorizontalAlignment="Left">
+      <TextBlock Text="设置" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" />
+      <TextBlock Text="数据根（重启生效）" Foreground="#9A9AA3" />
+      <TextBlock x:Name="DataRootText" Foreground="#D0D0D6" />
+
+      <TextBlock Text="默认内存（MB）" Foreground="#9A9AA3" />
+      <NumericUpDown x:Name="MemoryBox" Minimum="512" Maximum="32768" Increment="512" FormatString="0" />
+
+      <TextBlock Text="Java 路径（留空 = 按版本自动选，托管运行时优先）" Foreground="#9A9AA3" />
+      <TextBox x:Name="JavaBox" Watermark="例如 D:\mc-data\java\jre-legacy\...\bin\java.exe" />
+
+      <TextBlock Text="主题" Foreground="#9A9AA3" />
+      <ComboBox x:Name="ThemeBox" SelectedIndex="0">
+        <ComboBoxItem Content="深色" />
+        <ComboBoxItem Content="浅色" />
+      </ComboBox>
+
+      <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,0">
+        <Button Content="保存" Click="OnSaveClick" />
+        <TextBlock x:Name="StatusText" Foreground="#9A9AA3" VerticalAlignment="Center" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
