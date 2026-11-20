@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M9 进行中**（2026-11-20）：M8 完成 Modrinth 检索/安装与 .mrpack；M9 诊断 Core+CLI 完成（日志/崩溃/提示/诊断包），UI 入口待做
+- **当前阶段**：**M8 内容管理器扩展完成**（2026-11-20）：mods/资源包/光影/世界/数据包 全类型浏览 + 启用/禁用 + 删除/回收站 + 本地添加 + Modrinth 按类型下载；M9 诊断 UI 完成
 - **项目根**：`D:\dev\es-luncher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -220,6 +220,21 @@
 **测试**：**148 passed / 0 failed**（内容 10 + 元数据 4）
 
 **扩展点（别做死）**：新增内容类型只加枚举+目录映射；`ContentFile` 可扩字段；将来依赖解析/Modrinth 接入读同一批文件，不改现有语义。
+
+## M8 内容管理器扩展（2026-11-20，完成）
+
+`dotnet test` → **174 passed / 0 failed**。
+
+| 能力 | 证据 |
+|---|---|
+| 内容类型 5 种：mods/资源包/光影/世界/数据包 | UI 类型下拉 + 世界下拉（数据包用）；截图 `docs/img/m8-content-datapacks.png` |
+| 启用/禁用 | JEI `disable` → 列表 `[禁用]` → `enable` 恢复；`.disabled` 后缀 |
+| 世界 | `content add --kind worlds <目录>` → `saves/Demo World`；UI 目录选择器 |
+| 数据包 | `content add --kind datapacks --world "Demo World" <zip>` → 该世界 datapacks |
+| 本地添加 | 文件选择器（文件类）/ 目录选择器（世界） |
+| 回收站删除 | 统一进 `trash/content/<实例>/<时间戳>-<名字>` |
+| Modrinth 按类型 | 光影检索/安装实测：`ComplementaryReimagined_r5.10.zip`（567 KB） |
+| 安全 | 路径穿越/非法名拒绝；世界不可启用禁用 |
 
 ## M8 增补：Modrinth + .mrpack（2026-11-20）
 
