@@ -1506,7 +1506,7 @@ internal static class Program
 
         选项:
           --version <id>     必填，例如 1.7.10 / 1.12.2 / 26.3
-          --data <dir>       数据根（默认 D:\mc-data，或环境变量 ESLUNCHER_DATA）
+          --data <dir>       数据根（默认 %APPDATA%\\ESLuncher，或环境变量 ESLUNCHER_DATA）
           --concurrency <n>  fetch 并发下载数（默认 8）
           --only <parts>     fetch: client,libraries,assets,natives 的子集
           --refresh          强制刷新版本清单与 version.json
@@ -1572,7 +1572,7 @@ internal sealed class CommandOptions
 {
     public string? Version { get; private set; }
 
-    public string DataRoot { get; private set; } = DefaultDataRoot();
+    public string DataRoot { get; private set; } = DataLayout.DefaultRoot();
 
     public int Concurrency { get; private set; } = 8;
 

@@ -33,7 +33,6 @@ public static class AppServices
 
     private static DataLayout CreateLayout()
     {
-        var root = Environment.GetEnvironmentVariable("ESLUNCHER_DATA");
-        return new DataLayout(string.IsNullOrWhiteSpace(root) ? @"D:\mc-data" : root!);
+        return new DataLayout(DataLayout.DefaultRoot());
     }
 }

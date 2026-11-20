@@ -271,10 +271,12 @@
             </Border>
             <TextBlock Text="Endless Studio" FontSize="22" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
             <TextBlock Text="ES Luncher · GPL-3.0 · 0.1.0-dev" FontSize="12" Foreground="#9A9AA3" HorizontalAlignment="Center" />
-            <TextBlock Text="引擎 M0–M6 已完成：下载 / 启动 / Java 运行时 / 账号 / 实例 / 加载器"
+            <TextBlock Text="轻量、开源、无广告的 Minecraft 启动器"
                        FontSize="12" Foreground="#6E6E76" HorizontalAlignment="Center" TextAlignment="Center" />
             <TextBlock Text="第三方组件：Avalonia (MIT) · .NET 10 (MIT) · Mojang 运行时由官方分发"
                        FontSize="11" Foreground="#5C5C64" HorizontalAlignment="Center" TextAlignment="Center" />
+            <TextBlock Text="{app:T about.version}"
+                       FontSize="11" Foreground="#5C5C64" HorizontalAlignment="Center" />
             <Border Background="#141419" CornerRadius="10" Padding="14" Width="420" Margin="0,4,0,0">
               <StackPanel Spacing="6">
                 <TextBlock Text="{app:T about.credits}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="13" />

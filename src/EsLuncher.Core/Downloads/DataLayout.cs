@@ -6,6 +6,23 @@ namespace EsLuncher.Core.Downloads;
 /// </summary>
 public sealed class DataLayout
 {
+    /// <summary>默认数据根：环境变量 ESLUNCHER_DATA → 旧版 D:\mc-data（过渡兼容）→ %APPDATA%\ESLuncher。</summary>
+    public static string DefaultRoot()
+    {
+        var env = Environment.GetEnvironmentVariable("ESLUNCHER_DATA");
+        if (!string.IsNullOrWhiteSpace(env))
+        {
+            return env;
+        }
+
+        if (Directory.Exists(@"D:\mc-data"))
+        {
+            return @"D:\mc-data";
+        }
+
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ESLuncher");
+    }
+
     public DataLayout(string root)
     {
         Root = Path.GetFullPath(root);

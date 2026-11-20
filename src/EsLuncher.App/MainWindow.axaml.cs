@@ -250,7 +250,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            OthersStatus.Text = "仓库里的 docs/DEVELOPER-GUIDE.md 在发布目录不存在";
+            OthersStatus.Text = "开发者指南仅随源码提供（docs/DEVELOPER-GUIDE.md）";
         }
     }
 
