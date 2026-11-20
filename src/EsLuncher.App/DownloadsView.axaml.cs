@@ -19,6 +19,7 @@ public partial class DownloadsView : UserControl
     public DownloadsView()
     {
         InitializeComponent();
+        ModpackPanel.InstanceCreated += LoadInstances;
         Loaded += async (_, _) =>
         {
             LoadInstances();
