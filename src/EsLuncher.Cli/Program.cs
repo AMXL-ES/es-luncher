@@ -58,7 +58,7 @@ internal static class Program
 
             if (command == "deps")
             {
-                return DepsCommand(args);
+                return await DepsCommandAsync(args).ConfigureAwait(false);
             }
 
             if (command == "java")
@@ -234,11 +234,11 @@ internal static class Program
         }
     }
 
-    private static int DepsCommand(string[] args)
+    private static async Task<int> DepsCommandAsync(string[] args)
     {
         if (args.Length < 2)
         {
-            return Fail("用法：esluncher deps --instance <名字>");
+            return Fail("用法：esluncher deps --instance <名字> [--fix]");
         }
 
         var (_, optionTokens) = SplitOptions(args[1..]);
@@ -250,13 +250,58 @@ internal static class Program
 
         var layout = new DataLayout(options.DataRoot);
         var store = new InstanceStore(layout);
-        var result = new DependencyChecker(new InstanceContentService(layout, store)).Check(options.InstanceId!);
+        var instance = store.TryLoad(options.InstanceId!)
+            ?? throw new InvalidOperationException($"实例不存在：{options.InstanceId}");
+        var content = new InstanceContentService(layout, store);
+        var checker = new DependencyChecker(content);
+        var result = checker.Check(instance.Name);
 
         Console.WriteLine($"已装模组：{(result.Installed.Count == 0 ? "无" : string.Join(", ", result.Installed))}");
         Console.WriteLine(result.Missing.Count == 0
             ? "依赖检查：满足（静态检查）"
-            : $"缺少前置：{string.Join(", ", result.Missing)}");
-        return result.Missing.Count == 0 ? 0 : 1;
+            : $"可能缺少前置：{string.Join(", ", result.Missing)}（静态检查，mod id 与依赖 id 不一致时可能误报）");
+
+        if (!options.Fix || result.Missing.Count == 0)
+        {
+            return 0;
+        }
+
+        var (minecraftVersion, loader) = InstanceVersionInfo.Derive(instance.VersionId);
+        loader = ModrinthLoaderName(loader);
+        using var client = new HttpRemoteFileClient();
+        var modrinth = new ModrinthClient(client);
+
+        foreach (var dependency in result.Missing)
+        {
+            try
+            {
+                var hits = await modrinth
+                    .SearchAsync(dependency, minecraftVersion, loader, 5, CancellationToken.None)
+                    .ConfigureAwait(false);
+                var hit = hits.FirstOrDefault(candidate =>
+                    string.Equals(candidate.Slug, dependency, StringComparison.OrdinalIgnoreCase));
+                if (hit is null)
+                {
+                    Console.WriteLine($"  ! 无法自动补装 {dependency}（Modrinth 没有同名项目，请手动找）");
+                    continue;
+                }
+
+                var file = await modrinth
+                    .InstallAsync(content, instance.Name, hit.Slug, minecraftVersion, loader, CancellationToken.None)
+                    .ConfigureAwait(false);
+                Console.WriteLine($"  + 已安装 {dependency} → {file}");
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"  ! {dependency} 安装失败：{exception.Message}");
+            }
+        }
+
+        var after = checker.Check(instance.Name);
+        Console.WriteLine(after.Missing.Count == 0
+            ? "补装后：依赖满足"
+            : $"补装后仍缺：{string.Join(", ", after.Missing)}");
+        return after.Missing.Count == 0 ? 0 : 1;
     }
 
     private static async Task<JavaRuntime> InstallComponentAsync(
@@ -336,8 +381,10 @@ internal static class Program
         var layout = new DataLayout(options.DataRoot);
         using var client = new HttpRemoteFileClient();
         var modrinth = new ModrinthClient(client);
+        var kindText = options.Kind?.ToLowerInvariant();
+        var isModpack = kindText is "modpack" or "modpacks";
         var kind = ContentKind.Mods;
-        if (!string.IsNullOrWhiteSpace(options.Kind) && !InstanceContentService.TryParseKind(options.Kind!, out kind))
+        if (!isModpack && !string.IsNullOrWhiteSpace(kindText) && !InstanceContentService.TryParseKind(kindText!, out kind))
         {
             return Fail($"未知内容类型：{options.Kind}");
         }
@@ -357,7 +404,15 @@ internal static class Program
                     return Fail("modrinth search 需要 --query <关键词>");
                 }
 
-                var hits = await modrinth.SearchAsync(query, options.Version, options.Loader, options.Limit, CancellationToken.None, kind)
+                var hits = await modrinth
+                    .SearchAsync(
+                        query,
+                        options.Version,
+                        options.Loader,
+                        options.Limit,
+                        CancellationToken.None,
+                        isModpack ? ContentKind.Mods : kind,
+                        isModpack ? "modpack" : null)
                     .ConfigureAwait(false);
                 if (hits.Count == 0)
                 {
@@ -400,6 +455,60 @@ internal static class Program
                         options.World)
                     .ConfigureAwait(false);
                 Console.WriteLine($"已安装 {positionals[0]} → {file}（MC {options.Version ?? mcVersion}, 类型 {InstanceContentService.FolderName(kind)}）");
+                return 0;
+            }
+
+            case "modpack":
+            {
+                if (string.IsNullOrWhiteSpace(options.InstanceId) || positionals.Count < 1)
+                {
+                    return Fail("用法：esluncher modrinth modpack --instance <新实例名> <项目 slug/ID> [--version <mc>]");
+                }
+
+                var store = new InstanceStore(layout);
+                if (store.TryLoad(options.InstanceId!) is not null)
+                {
+                    return Fail($"实例已存在：{options.InstanceId}");
+                }
+
+                var versions = await modrinth
+                    .GetVersionsAsync(positionals[0], options.Version, null, CancellationToken.None)
+                    .ConfigureAwait(false);
+                var version = versions.FirstOrDefault()
+                    ?? throw new InvalidOperationException($"Modrinth 上没有可用的整合包版本：{positionals[0]}");
+                var file = version.Files.FirstOrDefault(candidate =>
+                        candidate.Filename.EndsWith(".mrpack", StringComparison.OrdinalIgnoreCase))
+                    ?? throw new InvalidOperationException($"整合包 {positionals[0]} 的最新版本没有 .mrpack 文件");
+
+                if (options.DryRun)
+                {
+                    Console.WriteLine($"计划：{file.Filename}（{file.Size / 1048576.0:F1} MiB）→ 实例 {options.InstanceId}");
+                    Console.WriteLine($"依赖：{version.Id}");
+                    return 0;
+                }
+
+                var downloader = new FileDownloader(client);
+                var zipPath = Path.Combine(layout.Root, "cache", "packs", file.Filename);
+                Directory.CreateDirectory(Path.GetDirectoryName(zipPath)!);
+                var downloaded = await downloader
+                    .DownloadAsync(new DownloadJob { Primary = new Uri(file.Url), TargetPath = zipPath }, CancellationToken.None)
+                    .ConfigureAwait(false);
+                if (downloaded.Status == FileDownloadStatus.Failed)
+                {
+                    return Fail($"下载整合包失败：{downloaded.Error}");
+                }
+
+                var installer = new ModpackInstaller(
+                    layout,
+                    store,
+                    new InstancePackService(layout, store, new InstanceContentService(layout, store)),
+                    new LoaderProvisioner(layout, downloader, client),
+                    new VersionFetcher(layout, downloader),
+                    client);
+                var instance = await installer
+                    .InstallAsync(zipPath, options.InstanceId!, 2048, CancellationToken.None)
+                    .ConfigureAwait(false);
+                Console.WriteLine($"已创建实例 {instance.Name} ← {instance.VersionId}");
                 return 0;
             }
 
@@ -1193,11 +1302,12 @@ internal static class Program
           esluncher content remove --instance <名字> [--kind <k>] <文件名>
           esluncher modrinth search --query <关键词> [--version <mc>] [--loader <l>] [--limit <n>]
           esluncher modrinth install --instance <名字> <项目 slug/ID>
+          esluncher modrinth modpack --instance <新实例名> <项目> [--version <mc>] [--dry-run]
           esluncher pack export --instance <名字> [--out <zip>]
           esluncher pack import --instance <名字> <zip>
           esluncher pack install --instance <新实例名> <zip>
           esluncher diagnose --instance <名字> [--export <zip>]
-          esluncher deps --instance <名字>
+          esluncher deps --instance <名字> [--fix]
           esluncher java
           esluncher java install --component <组件> | --version <id>
           esluncher versions [--type <t>] [--limit <n>]
@@ -1233,6 +1343,7 @@ internal static class Program
           --query <q>        modrinth search: 关键词
           --export <zip>     diagnose: 导出诊断包路径
           --world <名字>     data pack: 目标世界（content/datapacks 必填）
+          --fix              deps: 自动从 Modrinth 补装缺失前置
 
         示例:
           esluncher fetch  --version 1.7.10 --dry-run
@@ -1320,6 +1431,8 @@ internal sealed class CommandOptions
     public string? Query { get; private set; }
 
     public string? World { get; private set; }
+
+    public bool Fix { get; private set; }
 
     /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
     public string RequireVersion()
@@ -1419,6 +1532,9 @@ internal sealed class CommandOptions
                     break;
                 case "--world":
                     options.World = Next(args, ref i);
+                    break;
+                case "--fix":
+                    options.Fix = true;
                     break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");

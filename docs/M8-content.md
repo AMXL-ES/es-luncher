@@ -92,6 +92,25 @@ esluncher modrinth install --instance "Fabric 测试" --kind shaders --version 1
 
 > 约定说明：`.disabled` 是启动器层面的启用/禁用约定（MC 不加载非 zip 资源包，Iris 也不加载 .disabled 光影），改名可逆。
 
+### 整合包下载安装（2026-11-20）
+
+```powershell
+esluncher modrinth search --query fabulously --kind modpacks --version 1.18.2
+esluncher modrinth modpack --instance "FO 测试" fabulously-optimized --version 1.18.2 --dry-run
+esluncher modrinth modpack --instance "FO 测试" fabulously-optimized --version 1.18.2
+```
+
+实测 Fabulously Optimized（1.18.2）：
+
+```
+整合包依赖：MC 1.18.2, 加载器 fabric-loader 0.19.3
+整合包入库：下载 43，覆盖 60，跳过 0
+已创建实例 FO 测试 ← fabric-loader-0.19.3-1.18.2
+mods：46 个
+```
+
+> 该整合包自带 Crash Assistant，首次启动它会弹出独立窗口；这是第三方行为，与启动器安装链路无关。其余 46 个 mod 与 Fabric 0.19.3 由本启动器装齐。
+
 ## 9. 待办（M8 剩余）
 
 1. jar 内依赖版本范围与冲突提示（当前只列 id）。

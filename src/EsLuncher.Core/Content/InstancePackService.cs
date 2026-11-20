@@ -108,10 +108,29 @@ public sealed class InstancePackService(DataLayout layout, InstanceStore instanc
                 continue;
             }
 
-            await using var stream = File.Create(target + ".part");
-            await response.Content.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-            File.Move(target + ".part", target, overwrite: true);
-            downloaded++;
+            var partial = target + ".part";
+            try
+            {
+                await using (var stream = File.Create(partial))
+                {
+                    await response.Content.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
+                }
+
+                File.Move(partial, target, overwrite: true);
+                downloaded++;
+            }
+            catch
+            {
+                try
+                {
+                    File.Delete(partial);
+                }
+                catch (IOException)
+                {
+                }
+
+                throw;
+            }
         }
 
         foreach (var entry in archive.Entries)

@@ -20,9 +20,15 @@ public sealed class ModrinthClient(IRemoteFileClient client)
 {
     private const string BaseUrl = "https://api.modrinth.com/v2";
 
-    public static Uri BuildSearchUri(string query, string? mcVersion, string? loader, int limit, ContentKind kind = ContentKind.Mods)
+    public static Uri BuildSearchUri(
+        string query,
+        string? mcVersion,
+        string? loader,
+        int limit,
+        ContentKind kind = ContentKind.Mods,
+        string? projectTypeOverride = null)
     {
-        var facets = new List<string> { $"[\"project_type:{ProjectType(kind)}\"]" };
+        var facets = new List<string> { $"[\"project_type:{projectTypeOverride ?? ProjectType(kind)}\"]" };
         if (!string.IsNullOrWhiteSpace(mcVersion))
         {
             facets.Add($"[\"versions:{mcVersion}\"]");
@@ -131,9 +137,13 @@ public sealed class ModrinthClient(IRemoteFileClient client)
         string? loader,
         int limit,
         CancellationToken cancellationToken,
-        ContentKind kind = ContentKind.Mods)
+        ContentKind kind = ContentKind.Mods,
+        string? projectTypeOverride = null)
     {
-        var json = await GetStringAsync(BuildSearchUri(query, mcVersion, loader, limit, kind), cancellationToken).ConfigureAwait(false);
+        var json = await GetStringAsync(
+                BuildSearchUri(query, mcVersion, loader, limit, kind, projectTypeOverride),
+                cancellationToken)
+            .ConfigureAwait(false);
         return ParseSearch(json);
     }
 

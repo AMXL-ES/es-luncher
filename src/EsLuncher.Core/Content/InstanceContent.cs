@@ -83,6 +83,11 @@ public sealed class InstanceContentService(DataLayout layout, InstanceStore inst
         foreach (var path in Directory.EnumerateFileSystemEntries(directory))
         {
             var name = Path.GetFileName(path);
+            if (name.EndsWith(".part", StringComparison.OrdinalIgnoreCase))
+            {
+                continue; // 下载中的临时文件
+            }
+
             var enabled = true;
             if (kind != ContentKind.Worlds && name.EndsWith(DisabledSuffix, StringComparison.OrdinalIgnoreCase))
             {

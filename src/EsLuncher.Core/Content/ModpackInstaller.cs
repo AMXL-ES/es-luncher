@@ -120,10 +120,27 @@ public sealed class ModpackInstaller(
         }
 
         var instance = instances.Create(instanceName, versionId, memoryMb, username: null);
-        var (downloaded, overridden, skipped) = await packs
-            .ImportAsync(mrpackPath, instance.Name, client, cancellationToken)
-            .ConfigureAwait(false);
-        Console.WriteLine($"整合包入库：下载 {downloaded}，覆盖 {overridden}，跳过 {skipped}");
+        try
+        {
+            var (downloaded, overridden, skipped) = await packs
+                .ImportAsync(mrpackPath, instance.Name, client, cancellationToken)
+                .ConfigureAwait(false);
+            Console.WriteLine($"整合包入库：下载 {downloaded}，覆盖 {overridden}，跳过 {skipped}");
+        }
+        catch
+        {
+            // 导入失败不留半成品实例，允许同名重试
+            try
+            {
+                instances.Delete(instance.Name, force: true);
+            }
+            catch (IOException)
+            {
+            }
+
+            throw;
+        }
+
         return instance;
     }
 }

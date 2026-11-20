@@ -181,4 +181,13 @@ public sealed class InstanceContentTests : IDisposable
         Assert.True(_content.Remove("dev", ContentKind.Mods, "off.jar"));
         Assert.Empty(_content.List("dev", ContentKind.Mods));
     }
+    [Fact]
+    public void Partial_download_files_are_hidden()
+    {
+        var mods = Path.Combine(_layout.GameDir("dev"), "mods");
+        Directory.CreateDirectory(mods);
+        File.WriteAllText(Path.Combine(mods, "downloading.jar.part"), "half");
+
+        Assert.Empty(_content.List("dev", ContentKind.Mods));
+    }
 }

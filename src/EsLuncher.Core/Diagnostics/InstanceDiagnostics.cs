@@ -68,7 +68,7 @@ public sealed class InstanceDiagnostics(DataLayout layout, InstanceStore instanc
             var dependencies = new DependencyChecker(new InstanceContentService(layout, instances)).Check(instance.Name);
             if (dependencies.Missing.Count > 0)
             {
-                hints.Add($"缺少模组前置：{string.Join(", ", dependencies.Missing)}（可用 `esluncher modrinth install` 补装）");
+                hints.Add($"可能缺少模组前置：{string.Join(", ", dependencies.Missing)}（静态检查，可能误报；可用 `esluncher deps --fix` 尝试补装）");
             }
         }
         catch (IOException)
