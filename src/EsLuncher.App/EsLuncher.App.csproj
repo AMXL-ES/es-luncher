@@ -4,8 +4,15 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>EsLuncher.App</RootNamespace>
     <AssemblyName>EsLuncher</AssemblyName>
+    <Version>0.1.0</Version>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <AssemblyTitle>ES Luncher</AssemblyTitle>
+    <Product>ES Luncher</Product>
+    <Company>Endless Studio</Company>
+    <Copyright>GPL-3.0-or-later · Endless Studio</Copyright>
     <ApplicationIcon>Assets\es-luncher.ico</ApplicationIcon>
-    <!-- 只做「壳」：任何能被单测的业务逻辑都不许写在这里，写进 EsLuncher.Core。 -->
+    <!-- 只做「壳」：任何能被单测的业务逻辑都不许写在这里，写进 EsLuncher.Core -->
   </PropertyGroup>
 
   <ItemGroup>

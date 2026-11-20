@@ -167,7 +167,7 @@ public static class Localization
         ["detail.installInstance"] = ("安装为实例", "Install as instance"),
         ["detail.newInstance"] = ("新实例名", "New instance name"),
         ["detail.close"] = ("关闭", "Close"),
-        ["about.version"] = ("版本 0.1.0-dev · .NET 10", "Version 0.1.0-dev · .NET 10"),
+        ["about.version"] = ("版本 0.1.0 · .NET 10", "Version 0.1.0 · .NET 10"),
         ["about.credits"] = ("开发者 / 鸣谢", "Developers / Credits"),
         ["about.name"] = ("名字", "Name"),
         ["about.role"] = ("角色", "Role"),

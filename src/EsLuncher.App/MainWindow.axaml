@@ -71,7 +71,7 @@
         </StackPanel>
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <TextBlock Text="0.1.0-dev" FontSize="11" Foreground="#5C5C64" VerticalAlignment="Center" />
+          <TextBlock Text="0.1.0" FontSize="11" Foreground="#5C5C64" VerticalAlignment="Center" />
           <Button x:Name="AccountButton" Classes="nav" Click="OnAccountsClick">
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Border Width="24" Height="24" CornerRadius="12" Background="#4C8DF6">
@@ -270,7 +270,7 @@
               <Image x:Name="StudioLogo" Width="112" Height="112" Stretch="UniformToFill" />
             </Border>
             <TextBlock Text="Endless Studio" FontSize="22" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
-            <TextBlock Text="ES Luncher · GPL-3.0 · 0.1.0-dev" FontSize="12" Foreground="#9A9AA3" HorizontalAlignment="Center" />
+            <TextBlock Text="ES Luncher · GPL-3.0 · 0.1.0" FontSize="12" Foreground="#9A9AA3" HorizontalAlignment="Center" />
             <TextBlock Text="轻量、开源、无广告的 Minecraft 启动器"
                        FontSize="12" Foreground="#6E6E76" HorizontalAlignment="Center" TextAlignment="Center" />
             <TextBlock Text="第三方组件：Avalonia (MIT) · .NET 10 (MIT) · Mojang 运行时由官方分发"
