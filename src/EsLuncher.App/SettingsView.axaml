@@ -6,6 +6,7 @@
       <TextBlock Text="设置" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" />
       <TextBlock Text="数据根（重启生效）" Foreground="#9A9AA3" />
       <TextBlock x:Name="DataRootText" Foreground="#D0D0D6" />
+      <Button Content="打开数据目录" Click="OnOpenDataRootClick" HorizontalAlignment="Left" />
 
       <TextBlock Text="默认内存（MB）" Foreground="#9A9AA3" />
       <NumericUpDown x:Name="MemoryBox" Minimum="512" Maximum="32768" Increment="512" FormatString="0" />

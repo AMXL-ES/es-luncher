@@ -18,6 +18,12 @@ public partial class SettingsView : UserControl
         ThemeBox.SelectedIndex = settings.Theme == LauncherSettings.ThemeLight ? 1 : 0;
     }
 
+    private void OnOpenDataRootClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", AppServices.Layout.Root)
+        {
+            UseShellExecute = true,
+        });
+
     private void OnSaveClick(object? sender, RoutedEventArgs e)
     {
         var theme = ThemeBox.SelectedIndex == 1 ? LauncherSettings.ThemeLight : LauncherSettings.ThemeDark;

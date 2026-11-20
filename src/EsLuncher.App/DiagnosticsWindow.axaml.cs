@@ -13,6 +13,7 @@ public partial class DiagnosticsWindow : Window
     private readonly string _instance;
     private readonly DataLayout _layout;
     private readonly InstanceDiagnostics _diagnostics;
+    private IReadOnlyList<string> _allErrors = [];
 
     /// <summary>设计器/XAML 加载用的无参构造。</summary>
     public DiagnosticsWindow()
@@ -36,7 +37,8 @@ public partial class DiagnosticsWindow : Window
             var report = _diagnostics.Analyze(_instance);
             TitleText.Text = $"诊断 · {_instance}";
             LogText.Text = report.LogPath ?? "(没有 latest.log)";
-            ErrorsList.ItemsSource = report.Errors.Count == 0 ? new[] { "(没有错误行)" } : report.Errors;
+            _allErrors = report.Errors;
+            ApplyErrorFilter();
             CrashesList.ItemsSource = report.Crashes.Select(crash => crash.Summary).ToArray();
             HintsList.ItemsSource = report.Hints.Count == 0 ? new[] { "(没有额外提示)" } : report.Hints;
         }
@@ -70,6 +72,22 @@ public partial class DiagnosticsWindow : Window
             StatusText.Text = $"导出失败：{exception.Message}";
         }
     }
+
+    private void ApplyErrorFilter()
+    {
+        if (ErrorsList is null)
+        {
+            return;
+        }
+
+        var query = ErrorSearchBox?.Text?.Trim();
+        var filtered = string.IsNullOrWhiteSpace(query)
+            ? _allErrors
+            : _allErrors.Where(line => line.Contains(query!, StringComparison.OrdinalIgnoreCase)).ToArray();
+        ErrorsList.ItemsSource = filtered.Count == 0 ? new[] { "(没有匹配的错误行)" } : filtered;
+    }
+
+    private void OnErrorSearchChanged(object? sender, TextChangedEventArgs e) => ApplyErrorFilter();
 
     private void OnCloseClick(object? sender, RoutedEventArgs e) => Close();
 

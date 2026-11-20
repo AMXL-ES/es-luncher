@@ -105,9 +105,30 @@ public partial class MainWindow : Window
         AboutPage.IsVisible = tag == "about";
     }
 
+    private InstanceItem[] _allInstances = [];
+
     private void RefreshInstances()
     {
-        var items = _store.List().Select(config => new InstanceItem(config)).ToArray();
+        _allInstances = _store.List().Select(config => new InstanceItem(config)).ToArray();
+        ApplyInstanceFilter();
+    }
+
+    private void ApplyInstanceFilter()
+    {
+        // XAML 加载期 TextChanged 会先触发一次，此时命名控件可能还没赋值。
+        if (InstanceList is null || StatusText is null)
+        {
+            return;
+        }
+
+        var query = SearchBox?.Text?.Trim();
+        var items = string.IsNullOrWhiteSpace(query)
+            ? _allInstances
+            : _allInstances
+                .Where(item => item.Name.Contains(query!, StringComparison.OrdinalIgnoreCase)
+                    || item.Version.Contains(query!, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
         InstanceList.ItemsSource = items;
         if (items.Length > 0)
         {
@@ -115,9 +136,11 @@ public partial class MainWindow : Window
         }
 
         StatusText.Text = items.Length == 0
-            ? "还没有实例。用 CLI 创建：esluncher instance create <名字> --version <id>"
-            : $"共 {items.Length} 个实例";
+            ? "没有匹配的实例"
+            : $"共 {items.Length} 个实例" + (string.IsNullOrWhiteSpace(query) ? string.Empty : $"（筛选自 {_allInstances.Length}）");
     }
+
+    private void OnSearchChanged(object? sender, TextChangedEventArgs e) => ApplyInstanceFilter();
 
     private void OnRefreshClick(object? sender, RoutedEventArgs e) => RefreshInstances();
 

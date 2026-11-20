@@ -40,49 +40,71 @@ public sealed class ModUpdater(InstanceContentService content, ModrinthClient mo
         CancellationToken cancellationToken)
     {
         var directory = content.DirectoryFor(instanceName, ContentKind.Mods);
-        var statuses = new List<ModStatus>();
+        var mods = content.List(instanceName, ContentKind.Mods).Where(mod => !mod.IsDirectory).ToArray();
+        var statuses = new ModStatus[mods.Length];
 
-        foreach (var mod in content.List(instanceName, ContentKind.Mods))
+        // 并行查（最多 4 个），46 个模组时从十几秒降到几秒。
+        using var gate = new SemaphoreSlim(4);
+        var tasks = mods.Select(async (mod, index) =>
         {
-            if (mod.IsDirectory)
-            {
-                continue;
-            }
-
-            var metadata = ModMetadataReader.Read(Path.Combine(directory, mod.Name));
-            if (string.IsNullOrWhiteSpace(metadata.ModId))
-            {
-                statuses.Add(new ModStatus(mod.Name, null, metadata.Version ?? "?", null, null));
-                continue;
-            }
-
-            string? latest = null;
-            string? slug = null;
+            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                var hits = await modrinth
-                    .SearchAsync(metadata.ModId!, minecraftVersion, loader, 5, cancellationToken)
+                statuses[index] = await CheckOneAsync(
+                        Path.Combine(directory, mod.Name),
+                        mod.Name,
+                        minecraftVersion,
+                        loader,
+                        cancellationToken)
                     .ConfigureAwait(false);
-                var hit = hits.FirstOrDefault(candidate =>
-                    string.Equals(candidate.Slug, metadata.ModId, StringComparison.OrdinalIgnoreCase));
-                if (hit is not null)
-                {
-                    slug = hit.Slug;
-                    var versions = await modrinth
-                        .GetVersionsAsync(hit.Slug, minecraftVersion, loader, cancellationToken)
-                        .ConfigureAwait(false);
-                    latest = versions.FirstOrDefault()?.VersionNumber;
-                }
             }
-            catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException)
+            finally
             {
-                // 网络失败就当作"未知"，不阻塞其它模组
+                gate.Release();
             }
+        });
 
-            statuses.Add(new ModStatus(mod.Name, metadata.ModId, metadata.Version ?? "?", latest, slug));
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+        return statuses;
+    }
+
+    private async Task<ModStatus> CheckOneAsync(
+        string filePath,
+        string fileName,
+        string minecraftVersion,
+        string? loader,
+        CancellationToken cancellationToken)
+    {
+        var metadata = ModMetadataReader.Read(filePath);
+        if (string.IsNullOrWhiteSpace(metadata.ModId))
+        {
+            return new ModStatus(fileName, null, metadata.Version ?? "?", null, null);
         }
 
-        return statuses;
+        string? latest = null;
+        string? slug = null;
+        try
+        {
+            var hits = await modrinth
+                .SearchAsync(metadata.ModId!, minecraftVersion, loader, 5, cancellationToken)
+                .ConfigureAwait(false);
+            var hit = hits.FirstOrDefault(candidate =>
+                string.Equals(candidate.Slug, metadata.ModId, StringComparison.OrdinalIgnoreCase));
+            if (hit is not null)
+            {
+                slug = hit.Slug;
+                var versions = await modrinth
+                    .GetVersionsAsync(hit.Slug, minecraftVersion, loader, cancellationToken)
+                    .ConfigureAwait(false);
+                latest = versions.FirstOrDefault()?.VersionNumber;
+            }
+        }
+        catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException)
+        {
+            // 网络失败就当作"未知"，不阻塞其它模组
+        }
+
+        return new ModStatus(fileName, metadata.ModId, metadata.Version ?? "?", latest, slug);
     }
 
     /// <summary>把所有可更新的模组装到最新版，并回收旧文件；返回更新数量。</summary>

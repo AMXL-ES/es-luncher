@@ -3,7 +3,7 @@
         x:Class="EsLuncher.App.DiagnosticsWindow"
         Title="诊断"
         Width="760"
-        Height="560"
+        Height="640"
         WindowStartupLocation="CenterOwner"
         Background="#0E0E10">
   <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20">
@@ -13,13 +13,32 @@
     <Grid Grid.Row="2" ColumnDefinitions="*,*" Margin="0,14,0,0">
       <StackPanel Margin="0,0,10,0">
         <TextBlock Text="错误行" Foreground="#9A9AA3" FontSize="12" />
-        <ListBox x:Name="ErrorsList" Height="240" Background="Transparent" />
+        <TextBox x:Name="ErrorSearchBox" PlaceholderText="在错误行里搜索…" Margin="0,4,0,4" TextChanged="OnErrorSearchChanged" />
+        <ListBox x:Name="ErrorsList" Height="210" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="11" Foreground="#D0D0D6" Margin="0,0,0,4" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
         <TextBlock Text="崩溃报告" Foreground="#9A9AA3" FontSize="12" Margin="0,10,0,0" />
-        <ListBox x:Name="CrashesList" Height="90" Background="Transparent" />
+        <ListBox x:Name="CrashesList" Height="90" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="11" Foreground="#8A8A93" Margin="0,0,0,4" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
       </StackPanel>
       <StackPanel Grid.Column="1">
         <TextBlock Text="提示" Foreground="#9A9AA3" FontSize="12" />
-        <ListBox x:Name="HintsList" Height="340" Background="Transparent" />
+        <ListBox x:Name="HintsList" Height="300" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="11" Foreground="#D0D0D6" Margin="0,0,0,6" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
       </StackPanel>
     </Grid>
 
