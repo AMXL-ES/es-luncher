@@ -41,33 +41,37 @@ try {
         exit 1
     }
 
-    Write-Host '=== 1/6 build ==='
+    Write-Host '=== 1/7 build ==='
     $out = (& dotnet build GLauncher.slnx -c Release --nologo 2>&1) | Out-String
     Add-Result 'build (exit 0, 0 warning)' ($LASTEXITCODE -eq 0) $out.Trim()
 
-    Write-Host '=== 2/6 test ==='
+    Write-Host '=== 2/7 test ==='
     $out = (& dotnet test GLauncher.slnx -c Release --nologo 2>&1) | Out-String
     $testsOk = ($LASTEXITCODE -eq 0) -and ($out -match '失败:\s*0')
     $passed = if ($out -match '通过:\s*(\d+)') { $Matches[1] } else { '?' }
     Add-Result "test ($passed passed, 0 failed)" $testsOk $out.Trim()
 
-    Write-Host '=== 3/6 accounts ==='
+    Write-Host '=== 3/7 accounts ==='
     $out = (& $cli accounts 2>&1) | Out-String
     Add-Result 'accounts 可用' (($LASTEXITCODE -eq 0) -or ($out -match '没有已保存的账号')) $out.Trim()
 
-    Write-Host '=== 4/6 launch --dry-run ==='
+    Write-Host '=== 4/7 launch --dry-run ==='
     $out = (& $cli launch --version 1.18.2 --dry-run --username Dev 2>&1) | Out-String
     $dryOk = ($LASTEXITCODE -eq 0) -and ($out -match 'missing 0')
     Add-Result 'launch 1.18.2 命令组装 (classpath missing 0)' $dryOk $out.Trim()
 
-    Write-Host '=== 5/6 fetch 幂等 ==='
+    Write-Host '=== 5/7 fetch 幂等 ==='
     $out = (& $cli fetch --version 1.7.10 2>&1) | Out-String
     $fetchOk = ($LASTEXITCODE -eq 0) -and ($out -match 'downloaded=0') -and ($out -match 'failed=0')
     Add-Result 'fetch 1.7.10 幂等 (downloaded=0, failed=0)' $fetchOk $out.Trim()
 
-    Write-Host '=== 6/6 versions ==='
+    Write-Host '=== 6/7 versions ==='
     $out = (& $cli versions --limit 3 2>&1) | Out-String
     Add-Result 'versions 列表' (($LASTEXITCODE -eq 0) -and ($out -match 'manifest: \d+ 个版本')) $out.Trim()
+
+    Write-Host '=== 7/7 java ==='
+    $out = (& $cli java 2>&1) | Out-String
+    Add-Result 'java 运行时发现' (($LASTEXITCODE -eq 0) -and ($out -match '发现 \d+ 个')) $out.Trim()
 }
 finally {
     Pop-Location

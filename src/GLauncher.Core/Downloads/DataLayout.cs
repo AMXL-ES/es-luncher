@@ -33,6 +33,9 @@ public sealed class DataLayout
 
     public string AuthAccountsDir => Path.Combine(AuthDir, "accounts");
 
+    /// <summary>Mojang 官方运行时（按组件/版本分目录，与系统 JDK 隔离）。</summary>
+    public string JavaDir => Path.Combine(Root, "java");
+
     public string InstanceDir(string instanceId) => Path.Combine(InstancesDir, instanceId);
 
     /// <summary>游戏工作目录（<c>--gameDir</c>），与 natives 目录分开。</summary>

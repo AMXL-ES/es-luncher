@@ -94,30 +94,16 @@ public static class JavaDiscovery
     {
         var candidates = new List<string>();
 
+        // 显式传入的根（启动器托管的运行时）优先于系统安装：同主版本时先被选中。
+        foreach (var root in (extraRoots ?? []).Concat(DefaultRoots))
+        {
+            AddCandidates(candidates, root);
+        }
+
         var javaHome = Environment.GetEnvironmentVariable("JAVA_HOME");
         if (!string.IsNullOrWhiteSpace(javaHome))
         {
-            candidates.Add(Path.Combine(javaHome, "bin", "java.exe"));
-        }
-
-        foreach (var root in DefaultRoots.Concat(extraRoots ?? []))
-        {
-            if (!Directory.Exists(root))
-            {
-                continue;
-            }
-
-            try
-            {
-                foreach (var directory in Directory.EnumerateDirectories(root))
-                {
-                    candidates.Add(Path.Combine(directory, "bin", "java.exe"));
-                }
-            }
-            catch (IOException)
-            {
-                // 无权限/被占用就跳过
-            }
+            candidates.Insert(0, Path.Combine(javaHome, "bin", "java.exe"));
         }
 
         var runtimes = new List<JavaRuntime>();
@@ -137,6 +123,35 @@ public static class JavaDiscovery
         }
 
         return runtimes.OrderByDescending(runtime => runtime.MajorVersion).ToArray();
+    }
+
+    /// <summary>
+    /// 扫三层：root 本身、root/*、root/*/*（托管运行时是 java/&lt;组件&gt;/&lt;版本&gt;/bin/java.exe）。
+    /// </summary>
+    private static void AddCandidates(List<string> candidates, string root)
+    {
+        if (!Directory.Exists(root))
+        {
+            return;
+        }
+
+        candidates.Add(Path.Combine(root, "bin", "java.exe"));
+
+        try
+        {
+            foreach (var child in Directory.EnumerateDirectories(root))
+            {
+                candidates.Add(Path.Combine(child, "bin", "java.exe"));
+                foreach (var grandChild in Directory.EnumerateDirectories(child))
+                {
+                    candidates.Add(Path.Combine(grandChild, "bin", "java.exe"));
+                }
+            }
+        }
+        catch (IOException)
+        {
+            // 无权限就跳过这个根
+        }
     }
 }
 

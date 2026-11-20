@@ -1,6 +1,7 @@
 using System.Globalization;
 using GLauncher.Core.Auth;
 using GLauncher.Core.Downloads;
+using GLauncher.Core.Java;
 using GLauncher.Core.Launching;
 using GLauncher.Core.Metadata;
 
@@ -20,13 +21,22 @@ internal static class Program
 
         try
         {
-            var command = args[0];
+            var command = args[0].ToLowerInvariant();
+            if (command == "java")
+            {
+                if (args.Length > 1 && args[1].Equals("install", StringComparison.OrdinalIgnoreCase))
+                {
+                    return await JavaInstallAsync(CommandOptions.Parse(args[2..])).ConfigureAwait(false);
+                }
+
+                return ListJava(CommandOptions.Parse(args[1..]));
+            }
+
             var options = CommandOptions.Parse(args[1..]);
-            return command.ToLowerInvariant() switch
+            return command switch
             {
                 "fetch" => await FetchAsync(options).ConfigureAwait(false),
                 "launch" => await LaunchAsync(options).ConfigureAwait(false),
-                "java" => ListJava(),
                 "versions" => await VersionsAsync(options).ConfigureAwait(false),
                 "login" => await LoginAsync(options).ConfigureAwait(false),
                 "accounts" => ListAccounts(options),
@@ -44,16 +54,85 @@ internal static class Program
         }
     }
 
-    private static int ListJava()
+    private static int ListJava(CommandOptions options)
     {
-        var runtimes = JavaDiscovery.Discover();
+        var layout = new DataLayout(options.DataRoot);
+        var runtimes = JavaDiscovery.Discover([layout.JavaDir]);
         Console.WriteLine($"发现 {runtimes.Count} 个可用 Java（PATH 上的 java 一律忽略）：");
         foreach (var runtime in runtimes)
         {
-            Console.WriteLine($"  Java {runtime.MajorVersion,2}  {runtime.JavaExePath}");
+            var managed = runtime.JavaExePath.StartsWith(layout.JavaDir, StringComparison.OrdinalIgnoreCase);
+            Console.WriteLine($"  Java {runtime.MajorVersion,2}  {runtime.JavaExePath}{(managed ? "  [Mojang 托管]" : string.Empty)}");
         }
 
         return runtimes.Count > 0 ? 0 : 1;
+    }
+
+    private static async Task<int> JavaInstallAsync(CommandOptions options)
+    {
+        var layout = new DataLayout(options.DataRoot);
+        using var client = new HttpRemoteFileClient();
+        var downloader = new FileDownloader(client);
+
+        var component = options.Component;
+        if (string.IsNullOrWhiteSpace(component))
+        {
+            var versionId = options.RequireVersion();
+            var catalog = new VersionCatalog(layout, downloader);
+            var manifest = await catalog.GetManifestAsync(options.Refresh, CancellationToken.None).ConfigureAwait(false);
+            var version = await catalog.GetVersionAsync(versionId, manifest, options.Refresh, CancellationToken.None)
+                .ConfigureAwait(false);
+            component = version.JavaVersion?.Component ?? "jre-legacy";
+            Console.WriteLine($"{version.Id} 需要运行时组件 {component}（Java {version.JavaVersion?.MajorVersion}）");
+        }
+
+        var runtime = await InstallComponentAsync(layout, downloader, component, options, new ConsoleProgress(), CancellationToken.None)
+            .ConfigureAwait(false);
+        Console.WriteLine($"完成：Java {runtime.MajorVersion} @ {runtime.JavaExePath}");
+        return 0;
+    }
+
+    private static async Task<JavaRuntime> InstallComponentAsync(
+        DataLayout layout,
+        FileDownloader downloader,
+        string component,
+        CommandOptions options,
+        IProgress<DownloadProgress> progress,
+        CancellationToken cancellationToken)
+    {
+        var packages = await FetchRuntimeCatalogAsync(layout, options.Refresh, cancellationToken).ConfigureAwait(false);
+        var package = JavaRuntimeCatalog.Find(packages, component)
+            ?? throw new InvalidOperationException(
+                $"运行时目录里没有组件 {component}；可用：{string.Join(", ", packages.Select(p => p.Component))}");
+
+        Console.WriteLine($"安装 {package.Component} {package.VersionName} → {Path.Combine(layout.JavaDir, package.Component, package.VersionName)}");
+        var installer = new JavaRuntimeInstaller(layout, downloader);
+        return await installer.InstallAsync(package, options.Concurrency, progress, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<IReadOnlyList<JavaRuntimePackage>> FetchRuntimeCatalogAsync(
+        DataLayout layout,
+        bool refresh,
+        CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(layout.JavaDir);
+        var path = Path.Combine(layout.JavaDir, "java-runtimes.json");
+
+        if (!File.Exists(path) || refresh)
+        {
+            using var client = new HttpRemoteFileClient();
+            using var response = await client.GetAsync(JavaRuntimeCatalog.AllRuntimes, 0, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccess)
+            {
+                throw new HttpRequestException($"获取运行时目录失败：HTTP {response.StatusCode}");
+            }
+
+            await using var file = File.Create(path);
+            await response.Content!.CopyToAsync(file, cancellationToken).ConfigureAwait(false);
+        }
+
+        var json = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
+        return JavaRuntimeCatalog.Parse(json, JavaPlatform.Detect());
     }
 
     private static async Task<int> VersionsAsync(CommandOptions options)
@@ -202,10 +281,23 @@ internal static class Program
             }
         }
 
-        var selection = JavaSelector.Select(requiredMajor.Value, JavaDiscovery.Discover(), overridden);
+        var installedRuntimes = JavaDiscovery.Discover([layout.JavaDir]);
+        var selection = JavaSelector.Select(requiredMajor.Value, installedRuntimes, overridden);
+
+        if (!selection.IsSatisfied && options.InstallJava && overridden is null)
+        {
+            var component = version.JavaVersion?.Component ?? "jre-legacy";
+            Console.WriteLine($"本机缺少 Java {requiredMajor}，开始安装 Mojang 运行时组件 {component} …");
+            await InstallComponentAsync(layout, downloader, component, options, new ConsoleProgress(), CancellationToken.None)
+                .ConfigureAwait(false);
+            installedRuntimes = JavaDiscovery.Discover([layout.JavaDir]);
+            selection = JavaSelector.Select(requiredMajor.Value, installedRuntimes, null);
+        }
+
         Console.WriteLine(selection.Message);
         if (!selection.IsSatisfied)
         {
+            Console.WriteLine($"提示：加 --install-java 可让启动器自动装 Mojang 运行时（组件 {(version.JavaVersion?.Component ?? "jre-legacy")}）");
             return 3;
         }
 
@@ -404,6 +496,7 @@ internal static class Program
           glauncher fetch    --version <id> [选项]
           glauncher launch   --version <id> [选项]
           glauncher java
+          glauncher java install --component <组件> | --version <id>
           glauncher versions [--type <t>] [--limit <n>]
           glauncher login    --provider offline|microsoft [选项]
           glauncher accounts
@@ -427,6 +520,8 @@ internal static class Program
           --dump <file>      把完整命令行写到文件（排障/复现）
           --type <t>         versions: release|snapshot|old_alpha|old_beta|all（默认 release）
           --limit <n>        versions: 取几条（默认 10）
+          --component <c>    java install: 运行时组件，如 jre-legacy / java-runtime-gamma
+          --install-java     launch: 缺 Java 时自动安装 Mojang 运行时
 
         示例:
           glauncher fetch  --version 1.7.10 --dry-run
@@ -494,6 +589,10 @@ internal sealed class CommandOptions
     public string? Type { get; private set; }
 
     public int Limit { get; private set; } = 10;
+
+    public string? Component { get; private set; }
+
+    public bool InstallJava { get; private set; }
 
     /// <summary>fetch / launch 需要版本号，java 不需要 —— 所以校验放在命令里而不是 Parse 里。</summary>
     public string RequireVersion()
@@ -563,6 +662,12 @@ internal sealed class CommandOptions
                     break;
                 case "--limit":
                     options.Limit = int.Parse(Next(args, ref i), CultureInfo.InvariantCulture);
+                    break;
+                case "--component":
+                    options.Component = Next(args, ref i);
+                    break;
+                case "--install-java":
+                    options.InstallJava = true;
                     break;
                 default:
                     throw new ArgumentException($"未知参数：{args[i]}");
