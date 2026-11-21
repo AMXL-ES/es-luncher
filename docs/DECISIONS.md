@@ -30,3 +30,5 @@
 | 2026-11-20 | Forge installer 前自动写最小 `launcher_profiles.json` | installer 强制要求存在该文件，否则退出 1 | 无——纯 stub，不影响官方启动器文件 |
 | 2026-11-20 | 启动器图标：纯黑/纯白底，ES 偏上 + luncher 下方；生成脚本入库 | 用户指定；图标可复现，不依赖设计工具 | 换风格改 `scripts/gen-icon.ps1` 重跑 |
 | 2026-11-20 | Endless Studio 的名称/图标**只在关于页与鸣谢**出现，README/发行说明不出现 | 用户明确要求 | 需要改时只动 About 页资源 |
+| 2026-11-21 | 验收用一个可复跑脚本 `scripts/verify-acceptance.ps1`（默认全 dry-run，`-WithUi`/`-WithLaunch` 才动真格），退出码 0/1 | 把「判据必须是可执行证据」变成一条命令，免得每轮手工敲 | 删脚本或改成单元测试入口；判据不变 |
+| 2026-11-21 | 中文 Markdown 一律 UTF-8**无 BOM**；`.ps1` 一律 UTF-8**带 BOM** | 文档被 PS 5.1 按 ANSI 写入过一次，`RELEASE-CHECK.md` 因此整篇损毁 | 装 pwsh 7 后可统一为无 BOM；转换时注意 `.ps1` 会坏中文注释 |

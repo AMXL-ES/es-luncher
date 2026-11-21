@@ -1,27 +1,44 @@
-# ����ǰ��飨2026-11-20��
+# 发布前检查（2026-11-21 复核）
 
-## �Զ����
-- `dotnet build EsLuncher.slnx -c Release` �� **0 ���� 0 ����**
-- `dotnet test EsLuncher.slnx -c Release` �� **200 core + 1 headless UI = 201 passed**
-- `scripts/smoke-ui.ps1` �� ������ 8s ͨ��
-- ��ʵ����ع飺Fabric 1.18.2��classpath 45 ��ȱʧ 0��25s autostop ����
+> 本文件在 2026-11-21 被**整篇重写**：原文件（含 `artifacts/` 下两份副本、以及 git 历史里的两个版本）已损毁成 `锟斤拷` 双编码乱码，无法恢复。以下每一条都是当天实测，不是沿用旧结论。
+> 一键复跑：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-acceptance.ps1 -WithUi -WithLaunch`
 
-## ������β�Ķ�
-| �� | ״̬ |
+## 1. 自动检查
+
+| 项 | 命令 | 结果 |
+|---|---|---|
+| 构建 | `dotnet build EsLuncher.slnx -c Release` | **0 警告 / 0 错误**，1.3 s |
+| 测试 | `dotnet test EsLuncher.slnx -c Release` | **202 passed / 0 failed**（201 Core + 1 Headless UI） |
+| 验收脚本 | `scripts\verify-acceptance.ps1 -WithUi -WithLaunch` | **16 / 16 PASS**，exit 0，用时 44 s |
+| UI 冒烟 | `scripts\smoke-ui.ps1` | 进程存活 8 s 后正常关闭（10.4 s） |
+| 真实启动回归 | `launch --instance "Fabric 测试" --autostop 25` | **exit 0**；日志 `Loading 51 mods` / `Setting user: Player` / `Backend library: LWJGL version 3.2.2` / JEI atlas 创建成功 |
+
+验收脚本覆盖：M0 构建与测试、M1 版本清单与 1.7.10 下载计划、M2 1.18.2 命令组装、M3 账号列表、M4 Java 发现、M5 实例列表/体积/实例级启动、M7 UI 冒烟、M8 内容列表、M9 依赖体检与诊断，外加一次真实启动。
+
+## 2. 发布形态现状
+
+| 项 | 状态 |
 |---|---|
-| ���ݸ�Ĭ��ֵ | ��Ϊ `%APPDATA%\ESLuncher`�������������ȣ��ɻ��� `D:\mc-data` ����������ã�����ʵ������ʧ���� |
-| ΢���¼ | UI ���أ������˻����ã��������汾�ָ� |
-| �����߿���С�� | ����ҳ�ġ���������Դ���޹�桱���˻���ʾ���û���ָ��/������ʾȥ���ڲ� CLI ��� |
-| ����ҳ�汾�� | ��ʾ `�汾 0.1.0-dev �� .NET 10` |
-| 125% ���� | ��ʵ�⣨�˻�����ť�����޸��� |
+| 便携包 | `scripts\publish-portable.ps1`（framework-dependent，约 36 MiB zip，需 .NET 10 Desktop Runtime） |
+| 安装包脚本 | `installer\es-luncher.iss`（Inno Setup 6，产物 `artifacts\ESLuncher-<版本>-setup.exe`） |
+| 代码签名 | 未签；方案见 `CODE-SIGNING.md`、CI 接入见 `SIGNPATH-SETUP.md`；发布附 `SHA256SUMS-<版本>.txt` |
+| 自动更新 | **未做**（M10 剩余项） |
+| 数据根默认值 | `%APPDATA%\ESLuncher`，可用 `ESLUNCHER_DATA` 或 `--data` 覆盖 |
+| 用户可见文案 | 已词条化（中/英），微软登录入口按决定隐藏 |
 
-## ��֪ȱ�ڣ�����ǰ��֪����
-1. **û�а�װ��/��Я��/�Ը���/ǩ��**��M10 �ݻ���
-2. ΢���¼δ�ϣ�ȱ Azure client ID + ��Ҫ��Ʒ����
-3. ����ҳ/���ֶԻ����**��̬״̬�İ�������**
-4. NeoForge δͨ��CurseForge δ��
-5. 150% ����δ�⡢��������/�������δ��
+> 本次复核**没有重新打包**安装包与便携 zip：脚本与 iss 未改动，打包事实沿用 v0.1.0 那次的产物。要发版仍需按 `PACKAGING.md` 重跑一次。
 
-## ����
-**Դ���뱾�ع���������� 0.1.0-dev Ԥ������**��GitHub + ��ЯĿ¼����
-**������ֱ�Ӷ���ơ���ʽ�桱**���Ȳ� M10 ���/�Ը�����΢���¼������һ�ֶ�̬�İ��� 150% �������ա�
+## 3. 已知缺口（照实写，不粉饰）
+
+1. **M10 未完成**：无自动更新/增量更新；安装包与签名未在本次复核中重出。
+2. **微软正版登录**：代码 + 12 个测试就绪，缺 Azure 公共客户端 ID，且 UI 入口按你的决定隐藏。
+3. **NeoForge 未通**：`maven.neoforged.net` 本网络不可达 + 1.20.1 资源 624 MiB 超授权线。
+4. **CurseForge 未接**：需 API key 并确认分发条款。
+5. 大文件（版本/资源）下载仍无取消与真实进度条（只有 Modrinth 安装有）。
+6. 语言切换需重启（`{app:T}` 在加载期求值）；150% 缩放未测；完整读屏支持仍是基础级。
+7. UI 自动化测试只有 1 条 Headless 用例，深交互无覆盖。
+
+## 4. 结论
+
+**可以出 0.1.0 源码 + 便携预览**：构建零警告、202 测试全绿、16 项验收全过、真实启动回归通过。
+**不建议现在对外宣称「正式版」**：先补 M10 的自动更新与签名，再恢复微软登录、补 150% 缩放与多页 UI 测试。

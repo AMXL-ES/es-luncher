@@ -294,11 +294,34 @@
 
 实例页「Modrinth」→ 按实例 MC/加载器检索并安装；截图 `docs/img/m8-modrinth.png`。
 
-## 下一步（M9 收尾 → M10）
+## M0–M9 验收复核（2026-11-21）
 
-1. UI：诊断入口 + 结果面板；内容面板接 Modrinth 搜索框。
-2. 依赖自动解析（读版本依赖，缺前置时提示一键安装）。
-3. 之后 M10 分发（安装包/便携版/自动更新）。
+`scripts\verify-acceptance.ps1 -WithUi -WithLaunch` → **16 / 16 PASS（exit 0，44 s）**；`dotnet test` **202 passed / 0 failed**；构建 **0 警告 / 0 错误**。
+
+| 里程碑 | 判据 | 复核结果 |
+|---|---|---|
+| M0 | 构建零警告 + 全量测试 | 0 警告 / 0 错误；202 passed（201 Core + 1 Headless UI） |
+| M0/M7 | 空窗口能开能关 | `smoke-ui.ps1`：进程存活 8 s 后正常关闭（10.4 s） |
+| M1 | 版本清单 + 下载计划 | `versions --type release` 有输出；`fetch 1.7.10 --dry-run` 出计划 |
+| M2 | 1.18.2 命令组装 | `launch --version 1.18.2 --dry-run` 出 `-cp` |
+| M3a | 离线账号可列 | `accounts` exit 0（不输出 token） |
+| M4 | Java 发现 | `java` 列出托管与系统运行时 |
+| M5 | 实例列表 / 体积 / 实例级启动 | `instance list`、`instance size`、`launch --instance` 全 exit 0 |
+| M6 | 加载器真实启动（Fabric） | `launch --instance "Fabric 测试" --autostop 25` → **exit 0**；日志 `Loading 51 mods`、`Setting user: Player`、`Backend library: LWJGL version 3.2.2`、JEI atlas 创建成功 |
+| M7 | UI 可启动 | 冒烟通过（见上） |
+| M8 | 内容列举 | `content list --instance "Fabric 测试" --kind mods` exit 0 |
+| M9 | 依赖体检 + 诊断 | `deps` / `diagnose` 均 exit 0 |
+
+**同日修掉的数据问题**：`docs/ISSUES.md` GBK → UTF-8；`docs/RELEASE-CHECK.md` 原文件与 `artifacts/` 两份副本、git 两个历史版本均已损毁成 `锟斤拷` 乱码，**整篇重写**为 2026-11-21 实测版；13 条项目决策记忆从 `default-workspace` 迁到本项目根。
+
+**本次未覆盖**（不算过也不算败）：NeoForge、微软真实登录、CurseForge、安装包重打包与签名、150% 缩放。
+
+## 下一步（M10 分发）
+
+1. 自动更新（Velopack 候选）+ 增量更新；先验证 Velopack 与 .NET 10 兼容性。
+2. 重出便携包与安装包，并按 `docs/PACKAGING.md` 实装/卸载各跑一次。
+3. 签名：申请 SignPath Foundation（CI 与脚本已备好，缺 token 与 organization id）。
+4. 之后 M11 性能基准（冷启动 / 常驻内存 / 下载吞吐 / 长时挂机，全部要数字）。
 
 ## 待用户提供（做界面/关于页时提醒）
 
