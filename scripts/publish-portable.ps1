@@ -1,4 +1,4 @@
-# Build a portable zip: dotnet publish -> zip
+﻿# Build a portable zip: dotnet publish -> zip
 # Usage:
 #   powershell -File scripts\publish-portable.ps1 -Version 0.1.0-dev
 #   powershell -File scripts\publish-portable.ps1 -Version 0.1.0-dev -SelfContained

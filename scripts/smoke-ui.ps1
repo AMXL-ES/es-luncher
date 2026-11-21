@@ -1,4 +1,4 @@
-# UI 冒烟：启动 GUI，等 8 秒确认没崩，再关掉。
+﻿# UI 冒烟：启动 GUI，等 8 秒确认没崩，再关掉。
 # 需要已构建：dotnet build -c Release
 $ErrorActionPreference = 'Stop'
 $exe = Join-Path $PSScriptRoot '..\src\EsLuncher.App\bin\Release\net10.0\EsLuncher.exe'
