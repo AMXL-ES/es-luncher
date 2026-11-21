@@ -1,0 +1,40 @@
+ES Luncher — third-party notices
+================================
+
+本项目以 GPL-3.0-or-later 发布（见 LICENSE）。以下列出运行期依赖与其许可证。
+新增依赖前请同时更新本文件与 docs/adr/0002-license-gpl3.md。
+
+运行时组件
+----------
+Avalonia / Avalonia.Desktop / Avalonia.Themes.Fluent 12.1.6
+    MIT License — https://github.com/AvaloniaUI/Avalonia
+    Copyright (c) AvaloniaUI OÜ
+
+.NET 运行时（net10.0）
+    MIT License — https://github.com/dotnet/runtime
+    Copyright (c) .NET Foundation and Contributors
+
+Velopack 1.2.161（安装与自动更新）
+    MIT License — https://github.com/velopack/velopack
+    Copyright (c) Velopack Ltd, Caelan Sayler, Kevin Bost
+
+仅测试使用（不随产品分发）
+------------------------
+xunit 2.9.3                          Apache-2.0
+Microsoft.NET.Test.Sdk 17.14.1       MIT
+xunit.runner.visualstudio 3.1.4      MIT
+coverlet.collector 6.0.4             MIT
+
+运行期访问的数据与服务（代码不随仓库分发其内容）
+----------------------------------------------
+Mojang 版本清单 / 资源 / 库 / Java 运行时   按 Mojang 的使用条款，运行时下载，不随仓库分发
+Microsoft 账号 OAuth                        按 Microsoft 服务条款；不内置任何第三方 client ID
+Modrinth API v2                             按 Modrinth 条款；仅公开 API
+BMCLAPI                                     第三方镜像，仅作下载回退
+Crafatar                                    第三方头像服务，仅用于显示皮肤头像
+Fabric / Quilt Meta、Forge / NeoForge 安装器  各项目自有条款，运行时下载
+
+品牌与商标
+----------
+"ES Luncher" 与 "Endless Studio" 的名称、图标、LOGO 不随 GPL-3.0 授权。
+Minecraft 是 Mojang Studios / Microsoft 的商标，本项目与 Mojang、Microsoft 无关联、未获其背书。

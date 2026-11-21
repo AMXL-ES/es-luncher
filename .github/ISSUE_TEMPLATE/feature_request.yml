@@ -1,0 +1,39 @@
+name: 功能建议
+description: 想要的能力或改进
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你遇到的问题
+      description: 描述场景，而不是先给方案
+      placeholder: 每次换整合包都要手动改内存，实例多了很麻烦
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: 你希望的解决方式
+      placeholder: 能在实例列表里批量设置内存 / 导入导出这些设置
+  - type: dropdown
+    id: area
+    attributes:
+      label: 涉及哪一块
+      options:
+        - 下载与版本
+        - 实例管理
+        - 内容管理（mods/资源包/光影/世界/数据包）
+        - Modrinth / 整合包
+        - 加载器（Fabric/Quilt/Forge/NeoForge）
+        - 认证（离线 / 微软）
+        - 界面与交互
+        - 诊断与日志
+        - 安装与更新
+        - 其它
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 范围确认
+      options:
+        - label: 这个建议不涉及绕过正版校验或账号共享
+          required: true

@@ -1,0 +1,52 @@
+name: 问题反馈
+description: 报告启动器的问题（崩溃、下载失败、启动失败等）
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先看 [`docs/ISSUES.md`](../blob/main/docs/ISSUES.md) 与已有 issue，避免重复。
+        **不要在这里贴 token、账号或任何凭据。**
+  - type: input
+    id: version
+    attributes:
+      label: 启动器版本
+      description: 「其他 → 更新」或关于页显示的版本号
+      placeholder: 0.1.5
+    validations:
+      required: true
+  - type: input
+    id: mcver
+    attributes:
+      label: 出问题的 Minecraft 版本 / 加载器
+      placeholder: 1.18.2 + Fabric 0.20.1
+  - type: textarea
+    id: what
+    attributes:
+      label: 现象
+      description: 你做了什么、期望什么、实际发生什么
+      placeholder: |
+        1. 下载页选 1.18.2 → 下载并建实例
+        2. 实例页点启动
+        3. 弹出窗口后立刻退出，日志里有 xxx
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 诊断包或日志片段
+      description: 实例页「诊断 → 导出诊断包」得到 zip（含 logs/config/system-info），可直接拖进来；或贴关键报错行
+      render: text
+  - type: input
+    id: env
+    attributes:
+      label: 系统
+      placeholder: Windows 11 25H2 x64 / 16 GB / .NET 10
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 确认
+      options:
+        - label: 我用的是最新版本
+        - label: 这不是正版校验/账号共享相关的问题（本项目不支持这类需求）
+          required: true

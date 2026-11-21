@@ -23,6 +23,7 @@
 | `M9-diagnostics.md` | 诊断：日志错误/崩溃报告/人话提示/诊断包 | M9 期间持续更新 |
 | `M10-distribution.md` | 分发：Velopack 打包、增量更新、安装/卸载与验收数字 | M10 期间持续更新 |
 | `M11-performance.md` | 性能台账：冷启动、常驻内存、下载吞吐、挂机曲线的实测方法与数字 | M11 期间持续更新 |
+| `PUBLISH-GITHUB.md` | 首次公开到 GitHub 的完整步骤：仓库信息、Release 资产、更新源、签名 | 首次发布前 |
 | `DEVELOPER-GUIDE.md` | 用 Core 写自己的启动器：最小示例、接口表、扩展点、约定 | 长期维护 |
 | `AUDIT.md` | 现状审计：已实现/缺口/放错位置/计划 | 2026-11-20 |
 | `API-KEYS.md` | 需要申请/拿到的 API 与凭据（微软/CF/Modrinth） | 2026-11-20 |
