@@ -3,6 +3,26 @@
 > 你（未来的我）在每个会话开局先读：`PROGRESS.md` → `docs/INDEX.md` → 当前里程碑文档。
 > 不要重新通读历史代码；需要细节去读 `docs/`，不要靠回忆。
 
+## 0. 30 秒上手（2026-11-21 更新）
+
+| 项 | 值 |
+|---|---|
+| 远端仓库 | https://github.com/AMXL-ES/es-luncher （Public，GPL-3.0，`main`，CI 绿） |
+| 当前进度 | M0–M11 完成；M12 待做（发行说明 / 许可证清单 / 回滚方案） |
+| 最近发布 | v0.1.5（Velopack 包；`release.yml` 已改为 Velopack 管线） |
+| 已知缺口 | 微软登录缺 Azure client ID、NeoForge 网络不可达、CurseForge 未接、真实代码签名证书未办 |
+
+```powershell
+cd D:\dev\es-luncher
+dotnet build EsLuncher.slnx -c Release                                # 必须 0 警告
+dotnet test  EsLuncher.slnx -c Release                                # 204 测试
+powershell -File scripts\verify-acceptance.ps1 -WithUi -WithLaunch     # 17 项验收
+powershell -File scripts\pack-velopack.ps1 -Version x.y.z              # 出包（vpk 在 D:\dev\tools\vpk）
+```
+
+**本机三个坑**：`.ps1` 必须 UTF-8 带 BOM（`.md` 不带）；PATH 上的 `java` 会崩（0xC0000409，永远用绝对路径）；Watt Toolkit 的「GitHub 加速」会对 github.com 做 MITM，`git push` 需 repo-local
+`http.sslBackend=openssl` + `http.sslCAInfo=D:\dev\git-ca\ca-bundle+steamtools.crt`。
+
 ## 1. 项目身份
 
 - **ES Luncher**：Minecraft Java 版桌面启动器，Windows 优先、架构跨平台。
