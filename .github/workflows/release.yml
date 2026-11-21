@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "版本号（例如 0.1.0）"
+        description: "版本号（不带 v，例如 0.1.5）"
         required: true
-        default: "0.1.0"
+        default: "0.1.5"
   push:
     tags:
       - "v*"
@@ -16,10 +16,9 @@ permissions:
 
 env:
   DOTNET_VERSION: "10.0.x"
-  SIGNPATH_ENABLED: ${{ vars.SIGNPATH_ENABLED || 'false' }}
 
 jobs:
-  build-sign-release:
+  build-test-pack:
     runs-on: windows-latest
 
     steps:
@@ -38,86 +37,89 @@ jobs:
           "version=$v" >> $env:GITHUB_OUTPUT
           Write-Host "version=$v"
 
-      - name: Build
+      - name: Build (warnings are errors)
         run: dotnet build EsLuncher.slnx -c Release --nologo
 
       - name: Test
         run: dotnet test EsLuncher.slnx -c Release --nologo
 
-      - name: Publish portable zip
+      - name: Install vpk
         shell: pwsh
         run: |
-          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/publish-portable.ps1 -Version ${{ steps.ver.outputs.version }}
+          dotnet tool install vpk --tool-path "$env:RUNNER_TEMP\vpk"
+          if ($LASTEXITCODE -ne 0) { throw "vpk 安装失败" }
 
-      - name: Upload unsigned artifact (for SignPath)
-        id: upload-unsigned
-        uses: actions/upload-artifact@v4
-        with:
-          name: unsigned-ESLuncher-${{ steps.ver.outputs.version }}
-          path: artifacts/EsLuncher-${{ steps.ver.outputs.version }}-win-x64.zip
-          if-no-files-found: error
-
-      # 需要先在仓库 Variables 里设置 SIGNPATH_ENABLED=true 和下面几个变量
-      - name: Sign with SignPath
-        if: env.SIGNPATH_ENABLED == 'true'
-        uses: signpath/github-action-submit-signing-request@v1
-        with:
-          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
-          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIG }}
-          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
-          wait-for-completion: true
-          output-artifact-directory: signed
-
-      - name: Unpack signed artifact
-        if: env.SIGNPATH_ENABLED == 'true'
+      - name: Pack with Velopack (Setup + Portable + nupkg + delta)
         shell: pwsh
         run: |
-          $zip = Get-ChildItem signed -Filter *.zip | Select-Object -First 1
-          if (-not $zip) { throw "SignPath 没有返回 zip" }
-          $dir = "artifacts/EsLuncher-${{ steps.ver.outputs.version }}-win-x64"
-          if (Test-Path $dir) { Remove-Item $dir -Recurse -Force }
-          Expand-Archive $zip.FullName -DestinationPath $dir -Force
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pack-velopack.ps1 `
+            -Version "${{ steps.ver.outputs.version }}" `
+            -VpkPath "$env:RUNNER_TEMP\vpk\vpk.exe"
 
-      - name: Install Inno Setup
-        shell: pwsh
-        run: choco install innosetup --no-progress -y
-
-      - name: Build installer
-        shell: pwsh
-        run: |
-          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-          & $iscc /DAppVersion=${{ steps.ver.outputs.version }} installer\es-luncher.iss
-          if ($LASTEXITCODE -ne 0) { throw "Inno Setup 编译失败" }
-
-      - name: Refresh checksums
+      - name: Stage release files + checksums
+        id: stage
         shell: pwsh
         run: |
           $v = "${{ steps.ver.outputs.version }}"
-          $zip = "artifacts/EsLuncher-$v-win-x64.zip"
-          $setup = "artifacts/ESLuncher-$v-setup.exe"
-          $lines = @()
-          if (Test-Path $zip) { $lines += "$((Get-FileHash $zip -Algorithm SHA256).Hash)  $(Split-Path $zip -Leaf)" }
-          if (Test-Path $setup) { $lines += "$((Get-FileHash $setup -Algorithm SHA256).Hash)  $(Split-Path $setup -Leaf)" }
-          $lines | Set-Content "artifacts/SHA256SUMS-$v.txt" -Encoding ascii
-          Get-Content "artifacts/SHA256SUMS-$v.txt"
+          $src = "artifacts/releases"
+          $out = "out"
+          if (Test-Path $out) { Remove-Item $out -Recurse -Force }
+          New-Item -ItemType Directory -Force $out | Out-Null
 
-      - name: Release
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+          # 更新源索引与两类安装包必须齐全；delta 只在有上一个版本时生成。
+          $required = @(
+            "ESLuncher-win-Setup.exe",
+            "ESLuncher-win-Portable.zip",
+            "ESLuncher-$v-full.nupkg",
+            "releases.win.json",
+            "assets.win.json",
+            "RELEASES"
+          )
+          foreach ($f in $required) {
+            $p = Join-Path $src $f
+            if (-not (Test-Path $p)) { throw "缺少发布文件：$f" }
+            Copy-Item $p $out -Force
+          }
+
+          $delta = Join-Path $src "ESLuncher-$v-delta.nupkg"
+          if (Test-Path $delta) {
+            Copy-Item $delta $out -Force
+            Write-Host "包含增量包 $([math]::Round((Get-Item $delta).Length/1KB,1)) KB"
+          } else {
+            Write-Warning "没有增量包（首个版本或未保留历史 release），本次只发完整包"
+          }
+
+          $lines = @()
+          foreach ($f in (Get-ChildItem $out -File | Sort-Object Name)) {
+            $lines += "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash)  $($f.Name)"
+          }
+          $lines | Set-Content (Join-Path $out "SHA256SUMS-$v.txt") -Encoding ascii
+          Get-ChildItem $out | ForEach-Object { "{0,-40} {1,10:N1} KB" -f $_.Name, ($_.Length/1KB) }
+
+      # 代码签名接好后：给 pack-velopack.ps1 传 -PfxPath / -SignParams / -AzureTrustedSignFile
+      # （见 docs/CODE-SIGNING.md 与 docs/SIGNPATH-SETUP.md），这一步现在只做未签名包。
+
+      - name: Upload artifacts (workflow run)
+        uses: actions/upload-artifact@v4
+        with:
+          name: es-luncher-${{ steps.ver.outputs.version }}
+          path: out/*
+          if-no-files-found: error
+
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ver.outputs.version }}
           name: ES Luncher ${{ steps.ver.outputs.version }}
-          draft: true
-          files: |
-            artifacts/EsLuncher-${{ steps.ver.outputs.version }}-win-x64.zip
-            artifacts/ESLuncher-${{ steps.ver.outputs.version }}-setup.exe
-            artifacts/SHA256SUMS-${{ steps.ver.outputs.version }}.txt
+          # tag 推送直接发布；手动触发先存草稿，由人确认后点 Publish
+          draft: ${{ github.event_name == 'workflow_dispatch' }}
+          files: out/*
           body: |
             ES Luncher ${{ steps.ver.outputs.version }}
 
-            - Windows 10/11 x64
-            - 安装包或便携 zip 任选
-            - 未签名版本可能触发 SmartScreen，请先校验 SHA256SUMS
+            **安装**：`ESLuncher-win-Setup.exe`（安装版）或 `ESLuncher-win-Portable.zip`（便携版）
+            **要求**：Windows 10/11 x64 + .NET 10 桌面运行时（安装版自带）
+
+            **未代码签名**：首次运行可能提示「未知发布者」，请先核对 `SHA256SUMS-${{ steps.ver.outputs.version }}.txt`。
+
+            自动更新：程序内「其他 → 检查更新」；更新源指向本仓库 Releases。
