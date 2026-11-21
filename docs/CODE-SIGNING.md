@@ -67,6 +67,41 @@
 - 说明"未签名，SmartScreen 可能提示未知发布者"
 - 用户可校验哈希后再运行
 
+## 已接通的签名链路（2026-11-21 实测）
+
+`scripts\pack-velopack.ps1` 支持三条路，选一个参数即可：
+
+| 方式 | 参数 | 依赖 |
+|---|---|---|
+| **PFX 直接签**（无需 signtool / Windows SDK） | `-PfxPath <pfx> -PfxPassword <pwd>` | 证书 pfx；实际由 `scripts\sign-file.ps1` 用 `Set-AuthenticodeSignature`（SHA256 + DigiCert 时间戳）逐文件签 |
+| signtool | `-SignParams "/fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /n \"Endless Studio\""` | 装 Windows SDK 的 `signtool.exe`，证书在证书存储里 |
+| Azure Trusted Signing | `-AzureTrustedSignFile <metadata.json>` | Azure 订阅 + 身份验证 |
+
+### 自签测试结果（本机，只为验证流程）
+
+```
+证书    CN=Endless Studio (ES Luncher test), O=Endless Studio
+指纹    8AD7985DD218DA6D50B2B4C06F0759D70931033E（有效至 2028-11-21）
+命令    powershell -NoProfile -File scripts\pack-velopack.ps1 -Version 0.1.4 `
+            -PfxPath D:\dev\test-signing\es-luncher-test.pfx -PfxPassword es-luncher-test
+结果    Setup.exe           SignatureType=Authenticode
+                            Signer=CN=Endless Studio (ES Luncher test)
+                            Timestamp=CN=DigiCert SHA256 RSA4096 Timestamp Responder 2026 1
+                            Status=UnknownError（"证书链终止于不受信任的根证书"）
+        nupkg 内 EsLuncher.exe / Portable 的 current\EsLuncher.exe 同样带签名
+```
+
+**这条链路只证明「流程可用」，不解决 SmartScreen**：自签名根不受信，用户侧仍然提示未知发布者。
+要让 Windows 和用户信任，必须拿到真实证书（上表的 OV / EV / Azure / SignPath 任选），
+然后把 **pfx 文件 + 密码**（或 signtool 证书指纹、Azure metadata.json）交给我，改一个参数即可。
+
+### 清理自签材料
+
+```powershell
+Remove-Item D:\dev\test-signing -Recurse -Force
+Remove-Item Cert:\CurrentUser\My\8AD7985DD218DA6D50B2B4C06F0759D70931033E
+```
+
 ## 时间线
 - 传统 OV：3–7 个工作日（加急 1–2 天）
 - EV：类似，Token 邮寄另算

@@ -71,7 +71,7 @@
         </StackPanel>
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <TextBlock Text="0.1.0" FontSize="11" Foreground="#5C5C64" VerticalAlignment="Center" />
+          <TextBlock x:Name="HeaderVersionText" FontSize="11" Foreground="#5C5C64" VerticalAlignment="Center" />
           <Button x:Name="AccountButton" Classes="nav" Click="OnAccountsClick">
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Border Width="24" Height="24" CornerRadius="12" Background="#4C8DF6">
@@ -137,24 +137,28 @@
       </Grid>
 
       <!-- 实例页 -->
-      <Grid x:Name="InstancesPage" IsVisible="False" Margin="24,18" ColumnDefinitions="*,430" RowDefinitions="Auto,*">
+      <Grid x:Name="InstancesPage" IsVisible="False" Margin="24,18" ColumnDefinitions="*,396" RowDefinitions="Auto,Auto,*" ColumnSpacing="16">
         <Grid Grid.ColumnSpan="2" ColumnDefinitions="*,Auto">
-          <TextBlock Text="{app:T instances.title}" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
-            <Button x:Name="RefreshButton" Classes="ghost" Content="刷新" Click="OnRefreshClick" />
+          <StackPanel Spacing="4" VerticalAlignment="Center">
+            <TextBlock Text="{app:T instances.title}" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF" />
+            <TextBlock x:Name="InstancesSummary" FontSize="12" Foreground="#6E6E76" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Button x:Name="RefreshButton" Classes="ghost" Content="{app:T toolbar.refresh}" Click="OnRefreshClick" AutomationProperties.Name="{app:T toolbar.refresh}" />
+            <Button x:Name="OpenFolderButton" Classes="ghost" Content="{app:T toolbar.open}" Click="OnOpenFolderClick" AutomationProperties.Name="{app:T toolbar.open}" />
+            <Button x:Name="DiagnosticsButton" Classes="ghost" Content="{app:T toolbar.diagnostics}" Click="OnDiagnosticsClick" AutomationProperties.Name="{app:T toolbar.diagnostics}" />
+            <Button x:Name="LogButton" Classes="ghost" Content="{app:T toolbar.logs}" Click="OnLogClick" AutomationProperties.Name="{app:T toolbar.logs}" />
             <Button x:Name="LaunchButton" Classes="primary" Content="{app:T toolbar.launch.short}" Click="OnLaunchClick" AutomationProperties.Name="{app:T toolbar.launch}" />
-            <Button x:Name="OpenFolderButton" Classes="ghost" Content="{app:T toolbar.open}" Click="OnOpenFolderClick" />
-            <Button x:Name="DiagnosticsButton" Classes="ghost" Content="{app:T toolbar.diagnostics}" Click="OnDiagnosticsClick" />
-              <Button x:Name="LogButton" Classes="ghost" Content="{app:T toolbar.logs}" Click="OnLogClick" />
           </StackPanel>
         </Grid>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,14,0,0">
-          <TextBox x:Name="SearchBox" Width="300" PlaceholderText="搜索实例（名字/版本）" TextChanged="OnSearchChanged" />
-          <ComboBox x:Name="GroupBox" Width="150" SelectionChanged="OnGroupChanged" />
-        </StackPanel>
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,14,0,0">
+          <TextBox x:Name="SearchBox" PlaceholderText="{app:T search.placeholder}" TextChanged="OnSearchChanged" />
+          <ComboBox x:Name="GroupBox" Grid.Column="1" Width="150" Margin="10,0,0,0" SelectionChanged="OnGroupChanged" />
+        </Grid>
 
-        <ListBox x:Name="InstanceList" Grid.Row="1" Margin="0,54,12,0" Background="Transparent"
+        <Panel Grid.Row="2" Margin="0,12,0,0">
+        <ListBox x:Name="InstanceList" Background="Transparent"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  SelectionChanged="OnInstanceSelectionChanged">
           <ListBox.ItemsPanel>
@@ -164,16 +168,15 @@
           </ListBox.ItemsPanel>
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="app:InstanceItem">
-              <Border Width="300" Height="96" Margin="0,0,12,12" Background="#1A1A22" CornerRadius="12" Padding="14">
+              <Border Width="288" Margin="0,0,12,12" Background="#1A1A22" CornerRadius="12" Padding="14">
                 <Grid ColumnDefinitions="Auto,*">
-                  <Border Width="48" Height="48" CornerRadius="12" Background="#262631">
-                    <TextBlock Text="{Binding Initial}" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF"
+                  <Border Width="44" Height="44" CornerRadius="11" Background="#262631" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Initial}" FontSize="18" FontWeight="Bold" Foreground="#FFFFFF"
                                HorizontalAlignment="Center" VerticalAlignment="Center" />
                   </Border>
-                  <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="3" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding Version}" FontSize="11" Foreground="#9A9AA3" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding Group}" FontSize="10" Foreground="#6E6E76" TextTrimming="CharacterEllipsis" />
+                  <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="4" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#8A8A93" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
                 </Grid>
               </Border>
@@ -181,8 +184,16 @@
           </ListBox.ItemTemplate>
         </ListBox>
 
+          <StackPanel x:Name="InstancesEmptyState" IsVisible="False" Spacing="10"
+                      HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="{app:T instances.empty}" FontSize="15" Foreground="#9A9AA3" HorizontalAlignment="Center" />
+            <TextBlock Text="{app:T instances.emptyHint}" FontSize="12" Foreground="#5C5C64" HorizontalAlignment="Center" />
+            <Button Content="{app:T instances.emptyAction}" Classes="primary" HorizontalAlignment="Center" Click="OnGoDownloadsClick" />
+          </StackPanel>
+        </Panel>
+
         <!-- 内容面板 -->
-        <Border Grid.Column="1" Grid.Row="1" Margin="0,54,0,0" Background="#141419" CornerRadius="12" Padding="16">
+        <Border Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Margin="0,14,0,0" Background="#141419" CornerRadius="12" Padding="16">
           <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
             <TextBlock x:Name="ContentTitle" Text="内容" FontWeight="SemiBold" Foreground="#FFFFFF" />
             <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
@@ -221,8 +232,8 @@
         </Border>
       </Grid>
 
-      <app:DownloadsView x:Name="DownloadsPage" IsVisible="False" Margin="24,18" />
-      <app:SettingsView x:Name="SettingsPage" IsVisible="False" Margin="24,18" />
+      <ContentControl x:Name="DownloadsHost" IsVisible="False" Margin="24,18" />
+      <ContentControl x:Name="SettingsHost" IsVisible="False" Margin="24,18" />
 
       <!-- 其他 -->
       <Grid x:Name="OthersPage" IsVisible="False" Margin="24,18">
@@ -274,44 +285,8 @@
         </StackPanel>
       </Grid>
 
-      <!-- 关于 -->
-      <Grid x:Name="AboutPage" IsVisible="False">
-        <ScrollViewer>
-          <StackPanel Spacing="12" Margin="24,20" HorizontalAlignment="Center" Width="480">
-            <Border Width="112" Height="112" CornerRadius="22" ClipToBounds="True" HorizontalAlignment="Center">
-              <Image x:Name="StudioLogo" Width="112" Height="112" Stretch="UniformToFill" />
-            </Border>
-            <TextBlock Text="Endless Studio" FontSize="22" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
-            <TextBlock Text="ES Luncher · GPL-3.0 · 0.1.0" FontSize="12" Foreground="#9A9AA3" HorizontalAlignment="Center" />
-            <TextBlock Text="轻量、开源、无广告的 Minecraft 启动器"
-                       FontSize="12" Foreground="#6E6E76" HorizontalAlignment="Center" TextAlignment="Center" />
-            <TextBlock Text="第三方组件：Avalonia (MIT) · .NET 10 (MIT) · Mojang 运行时由官方分发"
-                       FontSize="11" Foreground="#5C5C64" HorizontalAlignment="Center" TextAlignment="Center" />
-            <TextBlock Text="{app:T about.version}"
-                       FontSize="11" Foreground="#5C5C64" HorizontalAlignment="Center" />
-            <Border Background="#141419" CornerRadius="10" Padding="14" Width="420" Margin="0,4,0,0">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{app:T about.credits}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="13" />
-                <Grid ColumnDefinitions="2*,1*">
-                  <TextBlock Text="{app:T about.name}" Foreground="#9A9AA3" FontSize="12" />
-                  <TextBlock Grid.Column="1" Text="{app:T about.role}" Foreground="#9A9AA3" FontSize="12" />
-                </Grid>
-                <ItemsControl x:Name="CreditsList">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="app:CreditItem">
-                      <Grid ColumnDefinitions="2*,1*" Margin="0,3,0,0">
-                        <TextBlock Text="{Binding Name}" Foreground="#FFFFFF" FontSize="12" />
-                        <TextBlock Grid.Column="1" Text="{Binding Role}" Foreground="#9A9AA3" FontSize="12" />
-                      </Grid>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <TextBlock Text="{app:T about.note}" Foreground="#5C5C64" FontSize="10" />
-              </StackPanel>
-            </Border>
-          </StackPanel>
-        </ScrollViewer>
-      </Grid>
+      <!-- 关于（首次打开时才创建，见 AboutView） -->
+      <ContentControl x:Name="AboutHost" IsVisible="False" />
     </Grid>
 
     <!-- 状态栏 -->

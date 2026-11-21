@@ -1,0 +1,104 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="using:EsLuncher.App"
+             x:Class="EsLuncher.App.AboutView">
+  <ScrollViewer>
+    <StackPanel Spacing="14" Margin="32,24,32,28" HorizontalAlignment="Center" MaxWidth="880">
+
+      <!-- 头部 -->
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="18">
+        <Border Width="88" Height="88" CornerRadius="20" ClipToBounds="True" Background="#1A1A22">
+          <Image x:Name="StudioLogo" Width="88" Height="88" Stretch="UniformToFill" />
+        </Border>
+        <StackPanel Grid.Column="1" Spacing="5" VerticalAlignment="Center">
+          <TextBlock Text="ES Luncher" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF" />
+          <TextBlock Text="{app:T about.tagline}" FontSize="13" Foreground="#9A9AA3" TextWrapping="Wrap" />
+          <TextBlock x:Name="AboutVersionText" FontSize="12" Foreground="#6E6E76" />
+        </StackPanel>
+      </Grid>
+
+      <!-- 运行环境 -->
+      <Border Background="#141419" CornerRadius="12" Padding="18">
+        <StackPanel Spacing="10">
+          <TextBlock Text="{app:T about.environment}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+          <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6">
+            <TextBlock Text="{app:T about.env.runtime}" Foreground="#8A8A93" FontSize="12" />
+            <TextBlock x:Name="EnvRuntimeText" Grid.Column="1" Foreground="#D0D0D6" FontSize="12" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="1" Text="{app:T about.env.os}" Foreground="#8A8A93" FontSize="12" />
+            <TextBlock x:Name="EnvOsText" Grid.Row="1" Grid.Column="1" Foreground="#D0D0D6" FontSize="12" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="2" Text="{app:T about.env.data}" Foreground="#8A8A93" FontSize="12" />
+            <TextBlock x:Name="EnvDataText" Grid.Row="2" Grid.Column="1" Foreground="#D0D0D6" FontSize="12" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="3" Text="{app:T about.env.install}" Foreground="#8A8A93" FontSize="12" />
+            <TextBlock x:Name="EnvInstallText" Grid.Row="3" Grid.Column="1" Foreground="#D0D0D6" FontSize="12" TextWrapping="Wrap" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- 第三方组件 -->
+      <Border Background="#141419" CornerRadius="12" Padding="18">
+        <StackPanel Spacing="8">
+          <TextBlock Text="{app:T about.components}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+          <Grid ColumnDefinitions="2*,1*,1.4*" Margin="0,2,0,0">
+            <TextBlock Text="{app:T about.component}" Foreground="#6E6E76" FontSize="11" />
+            <TextBlock Grid.Column="1" Text="{app:T about.componentVersion}" Foreground="#6E6E76" FontSize="11" />
+            <TextBlock Grid.Column="2" Text="{app:T about.license}" Foreground="#6E6E76" FontSize="11" />
+          </Grid>
+          <ItemsControl x:Name="ComponentsList">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="app:AboutComponentItem">
+                <Grid ColumnDefinitions="2*,1*,1.4*" Margin="0,3,0,0">
+                  <TextBlock Text="{Binding Name}" Foreground="#D0D0D6" FontSize="12" />
+                  <TextBlock Grid.Column="1" Text="{Binding Version}" Foreground="#8A8A93" FontSize="12" />
+                  <TextBlock Grid.Column="2" Text="{Binding License}" Foreground="#8A8A93" FontSize="12" TextWrapping="Wrap" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <!-- 数据与服务 -->
+      <Border Background="#141419" CornerRadius="12" Padding="18">
+        <StackPanel Spacing="8">
+          <TextBlock Text="{app:T about.services}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+          <ItemsControl x:Name="ServicesList">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="app:AboutServiceItem">
+                <Grid ColumnDefinitions="1.1*,2.2*" Margin="0,3,0,0">
+                  <TextBlock Text="{Binding Name}" Foreground="#D0D0D6" FontSize="12" />
+                  <TextBlock Grid.Column="1" Text="{Binding Usage}" Foreground="#8A8A93" FontSize="12" TextWrapping="Wrap" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="{app:T about.servicesNote}" Foreground="#5C5C64" FontSize="10" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <!-- 鸣谢 -->
+      <Border Background="#141419" CornerRadius="12" Padding="18">
+        <StackPanel Spacing="8">
+          <TextBlock Text="{app:T about.credits}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+          <Grid ColumnDefinitions="2*,2*" Margin="0,2,0,0">
+            <TextBlock Text="{app:T about.name}" Foreground="#6E6E76" FontSize="11" />
+            <TextBlock Grid.Column="1" Text="{app:T about.contribution}" Foreground="#6E6E76" FontSize="11" />
+          </Grid>
+          <ItemsControl x:Name="CreditsList">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="app:CreditItem">
+                <Grid ColumnDefinitions="2*,2*" Margin="0,3,0,0">
+                  <TextBlock Text="{Binding Name}" Foreground="#D0D0D6" FontSize="12" />
+                  <TextBlock Grid.Column="1" Text="{Binding Role}" Foreground="#8A8A93" FontSize="12" TextWrapping="Wrap" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="{app:T about.note}" Foreground="#5C5C64" FontSize="10" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock x:Name="AboutBuildText" FontSize="11" Foreground="#5C5C64"
+                 HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

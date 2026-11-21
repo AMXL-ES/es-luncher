@@ -17,7 +17,13 @@ param(
     [string]$OutputDir = '',
     [string]$VpkPath = 'D:\dev\tools\vpk\vpk.exe',
     [switch]$SelfContained,
-    [switch]$NoDelta
+    [switch]$NoDelta,
+    # 签名：给 PfxPath 就会用 scripts/sign-file.ps1 逐文件签名（无需 signtool）；
+    # 也可直接用 -SignParams（signtool 参数）或 -AzureTrustedSignFile（Azure Trusted Signing）。
+    [string]$PfxPath = '',
+    [string]$PfxPassword = '',
+    [string]$SignParams = '',
+    [string]$AzureTrustedSignFile = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -60,6 +66,23 @@ $arguments = @(
     '--delta', $delta
 )
 if (Test-Path $icon) { $arguments += @('--icon', $icon) }
+
+if (-not [string]::IsNullOrWhiteSpace($AzureTrustedSignFile)) {
+    $arguments += @('--azureTrustedSignFile', $AzureTrustedSignFile)
+    Write-Host "签名：Azure Trusted Signing（$AzureTrustedSignFile）"
+}
+elseif (-not [string]::IsNullOrWhiteSpace($SignParams)) {
+    $arguments += @('--signParams', $SignParams)
+    Write-Host "签名：signtool（$SignParams）"
+}
+elseif (-not [string]::IsNullOrWhiteSpace($PfxPath)) {
+    $signScript = Join-Path $PSScriptRoot 'sign-file.ps1'
+    if (-not (Test-Path $signScript)) { throw "找不到签名脚本：$signScript" }
+    if (-not (Test-Path $PfxPath)) { throw "找不到证书：$PfxPath" }
+    $template = 'powershell -NoProfile -ExecutionPolicy Bypass -File "{0}" -File {{{{file}}}} -PfxPath "{1}" -PfxPassword "{2}"' -f $signScript, $PfxPath, $PfxPassword
+    $arguments += @('--signTemplate', $template)
+    Write-Host ("签名：PfxTemplate（{0}）" -f (Split-Path -Leaf $PfxPath))
+}
 
 Write-Host ("vpk " + ($arguments -join ' '))
 & $VpkPath @arguments

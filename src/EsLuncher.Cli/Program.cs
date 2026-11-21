@@ -18,6 +18,13 @@ internal static class Program
 
     private static async Task<int> RunAsync(string[] args)
     {
+        // 下载源可用环境变量覆盖（与 UI 同一套语义），供基准脚本对比官方与镜像。
+        var downloadSource = Environment.GetEnvironmentVariable("ESLUNCHER_DOWNLOAD_SOURCE");
+        if (string.Equals(downloadSource, "bmclapi", StringComparison.OrdinalIgnoreCase))
+        {
+            EsLuncher.Core.Downloads.DownloadSourcePolicy.Source = EsLuncher.Core.Downloads.DownloadSource.Bmclapi;
+        }
+
         // update 子命令要 Velopack 的定位器（安装根与包目录）；开发态克隆一份空参数启动即可。
         // 其它子命令不需要，避免无谓开销。
         if (args.Length > 0 && args[0].Equals("update", StringComparison.OrdinalIgnoreCase))

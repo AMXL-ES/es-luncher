@@ -38,23 +38,24 @@ powershell -NoProfile -File scripts\pack-velopack.ps1 -Version 0.1.0 -NoDelta
 > **发布目录要长期保留**：清空后只能发 full 包，用户失去增量。
 > 第二个版本开始，把新版本打进**同一个** `artifacts\releases`，vpk 才会生成 delta。
 
-## 2. 签名（可选，尚未接入）
+## 2. 签名（链路已接通，缺证书）
 
-未签名时安装器会触发 SmartScreen「未知发布者」。证书与签名方案见
-`CODE-SIGNING.md`（SignPath Foundation / Azure Trusted Signing / OV 证书）与
-`SIGNPATH-SETUP.md`（CI 接入）。
-
-接入后给 vpk 加签名参数二选一：
+`scripts\pack-velopack.ps1` 已支持三种签名方式（细节见 `CODE-SIGNING.md`）：
 
 ```powershell
-# signtool + 证书
-... --signParams "/fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /n \"Endless Studio\""
+# PFX 直接签（不需要 signtool / Windows SDK）
+powershell -NoProfile -File scripts\pack-velopack.ps1 -Version 0.1.4 `
+    -PfxPath D:\dev\test-signing\es-luncher-test.pfx -PfxPassword es-luncher-test
+
+# signtool 参数（证书装在证书存储里）
+... -SignParams "/fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /n \"Endless Studio\""
 
 # Azure Trusted Signing
-... --azureTrustedSignFile D:\tools\metadata.json
+... -AzureTrustedSignFile D:\tools\metadata.json
 ```
 
-未签名发布时同时提供 `SHA256SUMS-<版本>.txt`（`scripts\publish-portable.ps1` 仍会生成）。
+自签证书已实测能把 Setup.exe、Portable 里的 `current\EsLuncher.exe`、nupkg 里的 `lib/app/EsLuncher.exe` 全部签上（带 DigiCert 时间戳），
+但自签名根不受信，**SmartScreen 依旧提示**。要真正受信必须先申请证书（见 `CODE-SIGNING.md` 的方案表）。
 
 ## 3. 发布前最后检查
 

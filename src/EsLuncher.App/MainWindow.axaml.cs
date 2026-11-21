@@ -23,7 +23,9 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        StartupTrace.Mark("mainwindow ctor begin");
         InitializeComponent();
+        StartupTrace.Mark("xaml loaded");
 
         _layout = AppServices.Layout;
         _store = new InstanceStore(_layout);
@@ -31,11 +33,11 @@ public partial class MainWindow : Window
         _accounts = new DpapiTokenStore(_layout);
 
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/es-luncher-256.png")));
-        HeaderLogo.Source = new Bitmap(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/es-luncher-256.png")));
-        StudioLogo.Source = new Bitmap(AssetLoader.Open(new Uri("avares://EsLuncher/Assets/endless-studio-logo.jpg")));
-        LoadCredits();
+        HeaderLogo.Source = LoadAssetImage("avares://EsLuncher/Assets/es-luncher-256.png", 36);
+        HeaderVersionText.Text = typeof(App).Assembly.GetName().Version?.ToString(3) ?? string.Empty;
         Localization.Language = AppServices.Settings.Language;
         ApplyLanguage();
+        StartupTrace.Mark("assets + language");
 
         if (int.TryParse(Environment.GetEnvironmentVariable("ESLUNCHER_UI_WIDTH"), out var width))
         {
@@ -49,8 +51,11 @@ public partial class MainWindow : Window
 
         StatusBarRightText.Text = $"GPL-3.0 · {_layout.Root}";
         RefreshInstances();
+        StartupTrace.Mark("instances listed");
         ApplyNav("home");
+        StartupTrace.Mark("home rendered");
         KeyDown += OnWindowKeyDown;
+        StartupTrace.Mark("mainwindow ctor end");
 
         // 开发/验收用：ESLUNCHER_UI_INSTANCE=<实例名> 直接选中该实例。
         var instanceName = Environment.GetEnvironmentVariable("ESLUNCHER_UI_INSTANCE");
@@ -116,19 +121,45 @@ public partial class MainWindow : Window
         }
     }
 
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        StartupTrace.Mark("window opened");
+        Avalonia.Threading.Dispatcher.UIThread.Post(
+            () => StartupTrace.Mark("first dispatcher idle"),
+            Avalonia.Threading.DispatcherPriority.Background);
+    }
+
     private void ApplyNav(string tag)
     {
-        if (InstancesPage is null || DownloadsPage is null || SettingsPage is null || AboutPage is null)
+        if (InstancesPage is null)
         {
             return;
         }
 
         HomePage.IsVisible = tag == "home";
         InstancesPage.IsVisible = tag == "instances";
-        DownloadsPage.IsVisible = tag == "downloads";
         OthersPage.IsVisible = tag == "others";
-        SettingsPage.IsVisible = tag == "settings";
-        AboutPage.IsVisible = tag == "about";
+        DownloadsHost.IsVisible = tag == "downloads";
+        SettingsHost.IsVisible = tag == "settings";
+        AboutHost.IsVisible = tag == "about";
+
+        // 重页面按需创建：启动时只加载主页与实例页，XAML 解析成本跟着用户实际去的地方走。
+        if (tag == "downloads")
+        {
+            EnsurePage<DownloadsView>(DownloadsHost);
+        }
+
+        if (tag == "settings")
+        {
+            EnsurePage<SettingsView>(SettingsHost);
+        }
+
+        if (tag == "about")
+        {
+            EnsurePage<AboutView>(AboutHost).EnsureLoaded();
+        }
+
         if (tag is "home" or "instances")
         {
             RefreshHome();
@@ -138,7 +169,36 @@ public partial class MainWindow : Window
         {
             RefreshOthers();
         }
+
+        // 内容面板涉及目录扫描 + jar 元数据，等真正进实例页再加载（启动时不做）。
+        if (tag == "instances" && InstanceList?.SelectedItem is InstanceItem)
+        {
+            RefreshWorlds();
+            RefreshContent();
+        }
     }
+
+    private static T EnsurePage<T>(ContentControl host, Func<T>? factory = null)
+        where T : Control
+    {
+        if (host.Content is T existing)
+        {
+            return existing;
+        }
+
+        var created = factory is null
+            ? (T)Activator.CreateInstance(typeof(T))!
+            : factory();
+        host.Content = created;
+        return created;
+    }
+
+    private static Bitmap LoadAssetImage(string uri, int decodeWidth)
+    {
+        using var stream = AssetLoader.Open(new Uri(uri));
+        return Bitmap.DecodeToWidth(stream, decodeWidth, BitmapInterpolationMode.HighQuality);
+    }
+    private void OnGoDownloadsClick(object? sender, RoutedEventArgs e) => ApplyNav("downloads");
 
     private void RefreshOthers()
     {
@@ -409,24 +469,37 @@ public partial class MainWindow : Window
             return;
         }
 
+        // 先用已知的离线名把顶栏填上；DPAPI 解密 + 文件读放后台，别拖慢启动。
+        var fallback = item?.Config.Username;
+        var display = string.IsNullOrWhiteSpace(fallback) ? "Player" : fallback!;
+        AccountName.Text = (item?.Config.AccountKey is null ? "离线 · " : string.Empty) + display;
+        AccountInitial.Text = string.IsNullOrEmpty(display) ? "?" : display[..1].ToUpperInvariant();
+
         var key = item?.Config.AccountKey;
-        string? name = null;
         if (!string.IsNullOrWhiteSpace(key))
         {
-            try
-            {
-                name = _accounts.LoadAsync(key!, CancellationToken.None).GetAwaiter().GetResult()?.Profile.Name;
-            }
-            catch (Exception)
-            {
-                name = null;
-            }
+            _ = FillSavedAccountAsync(key!);
         }
+    }
 
-        name ??= item?.Config.Username;
-        name ??= "Player";
-        AccountName.Text = (item?.Config.AccountKey is null ? "离线 · " : string.Empty) + name;
-        AccountInitial.Text = string.IsNullOrEmpty(name) ? "?" : name[..1].ToUpperInvariant();
+    private async Task FillSavedAccountAsync(string key)
+    {
+        try
+        {
+            var session = await _accounts.LoadAsync(key, CancellationToken.None).ConfigureAwait(true);
+            var name = session?.Profile.Name;
+            if (string.IsNullOrWhiteSpace(name) || AccountName is null)
+            {
+                return;
+            }
+
+            AccountName.Text = name!;
+            AccountInitial.Text = name![..1].ToUpperInvariant();
+        }
+        catch (Exception)
+        {
+            // 读不出来就保持离线名，不打扰用户。
+        }
     }
 
     private async void OnAccountsClick(object? sender, RoutedEventArgs e)
@@ -442,26 +515,6 @@ public partial class MainWindow : Window
     }
 
     private InstanceItem[] _allInstances = [];
-
-    private void LoadCredits()
-    {
-        try
-        {
-            using var stream = AssetLoader.Open(new Uri("avares://EsLuncher/Assets/credits.json"));
-            using var document = JsonDocument.Parse(stream);
-            var credits = document.RootElement.GetProperty("credits")
-                .EnumerateArray()
-                .Select(entry => new CreditItem(
-                    entry.GetProperty("name").GetString() ?? string.Empty,
-                    entry.TryGetProperty("role", out var role) ? role.GetString() ?? string.Empty : string.Empty))
-                .ToArray();
-            CreditsList.ItemsSource = credits;
-        }
-        catch (Exception exception) when (exception is IOException or JsonException or KeyNotFoundException)
-        {
-            CreditsList.ItemsSource = new[] { new CreditItem("(credits.json 读取失败)", string.Empty) };
-        }
-    }
 
     private void ApplyLanguage()
     {
@@ -525,6 +578,18 @@ public partial class MainWindow : Window
             InstanceList.SelectedIndex = 0;
         }
 
+        if (InstancesEmptyState is not null)
+        {
+            InstancesEmptyState.IsVisible = items.Length == 0 && string.IsNullOrWhiteSpace(query);
+        }
+
+        if (InstancesSummary is not null)
+        {
+            InstancesSummary.Text = _allInstances.Length == 0
+                ? Localization.T("instances.summaryEmpty")
+                : Localization.F("instances.summary", items.Length, _allInstances.Length);
+        }
+
         StatusText.Text = items.Length == 0
             ? Localization.T("status.noMatch")
             : string.IsNullOrWhiteSpace(query)
@@ -566,9 +631,13 @@ public partial class MainWindow : Window
 
     private void OnInstanceSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        RefreshWorlds();
-        RefreshContent();
+        // 主页永远要跟着选中项走；内容面板只在实例页可见时才扫目录。
         RefreshHome();
+        if (InstancesPage?.IsVisible == true)
+        {
+            RefreshWorlds();
+            RefreshContent();
+        }
     }
 
     private void OnContentKindChanged(object? sender, SelectionChangedEventArgs e) => RefreshContent();

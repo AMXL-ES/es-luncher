@@ -12,6 +12,7 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        StartupTrace.Mark("framework init");
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             RequestedThemeVariant = AppServices.Settings.Theme == LauncherSettings.ThemeLight
@@ -19,6 +20,7 @@ public partial class App : Application
                 : ThemeVariant.Dark;
             Localization.Language = AppServices.Settings.Language;
             desktop.MainWindow = new MainWindow();
+            StartupTrace.Mark("main window constructed");
         }
 
         base.OnFrameworkInitializationCompleted();

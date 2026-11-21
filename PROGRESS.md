@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M10 分发与自动更新完成**（2026-11-21）：Velopack 接管安装/便携/增量更新，增量升级实测通过；M11 待开工
+- **当前阶段**：**M11 性能与界面打磨**（2026-11-21）：冷启动 1306→948 ms、常驻 124.6→112.1 MB；关于页重做、实例页布局纠正；P1/P2 收口
 - **项目根**：`D:\dev\es-luncher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -335,14 +335,37 @@
 | **增量升级（关键判据）** | 源目录**只留 delta**、删掉 full 包 | 0.1.2 → **0.1.3 成功**；源里没有 14 MB 的 full，证明走的是增量 |
 | 卸载 | `Update.exe uninstall --silent` | 安装目录整体移除 |
 
-**未做**：签名（方案文档就绪，缺证书/CI 凭据）、GitHub Releases 更新源（暂无 git remote，先本地目录源）、启动时自动检查。
+**未做**：GitHub Releases 更新源（暂无 git remote，先本地目录源）、启动时自动检查。
 
-## 下一步（M11 性能与稳定）
+**签名（同日补）**：`scripts\pack-velopack.ps1` 支持 `-PfxPath` / `-SignParams` / `-AzureTrustedSignFile`，逐文件签由 `scripts\sign-file.ps1`（`Set-AuthenticodeSignature`，无需 signtool）完成。
+自签实测：0.1.4 的 Setup.exe / Portable 内 `current\EsLuncher.exe` / nupkg 内 `lib/app/EsLuncher.exe` 全部带上 Authenticode 签名 + DigiCert 时间戳；
+`Status=UnknownError`（自签根不受信，签名本身有效）。**真正解决 SmartScreen 仍需你提供真实证书**（pfx 或 signtool/Azure 凭据）。
 
-1. 基准台账：冷启动到可交互、常驻内存、下载吞吐（MB/s）、长时挂机（≥2h）后的内存曲线，全部要数字。
-2. 数据根体积治理：多版本 Java 与旧 release 的清理策略（当前 `java/` 已 230 MiB）。
-3. 回归自动化：把 `scripts/verify-acceptance.ps1` 接进 CI，并把「增量升级」做成可自动化的用例。
-4. M12 准备：发行说明、第三方许可清单、回滚方案。
+## M11 性能与稳定（2026-11-21 本轮交付，进行中）
+
+基准脚本：`scripts\bench-startup.ps1` / `bench-memory.ps1` / `bench-download.ps1`，数字与方法全在 `docs/M11-performance.md`。
+
+| 指标 | 优化前 | 优化后 | 变化 |
+|---|---|---|---|
+| 冷启动中位（5 次） | 1306 ms | **948 ms** | −27% |
+| 常驻工作集 | 124.6 MB | **112.1 MB** | −12.5 MB |
+| XAML 加载 | ~600 ms | **~166 ms** | −72% |
+| 下载吞吐（1.7.10 assets，官方源） | —— | **1.62 MB/s**（676 文件 / 107.4 MB / 66.4 s，0 失败） | —— |
+| 镜像对比（BMCLAPI） | —— | 0.20 MB/s + 5 个 TLS 失败 → **默认仍走官方** | —— |
+
+**怎么做到的**（先埋点再改，不猜）：`StartupTrace`（`ESLUNCHER_STARTUP_TRACE=1` → `%TEMP%\esluncher-startup.log`）显示瓶颈在 XAML 加载。
+于是把下载/设置/关于三页改成按需创建（`ContentControl` 宿主 + `AboutView` 抽离），账号名改后台 DPAPI 异步填充，图片按目标尺寸解码。
+
+**挂机**：20 分钟采样里 2 分钟涨约 30 MB 后即进入平台期（漂移 < 1 MB），未见泄漏；但进程在 17 分钟时自行退出，事件日志无崩溃记录 → 记 `TODO(需复现)`。**用户要求暂停常驻内存测试**，2 小时级留到下次。
+
+**界面同批**：关于页重做（运行环境 / 第三方组件 / 数据与服务 / 鸣谢四卡；组件版本运行时现读）；鸣谢标题去掉「开发者」字样、条目改为贡献描述；实例页布局纠正（搜索行不再用 margin 硬凑、卡片自适应、空态、汇总行、工具栏补无障碍名）。详见 `docs/M7-ui.md` §6。
+
+## 下一步（M11 收尾 → M12）
+
+1. 复现并定位「挂机 17 分钟自行退出」；加 `UnhandledException` 落盘与崩溃包。
+2. 2 小时挂机 + 边下边玩场景的内存曲线；下载吞吐多次采样取中位数。
+3. 大版本（26.x，587 MiB / 5,149 对象）下载需要你单独批准授权线。
+4. 之后 M12：发行说明、第三方许可清单落文件、回滚方案。
 
 ## 待用户提供（做界面/关于页时提醒）
 

@@ -9,6 +9,7 @@
 |---|---|---|
 | 构建 | `dotnet build EsLuncher.slnx -c Release` | **0 警告 / 0 错误**，1.2 s |
 | 测试 | `dotnet test EsLuncher.slnx -c Release` | **204 passed / 0 failed**（203 Core + 1 Headless UI） |
+| 冷启动 | `scripts\bench-startup.ps1 -Runs 5` | **中位 948 ms** / p95 976 ms / 常驻 112.1 MB（优化前 1306 ms / 124.6 MB，见 `M11-performance.md`） |
 | 验收脚本 | `scripts\verify-acceptance.ps1 -WithUi -WithLaunch` | **17 / 17 PASS**，exit 0 |
 | UI 冒烟 | `scripts\smoke-ui.ps1` | 进程存活 8 s 后正常关闭（10.2 s） |
 | 真实启动回归 | `launch --instance "Fabric 测试" --autostop 25` | **exit 0**；日志 `Loading 51 mods` / `Setting user: Player` / `Backend library: LWJGL version 3.2.2` / JEI atlas 创建成功 |
