@@ -34,6 +34,15 @@ public sealed class MainWindowSmokeTests
         Assert.NotNull(homeLaunch);
         Assert.False(string.IsNullOrWhiteSpace(AutomationProperties.GetName(homeLaunch!)));
 
+        // M10：更新卡片必须在「其他」页存在，且两个按钮带无障碍名称、应用按钮默认禁用。
+        Assert.NotNull(window.FindControl<Avalonia.Controls.Control>("OthersPage"));
+        var updateCheck = window.FindControl<Button>("UpdateCheckButton");
+        Assert.NotNull(updateCheck);
+        Assert.False(string.IsNullOrWhiteSpace(AutomationProperties.GetName(updateCheck!)));
+        var updateApply = window.FindControl<Button>("UpdateApplyButton");
+        Assert.NotNull(updateApply);
+        Assert.False(updateApply!.IsEnabled);
+
         window.Close();
     }
 }
