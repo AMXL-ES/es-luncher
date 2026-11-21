@@ -26,5 +26,5 @@
 
 首个可预览版本：版本下载（官方 / BMCLAPI 回退）、Java 运行时管理、离线启动、实例系统、Fabric/Quilt/Forge 加载器、内容管理（mods/资源包/光影/世界/数据包/截图）、Modrinth 检索安装、`.mrpack` 导入导出、世界备份还原、诊断与诊断包、中英界面。
 
-[0.1.5]: https://github.com/<owner>/es-luncher/compare/v0.1.0...v0.1.5
-[0.1.0]: https://github.com/<owner>/es-luncher/releases/tag/v0.1.0
+[0.1.5]: https://github.com/AMXL-ES/es-luncher/compare/v0.1.0...v0.1.5
+[0.1.0]: https://github.com/AMXL-ES/es-luncher/releases/tag/v0.1.0

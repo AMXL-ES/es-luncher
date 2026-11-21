@@ -2,6 +2,7 @@
 
 轻量、开源、无广告的 **Minecraft Java 版**桌面启动器（Windows 优先，架构跨平台）。
 
+[![ci](https://github.com/AMXL-ES/es-luncher/actions/workflows/ci.yml/badge.svg)](https://github.com/AMXL-ES/es-luncher/actions/workflows/ci.yml)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
 [![.NET 10](https://img.shields.io/badge/.NET-10-512BD4.svg)](https://dotnet.microsoft.com/)
 [![Avalonia 12](https://img.shields.io/badge/Avalonia-12-8B44AC.svg)](https://avaloniaui.net/)
@@ -58,7 +59,7 @@
 ## 从源码构建
 
 ```powershell
-git clone https://github.com/<owner>/es-luncher.git
+git clone https://github.com/AMXL-ES/es-luncher.git
 cd es-luncher
 
 dotnet build EsLuncher.slnx -c Release      # 零警告（TreatWarningsAsErrors 已开）
