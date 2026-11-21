@@ -7,6 +7,7 @@
 - **当前阶段**：**M11 性能与界面打磨**（2026-11-21）：冷启动 1306→948 ms、常驻 124.6→112.1 MB；关于页重做、实例页布局纠正；P1/P2 收口
 - **项目根**：`D:\dev\es-luncher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
+- **远端仓库**：https://github.com/AMXL-ES/es-luncher （Public，CI 绿；首次推送 2026-11-21，HEAD e9cf9d3）
 
 ## 已定（不可逆，已确认）
 
