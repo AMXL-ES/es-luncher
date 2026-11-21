@@ -1,5 +1,6 @@
 using EsLuncher.Core.Downloads;
 using EsLuncher.Core.Settings;
+using EsLuncher.Core.Updates;
 
 namespace EsLuncher.App;
 
@@ -23,6 +24,30 @@ public static class AppServices
     }
 
     public static event Action? SettingsChanged;
+
+    /// <summary>
+    /// 自动更新服务。更新源可用 <c>ESLUNCHER_UPDATE_SOURCE</c> 覆盖（本地目录或 URL），
+    /// 不设则用 Velopack 安装信息里的默认源。日志固定落 <c>数据根/logs/update.log</c>。
+    /// </summary>
+    public static IUpdateService CreateUpdateService()
+    {
+        var source = Environment.GetEnvironmentVariable("ESLUNCHER_UPDATE_SOURCE");
+        var logPath = Path.Combine(Layout.Root, "logs", "update.log");
+        return new VelopackUpdateService(
+            string.IsNullOrWhiteSpace(source) ? null : source,
+            message =>
+            {
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+                    File.AppendAllText(logPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {message}{Environment.NewLine}");
+                }
+                catch (IOException)
+                {
+                    // 日志失败不影响更新流程。
+                }
+            });
+    }
 
     public static void SaveSettings(LauncherSettings settings)
     {

@@ -5,4 +5,9 @@
     <AssemblyName>EsLuncher.Core</AssemblyName>
     <!-- 宪章第 1 条：引擎层零 UI 依赖。这里永远不放 Avalonia / System.Windows 引用。 -->
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 自动更新：Velopack 无 UI 依赖，放引擎层便于 CLI 与 UI 共用同一套检查/下载/应用逻辑 -->
+    <PackageReference Include="Velopack" />
+  </ItemGroup>
 </Project>

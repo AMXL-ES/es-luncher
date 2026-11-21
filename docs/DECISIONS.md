@@ -32,3 +32,7 @@
 | 2026-11-20 | Endless Studio 的名称/图标**只在关于页与鸣谢**出现，README/发行说明不出现 | 用户明确要求 | 需要改时只动 About 页资源 |
 | 2026-11-21 | 验收用一个可复跑脚本 `scripts/verify-acceptance.ps1`（默认全 dry-run，`-WithUi`/`-WithLaunch` 才动真格），退出码 0/1 | 把「判据必须是可执行证据」变成一条命令，免得每轮手工敲 | 删脚本或改成单元测试入口；判据不变 |
 | 2026-11-21 | 中文 Markdown 一律 UTF-8**无 BOM**；`.ps1` 一律 UTF-8**带 BOM** | 文档被 PS 5.1 按 ANSI 写入过一次，`RELEASE-CHECK.md` 因此整篇损毁 | 装 pwsh 7 后可统一为无 BOM；转换时注意 `.ps1` 会坏中文注释 |
+| 2026-11-21 | 分发用 **Velopack 1.2.161**（锁定版本，`vpk` 装在 `D:\dev\tools\vpk`，不进 PATH） | 唯一同时满足 .NET 10 原生、MIT、零依赖、自带增量的方案（ADR-0003） | 换回 Inno+自研更新就是重写这一段；版本升级时核对 `lib/net10.0` 仍在 |
+| 2026-11-21 | 安装位置 `%LocalAppData%\ESLuncher`；**数据根不变**（`%APPDATA%\ESLuncher` 或 `ESLUNCHER_DATA`） | Velopack 的默认布局；升级不碰实例与下载 | 想改安装位置要 `vpk`/Setup 侧调整，并同步卸载逻辑 |
+| 2026-11-21 | 更新**只在「其他」页手动触发**，不做启动静默检查 | 没有远程源、也没有签名时，开机弹窗只会打扰用户 | 接了 GitHub 源并签名后再加启动检查与后台下载 |
+| 2026-11-21 | 发布版本号由 `pack-velopack.ps1 -Version` 传入（`-p:Version` 覆盖程序集版本），`csproj` 的 0.1.0 只作开发默认值 | 让「打哪个版本」只有一处输入，避免手改 csproj 忘改 | 正式发版时同步改 csproj，让源码里的版本号与发布一致 |

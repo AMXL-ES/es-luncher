@@ -8,6 +8,7 @@ using EsLuncher.Core.Java;
 using EsLuncher.Core.Launching;
 using EsLuncher.Core.Loaders;
 using EsLuncher.Core.Metadata;
+using EsLuncher.Core.Updates;
 
 namespace EsLuncher.Cli;
 
@@ -17,6 +18,13 @@ internal static class Program
 
     private static async Task<int> RunAsync(string[] args)
     {
+        // update 子命令要 Velopack 的定位器（安装根与包目录）；开发态克隆一份空参数启动即可。
+        // 其它子命令不需要，避免无谓开销。
+        if (args.Length > 0 && args[0].Equals("update", StringComparison.OrdinalIgnoreCase))
+        {
+            Velopack.VelopackApp.Build().SetArgs(Array.Empty<string>()).Run();
+        }
+
         if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
         {
             PrintHelp();
@@ -64,6 +72,11 @@ internal static class Program
             if (command == "deps")
             {
                 return await DepsCommandAsync(args).ConfigureAwait(false);
+            }
+
+            if (command == "update")
+            {
+                return await UpdateCommandAsync(args[1..]).ConfigureAwait(false);
             }
 
             if (command == "java")
@@ -1457,6 +1470,69 @@ internal static class Program
             ? $"{bytes / 1024d / 1024d:0.0} MiB"
             : $"{bytes / 1024d:0.0} KiB";
 
+    /// <summary>
+    /// 自动更新验收面：<c>esluncher update [--source 目录或URL] [--download] [--apply]</c>。
+    /// 开发态（未用 Velopack Setup 安装）只做检查，`--apply` 会明确失败而不是假装成功。
+    /// </summary>
+    private static async Task<int> UpdateCommandAsync(string[] args)
+    {
+        string? source = null;
+        var download = false;
+        var apply = false;
+        for (var i = 0; i < args.Length; i++)
+        {
+            switch (args[i])
+            {
+                case "--source" when i + 1 < args.Length:
+                    source = args[++i];
+                    break;
+                case "--download":
+                    download = true;
+                    break;
+                case "--apply":
+                    apply = true;
+                    break;
+                default:
+                    return Fail($"update 不认识的参数：{args[i]}");
+            }
+        }
+
+        var service = new VelopackUpdateService(source, message => Console.WriteLine($"  · {message}"));
+        var result = await service.CheckAsync().ConfigureAwait(false);
+        Console.WriteLine($"当前版本 : {result.CurrentVersion}");
+        Console.WriteLine($"安装形态 : {(result.IsInstalled ? "Velopack 安装" : result.IsPortable ? "便携" : "开发态/未安装")}");
+        Console.WriteLine($"可用版本 : {result.AvailableVersion ?? "（已是最新）"}");
+        if (result.UpdateAvailable)
+        {
+            Console.WriteLine($"增量可用 : {(result.DeltaAvailable ? "是" : "否")}");
+        }
+
+        if (!download && !apply)
+        {
+            return 0;
+        }
+
+        if (!result.UpdateAvailable)
+        {
+            return 0;
+        }
+
+        await service.DownloadAsync(percent => Console.WriteLine($"  下载 {percent}%")).ConfigureAwait(false);
+        Console.WriteLine("下载完成");
+
+        if (apply)
+        {
+            if (!result.IsInstalled)
+            {
+                return Fail("当前不是 Velopack 安装形态，无法应用更新并重启（请用 Setup.exe 安装后再试）。");
+            }
+
+            service.ApplyAndRestart();
+        }
+
+        return 0;
+    }
+
     private static int Fail(string message)
     {
         Console.Error.WriteLine($"错误：{message}");
@@ -1502,6 +1578,7 @@ internal static class Program
           esluncher versions [--type <t>] [--limit <n>]
           esluncher login    --provider offline|microsoft [选项]
           esluncher accounts
+          esluncher update   [--source <目录或URL>] [--download] [--apply]
           esluncher logout   --account <名字>
 
         选项:

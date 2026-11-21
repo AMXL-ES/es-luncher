@@ -11,6 +11,7 @@
 | `DECISIONS.md` | 哪些小事是我替你定的、怎么推翻 | 新增默认值时 |
 | `adr/0001-ui-framework.md` | 为什么是 Avalonia 12 | 推翻选型时 |
 | `adr/0002-license-gpl3.md` | 为什么 GPL-3.0、能抄什么不能抄什么 | 许可证/依赖策略变化时 |
+| `adr/0003-distribution-velopack.md` | 为什么用 Velopack 接管安装与更新、代价是什么 | 分发链路变化时 |
 | `M1-metadata-download.md` | M1 的实测结构、规模数字、裁剪决定与下载验收记录 | M1 期间持续更新 |
 | `M2-launch-core.md` | 启动核心的组成、关键约定、命令行顺序与验收记录 | M2 期间持续更新 |
 | `M3-auth.md` | 认证：离线/微软链路/DPAPI/错误映射/未验证项 | M3 期间持续更新 |
@@ -20,6 +21,7 @@
 | `M7-ui.md` | 界面：图标规范、UI 壳、实例页/关于页、M7 待办 | M7 期间持续更新 |
 | `M8-content.md` | 内容管理：types/复制/回收站式移除/CLI/Modrinth/mrpack/扩展点 | M8 期间持续更新 |
 | `M9-diagnostics.md` | 诊断：日志错误/崩溃报告/人话提示/诊断包 | M9 期间持续更新 |
+| `M10-distribution.md` | 分发：Velopack 打包、增量更新、安装/卸载与验收数字 | M10 期间持续更新 |
 | `DEVELOPER-GUIDE.md` | 用 Core 写自己的启动器：最小示例、接口表、扩展点、约定 | 长期维护 |
 | `AUDIT.md` | 现状审计：已实现/缺口/放错位置/计划 | 2026-11-20 |
 | `API-KEYS.md` | 需要申请/拿到的 API 与凭据（微软/CF/Modrinth） | 2026-11-20 |

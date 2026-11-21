@@ -259,6 +259,18 @@
               <TextBlock x:Name="OthersStatus" Foreground="#6E6E76" FontSize="11" TextWrapping="Wrap" />
             </StackPanel>
           </Border>
+
+          <Border Background="#141419" CornerRadius="12" Padding="16">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{app:T others.update}" FontWeight="SemiBold" Foreground="#FFFFFF" FontSize="14" />
+              <TextBlock x:Name="UpdateVersionText" Foreground="#9A9AA3" FontSize="12" />
+              <WrapPanel>
+                <Button x:Name="UpdateCheckButton" Content="{app:T others.updateCheck}" Classes="ghost" Margin="0,0,8,8" AutomationProperties.Name="{app:T others.updateCheck}" Click="OnUpdateCheckClick" />
+                <Button x:Name="UpdateApplyButton" Content="{app:T others.updateApply}" Classes="ghost" Margin="0,0,8,8" AutomationProperties.Name="{app:T others.updateApply}" IsEnabled="False" Click="OnUpdateApplyClick" />
+              </WrapPanel>
+              <TextBlock x:Name="UpdateStatus" Foreground="#6E6E76" FontSize="11" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
         </StackPanel>
       </Grid>
 

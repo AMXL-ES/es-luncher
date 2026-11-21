@@ -4,7 +4,7 @@
 > **每轮开局三读**：本文件 → `docs/INDEX.md` → 当前里程碑文档。
 
 - **目标 id**：`goal-db5cdd51-065f-4a37-a25d-883614f0ab16`
-- **当前阶段**：**M8 内容管理器扩展完成**（2026-11-20）：mods/资源包/光影/世界/数据包 全类型浏览 + 启用/禁用 + 删除/回收站 + 本地添加 + Modrinth 按类型下载；M9 诊断 UI 完成
+- **当前阶段**：**M10 分发与自动更新完成**（2026-11-21）：Velopack 接管安装/便携/增量更新，增量升级实测通过；M11 待开工
 - **项目根**：`D:\dev\es-luncher` ｜ **数据根**：`D:\mc-data` ｜ **不占 C 盘**
 - **上游契约**：`C:\Users\HP\Desktop\Minecraft启动器-项目启动提示词.md`
 
@@ -316,12 +316,33 @@
 
 **本次未覆盖**（不算过也不算败）：NeoForge、微软真实登录、CurseForge、安装包重打包与签名、150% 缩放。
 
-## 下一步（M10 分发）
+## M10 分发与自动更新（2026-11-21 本轮交付）
 
-1. 自动更新（Velopack 候选）+ 增量更新；先验证 Velopack 与 .NET 10 兼容性。
-2. 重出便携包与安装包，并按 `docs/PACKAGING.md` 实装/卸载各跑一次。
-3. 签名：申请 SignPath Foundation（CI 与脚本已备好，缺 token 与 organization id）。
-4. 之后 M11 性能基准（冷启动 / 常驻内存 / 下载吞吐 / 长时挂机，全部要数字）。
+决策见 `docs/adr/0003-distribution-velopack.md`：**Velopack 1.2.161 全量接管**（安装包 / 便携包 / 自动更新 / 增量），Inno 退役。
+`dotnet test` → **204 passed / 0 failed**；构建 0 警告。
+
+| 能力 | 落点 | 证据 |
+|---|---|---|
+| 更新服务（检查/下载/应用） | `Core/Updates/UpdateService.cs`、`VelopackUpdateService.cs` | 接口不泄漏 Velopack 类型；参数顺序错误有 2 个单测 |
+| 安装/更新钩子 | `App/Program.cs` | `VelopackApp.Build().Run()` 置于最前 |
+| 无界面更新路径 | `App/HeadlessUpdate.cs` | `--update-test --source <dir> [--apply] [--log]`，输出 key=value |
+| CLI | `esluncher update [--source] [--download] [--apply]` | 开发态明确拒绝（exit 2 + 人话），不假装成功 |
+| 界面 | 「其他 → 更新」卡片 | 检查更新 / 下载并重启 / 状态行；中英词条 |
+| 打包 | `scripts/pack-velopack.ps1` | Setup 21.4 MB、Portable 14.0 MB、full 14,049 KB |
+| 增量 | 同目录连续打包 | **delta 15.3 KB / 37.1 KB**（对比 full 14,049 KB） |
+| 安装 | `ESLuncher-win-Setup.exe --silent` | 装到 `%LocalAppData%\ESLuncher`，exit 0 |
+| 升级 | `--update-test --apply` | 0.1.0 → 0.1.1 → … 重启后 `current` 正确递增 |
+| **增量升级（关键判据）** | 源目录**只留 delta**、删掉 full 包 | 0.1.2 → **0.1.3 成功**；源里没有 14 MB 的 full，证明走的是增量 |
+| 卸载 | `Update.exe uninstall --silent` | 安装目录整体移除 |
+
+**未做**：签名（方案文档就绪，缺证书/CI 凭据）、GitHub Releases 更新源（暂无 git remote，先本地目录源）、启动时自动检查。
+
+## 下一步（M11 性能与稳定）
+
+1. 基准台账：冷启动到可交互、常驻内存、下载吞吐（MB/s）、长时挂机（≥2h）后的内存曲线，全部要数字。
+2. 数据根体积治理：多版本 Java 与旧 release 的清理策略（当前 `java/` 已 230 MiB）。
+3. 回归自动化：把 `scripts/verify-acceptance.ps1` 接进 CI，并把「增量升级」做成可自动化的用例。
+4. M12 准备：发行说明、第三方许可清单、回滚方案。
 
 ## 待用户提供（做界面/关于页时提醒）
 

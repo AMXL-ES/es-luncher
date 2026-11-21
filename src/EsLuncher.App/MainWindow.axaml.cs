@@ -10,6 +10,7 @@ using EsLuncher.Core.Content;
 using EsLuncher.Core.Auth;
 using EsLuncher.Core.Downloads;
 using EsLuncher.Core.Instances;
+using EsLuncher.Core.Updates;
 
 namespace EsLuncher.App;
 
@@ -149,6 +150,70 @@ public partial class MainWindow : Window
         OthersInstanceText.Text = InstanceList?.SelectedItem is InstanceItem item
             ? $"{item.Name} · {item.Version}" + (string.IsNullOrWhiteSpace(item.Group) ? string.Empty : $" · {item.Group}")
             : "未选择实例（先到实例页选一个）";
+
+        if (UpdateVersionText is not null && string.IsNullOrEmpty(UpdateVersionText.Text))
+        {
+            var version = typeof(App).Assembly.GetName().Version?.ToString(3) ?? "?";
+            UpdateVersionText.Text = Localization.F("others.updateVersion", version);
+        }
+    }
+
+    private readonly IUpdateService _updateService = AppServices.CreateUpdateService();
+
+    private UpdateCheckResult? _updateResult;
+
+    private async void OnUpdateCheckClick(object? sender, RoutedEventArgs e)
+    {
+        UpdateCheckButton.IsEnabled = false;
+        UpdateApplyButton.IsEnabled = false;
+        UpdateStatus.Text = Localization.T("others.updateChecking");
+        try
+        {
+            _updateResult = await _updateService.CheckAsync();
+            UpdateVersionText.Text = Localization.F("others.updateVersion", _updateResult.CurrentVersion);
+            if (!_updateResult.UpdateAvailable)
+            {
+                UpdateStatus.Text = Localization.T("others.updateLatest");
+                return;
+            }
+
+            UpdateStatus.Text = Localization.F(
+                _updateResult.DeltaAvailable ? "others.updateAvailableDelta" : "others.updateAvailable",
+                _updateResult.AvailableVersion ?? "?");
+            UpdateApplyButton.IsEnabled = true;
+        }
+        catch (Exception exception)
+        {
+            UpdateStatus.Text = Localization.F("others.updateFailed", exception.Message);
+        }
+        finally
+        {
+            UpdateCheckButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnUpdateApplyClick(object? sender, RoutedEventArgs e)
+    {
+        if (_updateResult is not { UpdateAvailable: true })
+        {
+            return;
+        }
+
+        UpdateApplyButton.IsEnabled = false;
+        UpdateCheckButton.IsEnabled = false;
+        try
+        {
+            await _updateService.DownloadAsync(
+                percent => UpdateStatus.Text = Localization.F("others.updateDownloading", percent));
+            UpdateStatus.Text = Localization.T("others.updateLatest");
+            _updateService.ApplyAndRestart();
+        }
+        catch (Exception exception)
+        {
+            UpdateStatus.Text = Localization.F("others.updateFailed", exception.Message);
+            UpdateApplyButton.IsEnabled = true;
+            UpdateCheckButton.IsEnabled = true;
+        }
     }
 
     private void OnNavClick(object? sender, RoutedEventArgs e)

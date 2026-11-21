@@ -69,9 +69,16 @@ function Invoke-Step {
 }
 
 function Invoke-Cli {
-  param([string[]]$CliArgs)
+  param([string[]]$CliArgs, [switch]$NoDataRoot)
 
-  $out = & $script:Exe @CliArgs --data $DataRoot 2>&1 | Out-String
+  # 有些检查故意让 CLI 走错误分支（stderr + 非零退出码）；Stop 偏好会把它升级成终止错误。
+  $ErrorActionPreference = 'Continue'
+  if ($NoDataRoot) {
+    $out = & $script:Exe @CliArgs 2>&1 | Out-String
+  }
+  else {
+    $out = & $script:Exe @CliArgs --data $DataRoot 2>&1 | Out-String
+  }
   $script:LastCliCode = $LASTEXITCODE
   $script:LastCliOut = $out
 }
@@ -200,6 +207,28 @@ if ($exeOk) {
   $null = Invoke-Step -Name 'M3 accounts' -Detail 'saved accounts (no token)' -Action {
     Invoke-Cli -CliArgs @('accounts')
     return $script:LastCliOut
+  }
+
+  # -------------------------------------------------------------- M10 update guard
+  $releaseFeed = Join-Path $repo 'artifacts\releases'
+  if (Test-Path $releaseFeed) {
+    $guardSw = [System.Diagnostics.Stopwatch]::StartNew()
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+      Invoke-Cli -CliArgs @('update', '--source', $releaseFeed) -NoDataRoot
+    }
+    finally {
+      $ErrorActionPreference = $previousPreference
+      $guardSw.Stop()
+    }
+    # 期望行为：开发态（未安装）不支持自更新 → 退出码 2 且给出人话原因。
+    $guardOk = ($script:LastCliCode -eq 2) -and ($script:LastCliOut -match '安装形态')
+    $guardCode = 1
+    if ($guardOk) { $guardCode = 0 }
+    Add-Result -Name 'M10 update guard' -Code $guardCode `
+      -Detail ("dev build refuses self-update ({0:N1}s)" -f $guardSw.Elapsed.TotalSeconds) `
+      -Output $script:LastCliOut
   }
 
   # -------------------------------------------------------------- M7 UI smoke
